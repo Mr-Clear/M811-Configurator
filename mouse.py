@@ -1,6 +1,8 @@
 import usb.core
 import usb.util
 
+from enum import Enum
+from dataclasses import dataclass
 
 VENDOR_ID = 0x04d9  # Holtek
 
@@ -34,6 +36,8 @@ ADR_POLLRATE = (0x32, 0)
 
 ADR_DPIS = [(0x42, 0), (0x02, 1), (0xb2, 1), (0x62, 2), (0x12, 3)]
 
+PROFILE_COUNT = 5
+
 ADR_KEYMAPS = [
     [(0x82, 0), (0x86, 0), (0x8a, 0), (0x8e, 0), (0x92, 0), (0x96, 0), (0x9a, 0), (0x9e, 0), (0xa2, 0), (0xa6, 0), (0xaa, 0), (0xae, 0), (0xb2, 0), (0xb6, 0), (0xba, 0), (0xbe, 0), (0xc2, 0), (0xc6, 0), (0xda, 0), (0xde, 0)],
     [(0x42, 1), (0x46, 1), (0x4a, 1), (0x4e, 1), (0x52, 1), (0x56, 1), (0x5a, 1), (0x5e, 1), (0x62, 1), (0x66, 1), (0x6a, 1), (0x6e, 1), (0x72, 1), (0x76, 1), (0x7a, 1), (0x7e, 1), (0x82, 1), (0x86, 1), (0x9a, 1), (0x9e, 1)],
@@ -50,14 +54,49 @@ ADR_EFFECTS = [
     (0x69, 4),
 ]
 
+class MouseType(Enum):
+    M901 = 0xfc02
+    M990 = 0xfc0f
+    M709 = 0xfc2a
+    M702 = 0xfc2f
+    M711 = 0xfc30
+    M602 = 0xfc38
+    M607 = 0xfc38
+    M715 = 0xfc39
+    M921 = 0xfc40
+    M990_RGB = 0xfc41
+    M909 = 0xfc42
+    M802 = 0xfc42
+    M910 = 0xfc49
+    M908 = 0xfc4d
+    M719 = 0xfc4f
+    M721 = 0xfc5c
+    M801 = 0xfc56
+    M808 = 0xfc5f
+    M612 = 0xfc61
+    M811 = 0xfc6d
+
+@dataclass
+class UsbDevice:
+    dev: usb.core.Device
+    type: MouseType | None
+    name: str | None
+    supported: bool
+    access: bool
+
 
 class Mouse:
-
     def __init__(self, product_id: int) -> None:
         results = usb.core.find(idVendor=VENDOR_ID, idProduct=product_id)
         if not isinstance(results, usb.core.Device):
             raise AttributeError(f"No USB device with ID {VENDOR_ID:04x}:{product_id:04x}")
         self.dev: usb.core.Device = results
+
+    @classmethod
+    def from_device(cls, dev: usb.core.Device) -> "Mouse":
+        mouse = cls.__new__(cls)
+        mouse.dev = dev
+        return mouse
 
     def get_active_profile(self) -> int:
         self._unlock()
@@ -88,14 +127,14 @@ class Mouse:
         self._unlock()
         self._write16(ADR_EFFECTS[profile], 7, *effects)
         self._lock()
-    
+
     def get_keymap(self, profile: int, size: int) -> list[list[int]]:
         addrs = ADR_KEYMAPS[profile]
         self._unlock()
         codes = [self._read16(addrs[i], 4) for i in range(size)]
         self._lock()
         return codes
-    
+
     def print_keymap(self, profile: int, size: int) -> None:
         codes = self.get_keymap(profile, size)
         for i, code in enumerate(codes):
@@ -139,6 +178,53 @@ class Mouse:
         self._unlock()
         self._write64(ADR_SCROLL, 10, *gapped)
         self._lock()
+
+    @staticmethod
+    def find_devices() -> list[UsbDevice]:
+        devs = usb.core.find(idVendor=VENDOR_ID, find_all=True)
+        result = []
+        for dev in devs:
+            access = Mouse._test_access(dev)
+            for type in MouseType:
+                if dev.idProduct == type.value:
+                    device_type = type
+                    device_name = type.name
+                    supported = True
+                    break
+            else:
+                device_type = None
+                try:
+                    device_name = f"Unknown {dev.product}"
+                except (usb.core.USBError, ValueError):
+                    device_name = "Unknown device"
+                supported = False
+            result.append(UsbDevice(dev, device_type, device_name, supported, access))
+
+        # Find duplicate names
+        duplicates = set()
+        for i in range(len(result)):
+            for j in range(i + 1, len(result)):
+                if result[i].name is not None and result[i].name == result[j].name:
+                    duplicates.add(result[i].name)
+
+        for dev in result:
+            if dev.name in duplicates:
+                dev.name += f" ({dev.dev.bus}/{dev.dev.address})"
+
+        return result
+
+    @staticmethod
+    def _test_access(dev: usb.core.Device) -> bool:
+        try:
+            print(f"Kernel driver free: {dev.is_kernel_driver_active(INTERFACE)} for device {dev.idVendor:04x}:{dev.idProduct:04x} at /dev/bus/usb/{dev.bus:03d}/{dev.address:03d}")
+            if dev.is_kernel_driver_active(INTERFACE):
+                dev.detach_kernel_driver(INTERFACE)
+                print(f"Kernel driver detached")
+            dev.ctrl_transfer(0xA1, 0x01, 0x0302, INTERFACE, 16, TIMEOUT)
+            return True
+        except usb.core.USBError:
+            print(f"Access test failed for device {dev.idVendor:04x}:{dev.idProduct:04x} at /dev/bus/usb/{dev.bus:03d}/{dev.address:03d}")
+            return False
 
     def _read16(self, addr: tuple[int, int], n: int) -> list[int]:
         self._set(REPORT_16B, [LEN_16B, OP_SEEK, *addr, n], 16)
