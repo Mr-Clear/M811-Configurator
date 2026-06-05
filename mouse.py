@@ -1,8 +1,9 @@
+import types
+from dataclasses import dataclass
+from enum import Enum
+
 import usb.core
 import usb.util
-
-from enum import Enum
-from dataclasses import dataclass
 
 VENDOR_ID = 0x04d9  # Holtek
 
@@ -39,11 +40,16 @@ ADR_DPIS = [(0x42, 0), (0x02, 1), (0xb2, 1), (0x62, 2), (0x12, 3)]
 PROFILE_COUNT = 5
 
 ADR_KEYMAPS = [
-    [(0x82, 0), (0x86, 0), (0x8a, 0), (0x8e, 0), (0x92, 0), (0x96, 0), (0x9a, 0), (0x9e, 0), (0xa2, 0), (0xa6, 0), (0xaa, 0), (0xae, 0), (0xb2, 0), (0xb6, 0), (0xba, 0), (0xbe, 0), (0xc2, 0), (0xc6, 0), (0xda, 0), (0xde, 0)],
-    [(0x42, 1), (0x46, 1), (0x4a, 1), (0x4e, 1), (0x52, 1), (0x56, 1), (0x5a, 1), (0x5e, 1), (0x62, 1), (0x66, 1), (0x6a, 1), (0x6e, 1), (0x72, 1), (0x76, 1), (0x7a, 1), (0x7e, 1), (0x82, 1), (0x86, 1), (0x9a, 1), (0x9e, 1)],
-    [(0xf2, 1), (0xf6, 1), (0xfa, 1), (0xfe, 1), (0x02, 2), (0x06, 2), (0x0a, 2), (0x0e, 2), (0x12, 2), (0x16, 2), (0x1a, 2), (0x1e, 2), (0x22, 2), (0x26, 2), (0x2a, 2), (0x2e, 2), (0x32, 2), (0x36, 2), (0x4a, 2), (0x4e, 2)],
-    [(0xa2, 2), (0xa6, 2), (0xaa, 2), (0xae, 2), (0xb2, 2), (0xb6, 2), (0xba, 2), (0xbe, 2), (0xc2, 2), (0xc6, 2), (0xca, 2), (0xce, 2), (0xd2, 2), (0xd6, 2), (0xda, 2), (0xde, 2), (0xe2, 2), (0xe6, 2), (0xfa, 2), (0xfe, 2)],
-    [(0x52, 3), (0x56, 3), (0x5a, 3), (0x5e, 3), (0x62, 3), (0x66, 3), (0x6a, 3), (0x6e, 3), (0x72, 3), (0x76, 3), (0x7a, 3), (0x7e, 3), (0x82, 3), (0x86, 3), (0x8a, 3), (0x8e, 3), (0x92, 3), (0x96, 3), (0xaa, 3), (0xae, 3)],
+    [(0x82, 0), (0x86, 0), (0x8a, 0), (0x8e, 0), (0x92, 0), (0x96, 0), (0x9a, 0), (0x9e, 0), (0xa2, 0), (0xa6, 0),
+     (0xaa, 0), (0xae, 0), (0xb2, 0), (0xb6, 0), (0xba, 0), (0xbe, 0), (0xc2, 0), (0xc6, 0), (0xda, 0), (0xde, 0)],
+    [(0x42, 1), (0x46, 1), (0x4a, 1), (0x4e, 1), (0x52, 1), (0x56, 1), (0x5a, 1), (0x5e, 1), (0x62, 1), (0x66, 1),
+     (0x6a, 1), (0x6e, 1), (0x72, 1), (0x76, 1), (0x7a, 1), (0x7e, 1), (0x82, 1), (0x86, 1), (0x9a, 1), (0x9e, 1)],
+    [(0xf2, 1), (0xf6, 1), (0xfa, 1), (0xfe, 1), (0x02, 2), (0x06, 2), (0x0a, 2), (0x0e, 2), (0x12, 2), (0x16, 2),
+     (0x1a, 2), (0x1e, 2), (0x22, 2), (0x26, 2), (0x2a, 2), (0x2e, 2), (0x32, 2), (0x36, 2), (0x4a, 2), (0x4e, 2)],
+    [(0xa2, 2), (0xa6, 2), (0xaa, 2), (0xae, 2), (0xb2, 2), (0xb6, 2), (0xba, 2), (0xbe, 2), (0xc2, 2), (0xc6, 2),
+     (0xca, 2), (0xce, 2), (0xd2, 2), (0xd6, 2), (0xda, 2), (0xde, 2), (0xe2, 2), (0xe6, 2), (0xfa, 2), (0xfe, 2)],
+    [(0x52, 3), (0x56, 3), (0x5a, 3), (0x5e, 3), (0x62, 3), (0x66, 3), (0x6a, 3), (0x6e, 3), (0x72, 3), (0x76, 3),
+     (0x7a, 3), (0x7e, 3), (0x82, 3), (0x86, 3), (0x8a, 3), (0x8e, 3), (0x92, 3), (0x96, 3), (0xaa, 3), (0xae, 3)],
 ]
 
 ADR_EFFECTS = [
@@ -53,6 +59,7 @@ ADR_EFFECTS = [
     (0x61, 4),
     (0x69, 4),
 ]
+
 
 class MouseType(Enum):
     M901 = 0xfc02
@@ -76,6 +83,7 @@ class MouseType(Enum):
     M612 = 0xfc61
     M811 = 0xfc6d
 
+
 @dataclass
 class UsbDevice:
     dev: usb.core.Device
@@ -89,7 +97,8 @@ class Mouse:
     def __init__(self, product_id: int) -> None:
         results = usb.core.find(idVendor=VENDOR_ID, idProduct=product_id)
         if not isinstance(results, usb.core.Device):
-            raise AttributeError(f"No USB device with ID {VENDOR_ID:04x}:{product_id:04x}")
+            raise AttributeError(
+                f"No USB device with ID {VENDOR_ID:04x}:{product_id:04x}")
         self.dev: usb.core.Device = results
 
     @classmethod
@@ -147,7 +156,7 @@ class Mouse:
             self._write16(addr, 4, *code)
         self._lock()
 
-    def get_dpis(self, profile: int) -> list[list]:
+    def get_dpis(self, profile: int) -> list[list[int]]:
         self._unlock()
         dpi_codes = self._read64(ADR_DPIS[profile], 32)
         self._lock()
@@ -156,7 +165,7 @@ class Mouse:
                   if dpi_codes[i] == 1]
         return levels
 
-    def set_dpis(self, profile: int, levels: list[list]) -> None:
+    def set_dpis(self, profile: int, levels: list[list[int]]) -> None:
         dpi_codes = [[1, l, h] for l, h in levels]
         while len(dpi_codes) < 5:
             dpi_codes.append([0, 0, 0])
@@ -182,8 +191,10 @@ class Mouse:
     @staticmethod
     def find_devices() -> list[UsbDevice]:
         devs = usb.core.find(idVendor=VENDOR_ID, find_all=True)
-        result = []
+        assert isinstance(devs, types.GeneratorType)
+        result: list[UsbDevice] = []
         for dev in devs:
+            assert isinstance(dev, usb.core.Device)
             access = Mouse._test_access(dev)
             for type in MouseType:
                 if dev.idProduct == type.value:
@@ -198,14 +209,16 @@ class Mouse:
                 except (usb.core.USBError, ValueError):
                     device_name = "Unknown device"
                 supported = False
-            result.append(UsbDevice(dev, device_type, device_name, supported, access))
+            result.append(UsbDevice(dev, device_type,
+                          device_name, supported, access))
 
         # Find duplicate names
-        duplicates = set()
+        duplicates: set[str] = set()
         for i in range(len(result)):
             for j in range(i + 1, len(result)):
-                if result[i].name is not None and result[i].name == result[j].name:
-                    duplicates.add(result[i].name)
+                name = result[i].name
+                if name is not None and name == result[j].name:
+                    duplicates.add(name)
 
         for dev in result:
             if dev.name in duplicates:
@@ -216,14 +229,16 @@ class Mouse:
     @staticmethod
     def _test_access(dev: usb.core.Device) -> bool:
         try:
-            print(f"Kernel driver free: {dev.is_kernel_driver_active(INTERFACE)} for device {dev.idVendor:04x}:{dev.idProduct:04x} at /dev/bus/usb/{dev.bus:03d}/{dev.address:03d}")
+            print(
+                f"Kernel driver free: {dev.is_kernel_driver_active(INTERFACE)} for device {dev.idVendor:04x}:{dev.idProduct:04x} at /dev/bus/usb/{dev.bus:03d}/{dev.address:03d}")
             if dev.is_kernel_driver_active(INTERFACE):
                 dev.detach_kernel_driver(INTERFACE)
                 print(f"Kernel driver detached")
             dev.ctrl_transfer(0xA1, 0x01, 0x0302, INTERFACE, 16, TIMEOUT)
             return True
         except usb.core.USBError:
-            print(f"Access test failed for device {dev.idVendor:04x}:{dev.idProduct:04x} at /dev/bus/usb/{dev.bus:03d}/{dev.address:03d}")
+            print(
+                f"Access test failed for device {dev.idVendor:04x}:{dev.idProduct:04x} at /dev/bus/usb/{dev.bus:03d}/{dev.address:03d}")
             return False
 
     def _read16(self, addr: tuple[int, int], n: int) -> list[int]:
@@ -234,11 +249,13 @@ class Mouse:
         self._set(REPORT_64B, [LEN_64B, OP_SEEK, *addr, n], 64)
         return self._get(REPORT_64B, 64)
 
-    def _write16(self, addr: tuple[int, int], n: int, *args):
-        self._set(REPORT_16B, [LEN_16B, OP_WRITE, *addr, n, 0, 0, 0, *args], 16)
+    def _write16(self, addr: tuple[int, int], n: int, *args: int):
+        self._set(REPORT_16B, [LEN_16B, OP_WRITE,
+                  *addr, n, 0, 0, 0, *args], 16)
 
-    def _write64(self, addr: tuple[int, int], n: int, *args):
-        self._set(REPORT_64B, [LEN_64B, OP_WRITE, *addr, n, 0, 0, 0, *args], 64)
+    def _write64(self, addr: tuple[int, int], n: int, *args: int):
+        self._set(REPORT_64B, [LEN_64B, OP_WRITE,
+                  *addr, n, 0, 0, 0, *args], 64)
 
     def _unlock(self) -> None:
         self._set(REPORT_16B, [LEN_16B, OP_LOCK, 0], 16)
@@ -249,9 +266,11 @@ class Mouse:
     def _set(self, report: int, msg: list[int], length: int):
         pad = [0] * (length - len(msg))
         data = bytearray(msg + pad)
-        sent = self.dev.ctrl_transfer(SET_REQUEST_TYPE, SET_REPORT, report, INTERFACE, data, TIMEOUT)
+        sent = self.dev.ctrl_transfer(
+            SET_REQUEST_TYPE, SET_REPORT, report, INTERFACE, data, TIMEOUT)
         assert sent == length
 
     def _get(self, report: int, length: int) -> list[int]:
-        data = self.dev.ctrl_transfer(GET_REQUEST_TYPE, GET_REPORT, report, INTERFACE, length, TIMEOUT)
+        data = self.dev.ctrl_transfer(
+            GET_REQUEST_TYPE, GET_REPORT, report, INTERFACE, length, TIMEOUT)
         return list(data[8:])

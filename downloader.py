@@ -1,13 +1,17 @@
-# Downloads file in background and calls a callback when done. Also caches files on disk to avoid redownloading them every time the application is launched.
 import os
 import threading
+from typing import Callable
 from urllib.request import urlopen
 
 cache_dir = os.path.join(os.path.dirname(__file__), ".cache")
 if not os.path.exists(cache_dir):
     os.makedirs(cache_dir)
 
-def download(url: str, callback: callable[[bytes | Exception], None]):
+
+def download(url: str, callback: Callable[[bytes | Exception], None]):
+    '''Downloads file in background and calls a callback when done.
+       Also caches files in the '.cache' directory.'''
+
     def _download():
         filename = os.path.join(cache_dir, os.path.basename(url))
         if not os.path.exists(filename):

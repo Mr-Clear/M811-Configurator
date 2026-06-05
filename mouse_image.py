@@ -3,12 +3,11 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 
 import svgpathtools
-from PySide6.QtCore import QPointF, QRectF, Qt, Signal, Slot
-from PySide6.QtGui import QColor, QPainter, QPainterPath, QPixmap
-from PySide6.QtWidgets import QLabel
+from PySide6.QtCore import QEvent, QPointF, QRectF, Qt, Signal, Slot
+from PySide6.QtGui import QColor, QMouseEvent, QPainter, QPainterPath, QPixmap
+from PySide6.QtWidgets import QLabel, QWidget
 
 from downloader import download
-
 
 _XLINK_HREF = '{http://www.w3.org/1999/xlink}href'
 _HREF = 'href'
@@ -40,7 +39,7 @@ def _svg_path_to_painter_path(d: str) -> QPainterPath:
                 seg.control.real, seg.control.imag,
                 seg.end.real, seg.end.imag,
             )
-        elif isinstance(seg, svgpathtools.Arc):
+        else:  # isinstance(seg, svgpathtools.Arc)
             for cubic in seg.as_cubic_curves():
                 path.cubicTo(
                     cubic.control1.real, cubic.control1.imag,
@@ -59,7 +58,7 @@ class MouseImageWidget(QLabel):
     button_clicked = Signal(int)
     button_hovered = Signal(int)
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._base_pixmap: QPixmap | None = None
         self._image_rect: QRectF = QRectF()
@@ -111,7 +110,8 @@ class MouseImageWidget(QLabel):
 
         # SVG width / height
         try:
-            self._svg_size = (float(root.get('width', 1)), float(root.get('height', 1)))
+            self._svg_size = (float(root.get('width', 1)),
+                              float(root.get('height', 1)))
         except ValueError:
             self._svg_size = (1.0, 1.0)
 
@@ -164,7 +164,8 @@ class MouseImageWidget(QLabel):
         # Build contiguous list, leaving gaps as empty paths
         if button_map:
             max_index = max(button_map.keys())
-            self._paths = [button_map.get(i, QPainterPath()) for i in range(max_index + 1)]
+            self._paths = [button_map.get(i, QPainterPath())
+                           for i in range(max_index + 1)]
         else:
             self._paths = []
 
@@ -268,7 +269,7 @@ class MouseImageWidget(QLabel):
     # Events                                                               #
     # ------------------------------------------------------------------ #
 
-    def mouseMoveEvent(self, event) -> None:
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
         hovered = self._path_index_at(QPointF(event.position()))
         if hovered != self._hovered:
             self._hovered = hovered
@@ -276,14 +277,14 @@ class MouseImageWidget(QLabel):
             self.button_hovered.emit(hovered)
         super().mouseMoveEvent(event)
 
-    def leaveEvent(self, event) -> None:
+    def leaveEvent(self, event: QEvent) -> None:
         if self._hovered != -1:
             self._hovered = -1
             self._redraw()
             self.button_hovered.emit(-1)
         super().leaveEvent(event)
 
-    def mousePressEvent(self, event) -> None:
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             index = self._path_index_at(QPointF(event.position()))
             if index >= 0:
