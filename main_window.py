@@ -3,20 +3,26 @@ from dataclasses import dataclass
 from urllib.request import urlopen
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
+from PySide6.QtGui import (QBrush, QColor, QFont, QIcon, QPainter, QPen,
+                           QPixmap, QPolygon)
 from PySide6.QtWidgets import (QApplication, QComboBox, QFormLayout,
                                QHBoxLayout, QLabel, QMainWindow, QPushButton,
-                               QScrollArea, QVBoxLayout, QWidget, QTabWidget)
+                               QScrollArea, QSizePolicy, QSplitter, QTabWidget,
+                               QVBoxLayout, QWidget)
 from usb.core import USBError
 
+from button_widget import ButtonWidget
+from downloader import download
 from mouse import PROFILE_COUNT, Mouse, MouseType, UsbDevice
 from vertical_tab_wiget import VerticalTabWidget
 
+icon_source = "https://redragon.com/cdn/shop/files/small_logo.png?crop=left&height=64&width=64"
 
 @dataclass
 class MouseConfig:
     image_source: str
     buttons: list[str]
+    button_areas: list[QPolygon] | None = None
     fully_supported: bool = True
 
 
@@ -41,7 +47,7 @@ class MainWindow(QMainWindow):
         self.profile = 0
 
         self.setWindowTitle("M811 Configurator")
-        self.resize(1000, 800)
+        self.resize(800, 600)
         self.mouse: Mouse | None = None
         self.mice: list[UsbDevice] = []
 
@@ -50,17 +56,17 @@ class MainWindow(QMainWindow):
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         controls_layout = QHBoxLayout()
-        self.mouse_combo = QComboBox()
-        self.mouse_combo.currentIndexChanged.connect(self._select_mouse_by_index)
+        self.select_mouse_combo = QComboBox()
+        self.select_mouse_combo.currentIndexChanged.connect(self._select_mouse_by_index)
         refresh_button = QPushButton("Refresh")
         refresh_button.clicked.connect(self._load_mice)
-        controls_layout.addWidget(self.mouse_combo, 1)
+        controls_layout.addWidget(QLabel("Select mouse:"))
+        controls_layout.addWidget(self.select_mouse_combo, 1)
         controls_layout.addWidget(refresh_button)
         layout.addLayout(controls_layout)
 
         self.image_label = QLabel()
         self.image_label.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
-        layout.addWidget(self.image_label)
 
         self.warning_label = QLabel()
         self.warning_label.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
@@ -71,25 +77,56 @@ class MainWindow(QMainWindow):
 
         self.mouse_widget = QWidget()
         self.mouse_widget.setLayout(QVBoxLayout())
-        self.mouse_widget.setVisible(False)
+        self.mouse_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.mouse_widget.layout().setContentsMargins(0, 0, 0, 0)
 
-        self.mouse_scrollwidget = QScrollArea()
-        self.mouse_scrollwidget.setWidget(self.mouse_widget)
-        self.mouse_scrollwidget.setWidgetResizable(True)
-        layout.addWidget(self.mouse_scrollwidget)
+        self.profile_widget = QWidget()
+        self.profile_widget.setLayout(QHBoxLayout())
+        self.profile_widget.layout().setContentsMargins(0, 0, 0, 0)
+        self.mouse_widget.layout().addWidget(self.profile_widget)
 
         self.profiles_combo = QComboBox()
         for i in range(PROFILE_COUNT):
             self.profiles_combo.addItem(f"Profile {i+1}")
         self.profiles_combo.currentIndexChanged.connect(self._select_profile)
-        self.mouse_widget.layout().addWidget(self.profiles_combo)
+        self.profile_widget.layout().addWidget(self.profiles_combo)
+
+        self.upload_button = QPushButton("Upload Changes")
+        self.upload_button.setEnabled(False)
+        self.profile_widget.layout().addWidget(self.upload_button)
+
+        self.discard_button = QPushButton("Discard Changes")
+        self.discard_button.setEnabled(False)
+        self.profile_widget.layout().addWidget(self.discard_button)
+
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        splitter_left = QWidget()
+        splitter_left.setLayout(QVBoxLayout())
+        splitter_left.layout().setAlignment(Qt.AlignmentFlag.AlignTop)
+        splitter_left.layout().setContentsMargins(0, 0, 0, 0)
+        splitter_left.layout().addWidget(self.image_label)
+        splitter.addWidget(splitter_left)
+        splitter.setStretchFactor(0, 0)
+
+        splitter_right = QWidget()
+        splitter_right.setLayout(QVBoxLayout())
+        splitter_right.layout().setAlignment(Qt.AlignmentFlag.AlignTop)
+        splitter_right.layout().setContentsMargins(0, 0, 0, 0)
+        splitter.addWidget(splitter_right)
+        splitter.setStretchFactor(1, 1)
 
         self.buttons_widget = VerticalTabWidget()
-        self.mouse_widget.layout().addWidget(self.buttons_widget)
+        self.buttons_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        splitter_right.layout().addWidget(self.buttons_widget)
 
+        self.mouse_widget.layout().addWidget(splitter)
+        layout.addWidget(self.mouse_widget)
         self.setCentralWidget(central_widget)
 
         self._load_mice()
+
+        download(icon_source, self._set_app_icon)
 
     @property
     def current_usb_device(self) -> UsbDevice | None:
@@ -99,28 +136,28 @@ class MainWindow(QMainWindow):
         current_device = self.current_usb_device
 
         self.mice = Mouse.find_devices()
-        self.mouse_combo.blockSignals(True)
-        self.mouse_combo.clear()
+        self.select_mouse_combo.blockSignals(True)
+        self.select_mouse_combo.clear()
 
         if not self.mice:
-            self.mouse_combo.addItem("No mice found")
-            self.mouse_combo.setEnabled(False)
+            self.select_mouse_combo.addItem("No mice found")
+            self.select_mouse_combo.setEnabled(False)
             self.mouse = None
         else:
-            self.mouse_combo.setEnabled(True)
+            self.select_mouse_combo.setEnabled(True)
 
         for index, mouse in enumerate(self.mice):
             label = mouse.name or f"Device {mouse.dev.idProduct:04x}"
             if not mouse.access:
                 label = f"{label} (inaccessible)"
-            self.mouse_combo.addItem(label)
+            self.select_mouse_combo.addItem(label)
             if not mouse.access:
-                self.mouse_combo.setItemData(index, QColor("red"), Qt.ItemDataRole.ForegroundRole)
+                self.select_mouse_combo.setItemData(index, QColor("red"), Qt.ItemDataRole.ForegroundRole)
 
         if current_device is not None:
             for index, mouse in enumerate(self.mice):
                 if mouse.dev == current_device.dev:
-                    self.mouse_combo.setCurrentIndex(index)
+                    self.select_mouse_combo.setCurrentIndex(index)
                     break
 
         print(f"Selected mouse: {self.current_usb_device}, Mice count: {len(self.mice)}")
@@ -128,10 +165,10 @@ class MainWindow(QMainWindow):
             self._select_mouse(None)
         if not self.current_usb_device and self.mice:
             print("No previously selected mouse found, selecting first available mouse.")
-            self.mouse_combo.setCurrentIndex(0)
+            self.select_mouse_combo.setCurrentIndex(0)
             self._select_mouse_by_index(0)
 
-        self.mouse_combo.blockSignals(False)
+        self.select_mouse_combo.blockSignals(False)
 
 
     def _select_mouse_by_index(self, index: int) -> None:
@@ -146,7 +183,7 @@ class MainWindow(QMainWindow):
         self.mouse_config = mouse_configs.get(type, mouse_configs[None])
 
         if mouse:
-            pixmap = self._load_image(self.mouse_config.image_source)
+            download(self.mouse_config.image_source, self._set_image)
         else:
             pixmap = QPixmap(400, 300)
             pixmap.fill(Qt.GlobalColor.transparent)
@@ -155,7 +192,6 @@ class MainWindow(QMainWindow):
             painter.setFont(QFont("Arial", 32))
             painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No mouse selected")
             painter.end()
-        if pixmap is not None:
             self.image_label.setPixmap(pixmap)
 
         if mouse and mouse.access:
@@ -164,31 +200,40 @@ class MainWindow(QMainWindow):
                 self.warning_label.setText("This mouse model is not fully supported. Some features may not work correctly.<br>\n" \
                                            "You can raise an issue on GitHub: <a href='https://github.com/Mr-Clear/M811-Configurator' style='font-family: monospace;'>https://github.com/Mr-Clear/M811-Configurator</a>.")
                 self.warning_label.setVisible(True)
+                self.mouse_widget.setEnabled(False)
             else:
                 self.warning_label.setVisible(False)
+                self.mouse_widget.setEnabled(True)
             self._read_mouse()
         elif mouse and not mouse.access:
             self.mouse = None
             self.warning_label.setText(self.create_inaccessible_warning_text(mouse))
             self.warning_label.setVisible(True)
+            self.mouse_widget.setEnabled(False)
         else:
             self.mouse = None
             self.warning_label.setVisible(False)
+            self.mouse_widget.setEnabled(False)
 
     def _select_profile(self, index: int) -> None:
         print(f"Selected profile: {index}")
         self.profile = index
         self._read_mouse()
 
-    def _load_image(self, source: str) -> QPixmap | None:
-        with urlopen(source) as response:
-            image_data = response.read()
+    def _set_image(self, data: bytes | Exception) -> None:
+        if isinstance(data, Exception):
+            print(f"Failed to download image: {data}")
+            return
 
         pixmap = QPixmap()
-        if not pixmap.loadFromData(image_data):
-            return None
+        if not pixmap.loadFromData(data):
+            print("Failed to load image from downloaded data")
+            return
 
-        return pixmap.scaledToWidth(400, Qt.TransformationMode.SmoothTransformation)
+        pixmap = pixmap.scaledToWidth(400, Qt.TransformationMode.SmoothTransformation)
+        self.image_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.image_label.setFixedSize(pixmap.size())
+        self.image_label.setPixmap(pixmap)
 
     def _unregister_mouse(self) -> None:
         if self.mouse is None:
@@ -210,22 +255,40 @@ class MainWindow(QMainWindow):
         if self.mouse is None:
             return
 
-        self.mouse_widget.setVisible(True)
-
         keymap = self.mouse.get_keymap(self.profile, len(self.mouse_config.buttons))
+        self.buttons_widget.clear()
         for button_index, keys in enumerate(keymap):
             button_name = self.mouse_config.buttons[button_index] if button_index < len(self.mouse_config.buttons) else f"Button {button_index+1}"
-            button_widget = QWidget()
-            button_layout = QFormLayout(button_widget)
-            for key_index, key in enumerate(keys):
-                key_label = QLabel(f"Key {key_index+1}")
-                key_value = QLabel(f"{key:02x}" if key is not None else "None")
-                button_layout.addRow(key_label, key_value)
+            button_widget = ButtonWidget(keys)
             self.buttons_widget.addTab(button_widget, button_name)
 
     def closeEvent(self, event) -> None:
         self._register_mouse()
         super().closeEvent(event)
+
+    def _set_app_icon(self, data: bytes | Exception) -> None:
+        if isinstance(data, Exception):
+            print(f"Failed to download application icon: {data}")
+            return
+
+        app_icon = QPixmap()
+        if not app_icon.loadFromData(data):
+            print("Failed to load application icon from downloaded data")
+            return
+
+        circled_icon = QPixmap(app_icon.size())
+        circled_icon.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(circled_icon)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(QColor("black"))
+        painter.setBrush(QColor("white"))
+        radius = app_icon.width() // 2
+        center = app_icon.rect().center()
+        painter.drawEllipse(center, radius, radius)
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+        painter.drawPixmap(0, 0, app_icon)
+        painter.end()
+        self.setWindowIcon(QIcon(circled_icon))
 
     @staticmethod
     def create_inaccessible_warning_text(dev: UsbDevice) -> str:
