@@ -1,3 +1,4 @@
+'''Shows an image of the mouse with clickable/highlightable button areas defined by an SVG file.'''
 from __future__ import annotations
 
 import logging
@@ -14,6 +15,19 @@ logger = logging.getLogger(__name__)
 
 _XLINK_HREF = '{http://www.w3.org/1999/xlink}href'
 _HREF = 'href'
+
+
+def _elem_to_path_d(tag: str, elem: ET.Element) -> str | None:
+    """Return an SVG path ``d`` string for *elem*, or ``None`` if unsupported."""
+    if tag == 'path':
+        return elem.get('d')
+    if tag in ('polygon', 'polyline'):
+        points = elem.get('points', '')
+        coords = points.replace(',', ' ').split()
+        if len(coords) >= 4:
+            pairs = list(zip(coords[::2], coords[1::2]))
+            return 'M ' + ' L '.join(f'{x},{y}' for x, y in pairs) + ' Z'
+    return None
 
 
 def _svg_path_to_painter_path(d: str) -> QPainterPath:
@@ -67,33 +81,29 @@ class MouseImageWidget(QLabel):
         self._image_rect: QRectF = QRectF()
         self._svg_size: tuple[float, float] = (1.0, 1.0)
         self._scale: float = 1.0
-        self._fixed_width: float | None = None
-        self._fixed_height: float | None = None
+        self._fixed_size: tuple[float | None, float | None] = (None, None)  # (width, height)
         self._paths: list[QPainterPath] = []
-        self._selected: int = -1
-        self._hovered: int = -1
+        self._highlight: tuple[int, int] = (-1, -1)  # (selected, hovered)
         self.setMouseTracking(True)
 
     @property
     def fixed_width(self) -> float | None:
-        return self._fixed_width
+        '''If set, the image is scaled to this width (overriding fixed_height).'''
+        return self._fixed_size[0]
 
     @fixed_width.setter
     def fixed_width(self, value: float | None) -> None:
-        self._fixed_width = value
-        if value is not None:
-            self._fixed_height = None
+        self._fixed_size = (value, None if value is not None else self._fixed_size[1])
         self._recompute_scale()
 
     @property
     def fixed_height(self) -> float | None:
-        return self._fixed_height
+        '''If set, the image is scaled to this height (overriding fixed_width).'''
+        return self._fixed_size[1]
 
     @fixed_height.setter
     def fixed_height(self, value: float | None) -> None:
-        self._fixed_height = value
-        if value is not None:
-            self._fixed_width = None
+        self._fixed_size = (None if value is not None else self._fixed_size[0], value)
         self._recompute_scale()
 
     @Slot(str)
@@ -108,7 +118,7 @@ class MouseImageWidget(QLabel):
         - ``<path id="button1">``, ``<path id="button2">`` … define hit areas.
           Missing indices are skipped; the list is built up to the highest found.
         """
-        logger.debug(f"Loading SVG: {svg_path}")
+        logger.debug("Loading SVG: %s", svg_path)
         tree = ET.parse(svg_path)
         root = tree.getroot()
 
@@ -152,16 +162,7 @@ class MouseImageWidget(QLabel):
             if btn_index < 0:
                 continue
 
-            d: str | None = None
-            if tag == 'path':
-                d = elem.get('d')
-            elif tag in ('polygon', 'polyline'):
-                points = elem.get('points', '')
-                coords = points.replace(',', ' ').split()
-                if len(coords) >= 4:
-                    pairs = list(zip(coords[::2], coords[1::2]))
-                    d = 'M ' + ' L '.join(f'{x},{y}' for x, y in pairs) + ' Z'
-
+            d = _elem_to_path_d(tag, elem)
             if d:
                 button_map[btn_index] = _svg_path_to_painter_path(d)
 
@@ -181,16 +182,17 @@ class MouseImageWidget(QLabel):
 
     @Slot(float)
     def set_scale(self, scale: float) -> None:
-        self._fixed_width = None
-        self._fixed_height = None
+        '''Set a custom scale factor, overriding fixed_width/fixed_height.'''
+        self._fixed_size = (None, None)
         self._scale = max(scale, 0.01)
         self._apply_size()
         self._redraw()
 
     @Slot(int)
     def set_selected_button(self, index: int) -> None:
-        if self._selected != index:
-            self._selected = index
+        '''Highlight the button at the given index (0-based), or -1 to clear.'''
+        if self._highlight[0] != index:
+            self._highlight = (index, self._highlight[1])
             self._redraw()
 
     # ------------------------------------------------------------------ #
@@ -198,12 +200,13 @@ class MouseImageWidget(QLabel):
     # ------------------------------------------------------------------ #
 
     def _recompute_scale(self) -> None:
-        """Recalculate _scale from _fixed_width/_fixed_height and current SVG size, then redraw."""
+        """Recalculate _scale from _fixed_size and current SVG size, then redraw."""
         sw, sh = self._svg_size
-        if self._fixed_width is not None and sw > 0:
-            self._scale = self._fixed_width / sw
-        elif self._fixed_height is not None and sh > 0:
-            self._scale = self._fixed_height / sh
+        fw, fh = self._fixed_size
+        if fw is not None and sw > 0:
+            self._scale = fw / sw
+        elif fh is not None and sh > 0:
+            self._scale = fh / sh
         self._apply_size()
         self._redraw()
 
@@ -221,7 +224,7 @@ class MouseImageWidget(QLabel):
 
     def _on_image_downloaded(self, data: bytes | Exception) -> None:
         if isinstance(data, Exception):
-            logger.error(f"MouseImageWidget: failed to download image: {data}")
+            logger.error("MouseImageWidget: failed to download image: %s", data)
             return
         pixmap = QPixmap()
         if not pixmap.loadFromData(data):
@@ -250,18 +253,19 @@ class MouseImageWidget(QLabel):
             )
 
         # Draw button overlays
+        selected, hovered = self._highlight
         for i, path in enumerate(self._paths):
             if path.isEmpty():
                 continue
-            if i == self._selected:
-                if i == self._hovered:
+            if i == selected:
+                if i == hovered:
                     painter.fillPath(path, QColor(255, 200, 120, 180))
                     painter.setPen(QColor(255, 140, 0, 220))
                 else:
                     painter.fillPath(path, QColor(255, 165, 64, 120))
                     painter.setPen(QColor(255, 140, 0, 200))
                 painter.drawPath(path)
-            elif i == self._hovered:
+            elif i == hovered:
                 painter.fillPath(path, QColor(255, 255, 255, 60))
                 painter.setPen(QColor(255, 255, 255, 150))
                 painter.drawPath(path)
@@ -275,15 +279,15 @@ class MouseImageWidget(QLabel):
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         hovered = self._path_index_at(QPointF(event.position()))
-        if hovered != self._hovered:
-            self._hovered = hovered
+        if hovered != self._highlight[1]:
+            self._highlight = (self._highlight[0], hovered)
             self._redraw()
             self.button_hovered.emit(hovered)
         super().mouseMoveEvent(event)
 
     def leaveEvent(self, event: QEvent) -> None:
-        if self._hovered != -1:
-            self._hovered = -1
+        if self._highlight[1] != -1:
+            self._highlight = (self._highlight[0], -1)
             self._redraw()
             self.button_hovered.emit(-1)
         super().leaveEvent(event)

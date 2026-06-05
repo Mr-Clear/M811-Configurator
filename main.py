@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+'''Main entry point for the M811 Configurator application.'''
+
 import logging
 
 from ui.main_window import start_app

@@ -1,3 +1,5 @@
+'''Custom QTabWidget with a west-positioned tab bar that draws labels horizontally (not rotated).'''
+
 from PySide6.QtCore import QPoint, QRect, QSize
 from PySide6.QtGui import QPaintEvent
 from PySide6.QtWidgets import (QStyle, QStyleOptionTab, QStylePainter, QTabBar,
@@ -11,7 +13,8 @@ class HorizontalTabBar(QTabBar):
         super().__init__(parent)
         self._hovered_tab = -1
 
-    def setHoveredTab(self, index: int) -> None:
+    def set_hovered_tab(self, index: int) -> None:
+        '''Set the index of the currently hovered tab, or -1 if no tab is hovered.'''
         if self._hovered_tab != index:
             self._hovered_tab = index
             self.update()
@@ -20,7 +23,7 @@ class HorizontalTabBar(QTabBar):
         s = super().tabSizeHint(index)
         return QSize(s.height(), min(s.height(), 24))
 
-    def paintEvent(self, event: QPaintEvent) -> None:
+    def paintEvent(self, _: QPaintEvent) -> None:
         painter = QStylePainter(self)
         for index in range(self.count()):
             opt = QStyleOptionTab()
@@ -59,6 +62,7 @@ class HorizontalTabBar(QTabBar):
 
 
 class VerticalTabWidget(QTabWidget):
+    '''QTabWidget with a west-positioned tab bar that draws labels horizontally (not rotated).'''
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setTabBar(HorizontalTabBar())

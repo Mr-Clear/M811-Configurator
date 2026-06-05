@@ -1,9 +1,6 @@
+''' Main application window. '''
 import logging
 import sys
-
-from ui.mouse_selector_widget import MouseSelectorWidget
-
-logger = logging.getLogger(__name__)
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
@@ -16,21 +13,37 @@ from ui.button_widget import ButtonWidget
 from ui.downloader import download
 from ui.mouse_config import mouse_configs
 from ui.mouse_image import MouseImageWidget
+from ui.mouse_selector_widget import MouseSelectorWidget
 from ui.vertical_tab_wiget import HorizontalTabBar, VerticalTabWidget
 
-icon_source = "https://redragon.com/cdn/shop/files/small_logo.png?crop=left&height=64&width=64"
+logger = logging.getLogger(__name__)
+
+
+ICON_SOURCE = "https://redragon.com/cdn/shop/files/small_logo.png?crop=left&height=64&width=64"
 
 
 class MainWindow(QMainWindow):
+    '''Main application window.'''
+
     def __init__(self) -> None:
         super().__init__()
 
         self.profile = 0
+        self.mouse: Mouse | None = None
+        self.mouse_config = mouse_configs[None]
+        self.mouse_image: MouseImageWidget
+        self.warning_label: QLabel
+        self.mouse_widget: QWidget
+        self.buttons_widget: VerticalTabWidget
 
         self.setWindowTitle("M811 Configurator")
         self.resize(800, 600)
-        download(icon_source, self._set_app_icon)
+        download(ICON_SOURCE, self._set_app_icon)
+        self._build_ui()
+        self.mouse_selector.refresh_mice()
 
+    def _build_ui(self) -> None:
+        """Create and wire all widgets; called once from __init__."""
         central_widget = QWidget(self)
         layout = QVBoxLayout(central_widget)
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -59,29 +72,40 @@ class MainWindow(QMainWindow):
         self.mouse_widget.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         mouse_widget_layout.setContentsMargins(0, 0, 0, 0)
+        mouse_widget_layout.addWidget(self._build_profile_bar())
+        mouse_widget_layout.addWidget(self._build_splitter())
 
-        self.profile_widget = QWidget()
-        profile_widget_layout = QHBoxLayout(self.profile_widget)
+        layout.addWidget(self.mouse_widget)
+        self.setCentralWidget(central_widget)
+
+    def _build_profile_bar(self) -> QWidget:
+        """Build the profile-selector / upload / discard bar."""
+        profile_widget = QWidget()
+        profile_widget_layout = QHBoxLayout(profile_widget)
         profile_widget_layout.setContentsMargins(0, 0, 0, 0)
-        mouse_widget_layout.addWidget(self.profile_widget)
 
-        self.profiles_combo = QComboBox()
+        profiles_combo = QComboBox()
         for i in range(PROFILE_COUNT):
-            self.profiles_combo.addItem(f"Profile {i+1}")
-        self.profiles_combo.currentIndexChanged.connect(self._select_profile)
-        profile_widget_layout.addWidget(self.profiles_combo)
+            profiles_combo.addItem(f"Profile {i+1}")
+        profiles_combo.currentIndexChanged.connect(self._select_profile)
+        profile_widget_layout.addWidget(profiles_combo)
 
-        self.upload_button = QPushButton("Upload Changes")
-        self.upload_button.setEnabled(False)
-        profile_widget_layout.addWidget(self.upload_button)
+        upload_button = QPushButton("Upload Changes")
+        upload_button.setEnabled(False)
+        profile_widget_layout.addWidget(upload_button)
 
-        self.discard_button = QPushButton("Discard Changes")
-        self.discard_button.setEnabled(False)
-        profile_widget_layout.addWidget(self.discard_button)
+        discard_button = QPushButton("Discard Changes")
+        discard_button.setEnabled(False)
+        profile_widget_layout.addWidget(discard_button)
 
+        return profile_widget
+
+    def _build_splitter(self) -> QSplitter:
+        """Build the horizontal splitter containing the mouse image and button tabs."""
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.setSizePolicy(QSizePolicy.Policy.Expanding,
                                QSizePolicy.Policy.Expanding)
+
         splitter_left = QWidget()
         splitter_left_layout = QVBoxLayout(splitter_left)
         splitter_left_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -94,25 +118,21 @@ class MainWindow(QMainWindow):
         splitter_right_layout = QVBoxLayout(splitter_right)
         splitter_right_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         splitter_right_layout.setContentsMargins(0, 0, 0, 0)
-        splitter.addWidget(splitter_right)
-        splitter.setStretchFactor(1, 1)
-
         self.buttons_widget = VerticalTabWidget()
         self.buttons_widget.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.buttons_widget.currentChanged.connect(self._on_button_selected)
         splitter_right_layout.addWidget(self.buttons_widget)
+        splitter.addWidget(splitter_right)
+        splitter.setStretchFactor(1, 1)
 
-        mouse_widget_layout.addWidget(splitter)
-        layout.addWidget(self.mouse_widget)
-        self.setCentralWidget(central_widget)
-
-        self.mouse_selector.refresh_mice()
+        return splitter
 
     def _on_mouse_selected(self, mouse: UsbDevice | None = None) -> None:
-        logger.debug(f"Selected mouse: {mouse.name if mouse is not None else None}")
-        type = mouse.type if mouse is not None else None
-        self.mouse_config = mouse_configs.get(type, mouse_configs[None])
+        logger.debug("Selected mouse: %s",
+                     mouse.name if mouse is not None else "None")
+        mouse_type = mouse.type if mouse is not None else None
+        self.mouse_config = mouse_configs.get(mouse_type, mouse_configs[None])
 
         if mouse:
             self.mouse_image.load_svg(self.mouse_config.image)
@@ -130,8 +150,7 @@ class MainWindow(QMainWindow):
         if mouse and mouse.access:
             self.mouse = Mouse.from_device(mouse.dev)
             if not self.mouse_config.fully_supported:
-                self.warning_label.setText("This mouse model is not fully supported. Some features may not work correctly.<br>\n"
-                                           "You can raise an issue on GitHub: <a href='https://github.com/Mr-Clear/M811-Configurator' style='font-family: monospace;'>https://github.com/Mr-Clear/M811-Configurator</a>.")
+                self.warning_label.setText(MainWindow._create_unsupported_warning_text())
                 self.warning_label.setVisible(True)
             else:
                 self.warning_label.setVisible(False)
@@ -140,7 +159,7 @@ class MainWindow(QMainWindow):
         elif mouse and not mouse.access:
             self.mouse = None
             self.warning_label.setText(
-                self.create_inaccessible_warning_text(mouse))
+                self._create_inaccessible_warning_text(mouse))
             self.warning_label.setVisible(True)
             self.mouse_widget.setEnabled(False)
         else:
@@ -149,7 +168,7 @@ class MainWindow(QMainWindow):
             self.mouse_widget.setEnabled(False)
 
     def _select_profile(self, index: int) -> None:
-        logger.debug(f"Selected profile: {index + 1}")
+        logger.debug("Selected profile: %d", index + 1)
         self.profile = index
         self._read_mouse()
 
@@ -157,7 +176,9 @@ class MainWindow(QMainWindow):
         if self.mouse is None:
             return
 
-        logger.info(f"Reading configuration from mouse {self.mouse.dev.idVendor:04x}:{self.mouse.dev.idProduct:04x} at /dev/bus/usb/{self.mouse.dev.bus:03d}/{self.mouse.dev.address:03d}")
+        logger.info("Reading configuration from mouse %04x:%04x at /dev/bus/usb/%03d/%03d",
+                    self.mouse.dev.idVendor, self.mouse.dev.idProduct,
+                    self.mouse.dev.bus, self.mouse.dev.address)
         keymap = self.mouse.get_keymap(
             self.profile, len(self.mouse_config.buttons))
         self.buttons_widget.clear()
@@ -174,7 +195,8 @@ class MainWindow(QMainWindow):
 
         app_icon = QPixmap()
         if not app_icon.loadFromData(data):
-            logger.error("Failed to load application icon from downloaded data")
+            logger.error(
+                "Failed to load application icon from downloaded data")
             return
 
         circled_icon = QPixmap(app_icon.size())
@@ -202,17 +224,26 @@ class MainWindow(QMainWindow):
     def _on_button_hovered(self, button_index: int) -> None:
         tab_bar = self.buttons_widget.tabBar()
         assert isinstance(tab_bar, HorizontalTabBar)
-        tab_bar.setHoveredTab(button_index)
+        tab_bar.set_hovered_tab(button_index)
 
     @staticmethod
-    def create_inaccessible_warning_text(dev: UsbDevice) -> str:
+    def _create_inaccessible_warning_text(dev: UsbDevice) -> str:
+        # pylint: disable=line-too-long
         return f"Selected mouse is not accessible. Please check permissions of <span style='font-family: monospace;'>/dev/bus/usb/{dev.dev.bus:03d}/{dev.dev.address:03d}</span>.<br>\n" \
             f"To grant access, you can create a udev rule like this in e.g. <span style='font-family: monospace;'>/etc/udev/rules.d/99-mouse.rules</span>:<br>\n" \
             f"<span style='font-family: monospace;'>SUBSYSTEM==\"usb\", ATTRS{{idVendor}}==\"{dev.dev.idVendor:04x}\", ATTRS{{idProduct}}==\"{dev.dev.idProduct:04x}\", MODE=\"0666\"</span><br>\n" \
             f"After creating the rule, reload udev rules with <span style='font-family: monospace;'>sudo udevadm control --reload</span> and re-plug the mouse."
 
+    @staticmethod
+    def _create_unsupported_warning_text() -> str:
+        # pylint: disable=line-too-long
+        return "This mouse model is not fully supported. Some features may not work correctly.<br>\n" \
+               "You can raise an issue on GitHub: <a href='https://github.com/Mr-Clear/M811-Configurator' style='font-family: monospace;'>https://github.com/Mr-Clear/M811-Configurator</a>."
+
+
 
 def start_app() -> int:
+    '''Creates the main window and starts the application event loop.'''
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()

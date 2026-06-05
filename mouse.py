@@ -1,3 +1,7 @@
+'''Module for interfacing with Redragon mice over USB,
+   allowing reading and writing of configuration data.
+   Reverse engineered by https://github.com/dokutan/mouse_m908/tree/master'''
+
 import types
 from dataclasses import dataclass
 from enum import Enum
@@ -11,10 +15,10 @@ INTERFACE = 2
 
 # HID custom feature report constants
 
-SET_REQUEST_TYPE = usb.util.CTRL_OUT | usb.util.CTRL_TYPE_CLASS | usb.util.CTRL_RECIPIENT_INTERFACE  # 0x21
+SET_REQUEST_TYPE = usb.util.CTRL_OUT | usb.util.CTRL_TYPE_CLASS | usb.util.CTRL_RECIPIENT_INTERFACE
 SET_REPORT = 0x09
 
-GET_REQUEST_TYPE = usb.util.CTRL_IN | usb.util.CTRL_TYPE_CLASS | usb.util.CTRL_RECIPIENT_INTERFACE  # 0xA1
+GET_REQUEST_TYPE = usb.util.CTRL_IN | usb.util.CTRL_TYPE_CLASS | usb.util.CTRL_RECIPIENT_INTERFACE
 GET_REPORT = 0x01
 
 FEATURE_REPORT = 0x0300
@@ -40,16 +44,21 @@ ADR_DPIS = [(0x42, 0), (0x02, 1), (0xb2, 1), (0x62, 2), (0x12, 3)]
 PROFILE_COUNT = 5
 
 ADR_KEYMAPS = [
-    [(0x82, 0), (0x86, 0), (0x8a, 0), (0x8e, 0), (0x92, 0), (0x96, 0), (0x9a, 0), (0x9e, 0), (0xa2, 0), (0xa6, 0),
-     (0xaa, 0), (0xae, 0), (0xb2, 0), (0xb6, 0), (0xba, 0), (0xbe, 0), (0xc2, 0), (0xc6, 0), (0xda, 0), (0xde, 0)],
-    [(0x42, 1), (0x46, 1), (0x4a, 1), (0x4e, 1), (0x52, 1), (0x56, 1), (0x5a, 1), (0x5e, 1), (0x62, 1), (0x66, 1),
-     (0x6a, 1), (0x6e, 1), (0x72, 1), (0x76, 1), (0x7a, 1), (0x7e, 1), (0x82, 1), (0x86, 1), (0x9a, 1), (0x9e, 1)],
-    [(0xf2, 1), (0xf6, 1), (0xfa, 1), (0xfe, 1), (0x02, 2), (0x06, 2), (0x0a, 2), (0x0e, 2), (0x12, 2), (0x16, 2),
-     (0x1a, 2), (0x1e, 2), (0x22, 2), (0x26, 2), (0x2a, 2), (0x2e, 2), (0x32, 2), (0x36, 2), (0x4a, 2), (0x4e, 2)],
-    [(0xa2, 2), (0xa6, 2), (0xaa, 2), (0xae, 2), (0xb2, 2), (0xb6, 2), (0xba, 2), (0xbe, 2), (0xc2, 2), (0xc6, 2),
-     (0xca, 2), (0xce, 2), (0xd2, 2), (0xd6, 2), (0xda, 2), (0xde, 2), (0xe2, 2), (0xe6, 2), (0xfa, 2), (0xfe, 2)],
-    [(0x52, 3), (0x56, 3), (0x5a, 3), (0x5e, 3), (0x62, 3), (0x66, 3), (0x6a, 3), (0x6e, 3), (0x72, 3), (0x76, 3),
-     (0x7a, 3), (0x7e, 3), (0x82, 3), (0x86, 3), (0x8a, 3), (0x8e, 3), (0x92, 3), (0x96, 3), (0xaa, 3), (0xae, 3)],
+    [(0x82, 0), (0x86, 0), (0x8a, 0), (0x8e, 0), (0x92, 0), (0x96, 0), (0x9a, 0), (0x9e, 0),
+     (0xa2, 0), (0xa6, 0), (0xaa, 0), (0xae, 0), (0xb2, 0), (0xb6, 0), (0xba, 0), (0xbe, 0),
+     (0xc2, 0), (0xc6, 0), (0xda, 0), (0xde, 0)],
+    [(0x42, 1), (0x46, 1), (0x4a, 1), (0x4e, 1), (0x52, 1), (0x56, 1), (0x5a, 1), (0x5e, 1),
+     (0x62, 1), (0x66, 1), (0x6a, 1), (0x6e, 1), (0x72, 1), (0x76, 1), (0x7a, 1), (0x7e, 1),
+     (0x82, 1), (0x86, 1), (0x9a, 1), (0x9e, 1)],
+    [(0xf2, 1), (0xf6, 1), (0xfa, 1), (0xfe, 1), (0x02, 2), (0x06, 2), (0x0a, 2), (0x0e, 2),
+     (0x12, 2), (0x16, 2), (0x1a, 2), (0x1e, 2), (0x22, 2), (0x26, 2), (0x2a, 2), (0x2e, 2),
+     (0x32, 2), (0x36, 2), (0x4a, 2), (0x4e, 2)],
+    [(0xa2, 2), (0xa6, 2), (0xaa, 2), (0xae, 2), (0xb2, 2), (0xb6, 2), (0xba, 2), (0xbe, 2),
+     (0xc2, 2), (0xc6, 2), (0xca, 2), (0xce, 2), (0xd2, 2), (0xd6, 2), (0xda, 2), (0xde, 2),
+     (0xe2, 2), (0xe6, 2), (0xfa, 2), (0xfe, 2)],
+    [(0x52, 3), (0x56, 3), (0x5a, 3), (0x5e, 3), (0x62, 3), (0x66, 3), (0x6a, 3), (0x6e, 3),
+     (0x72, 3), (0x76, 3), (0x7a, 3), (0x7e, 3), (0x82, 3), (0x86, 3), (0x8a, 3), (0x8e, 3),
+     (0x92, 3), (0x96, 3), (0xaa, 3), (0xae, 3)],
 ]
 
 ADR_EFFECTS = [
@@ -62,6 +71,7 @@ ADR_EFFECTS = [
 
 
 class MouseType(Enum):
+    '''Enumeration of supported mouse types, identified by USB product ID.'''
     M901 = 0xfc02
     M990 = 0xfc0f
     M709 = 0xfc2a
@@ -86,6 +96,7 @@ class MouseType(Enum):
 
 @dataclass
 class UsbDevice:
+    '''Representation of a USB device with associated mouse type and access information.'''
     dev: usb.core.Device
     type: MouseType | None
     name: str | None
@@ -94,6 +105,8 @@ class UsbDevice:
 
 
 class Mouse:
+    '''Class representing a connected mouse device,
+       providing methods to read and write its configuration.'''
     def __init__(self, product_id: int) -> None:
         results = usb.core.find(idVendor=VENDOR_ID, idProduct=product_id)
         if not isinstance(results, usb.core.Device):
@@ -103,29 +116,35 @@ class Mouse:
 
     @classmethod
     def from_device(cls, dev: usb.core.Device) -> "Mouse":
+        '''Create a Mouse instance from a usb.core.Device, without checking the product ID.'''
         mouse = cls.__new__(cls)
         mouse.dev = dev
         return mouse
 
     def get_active_profile(self) -> int:
+        '''Get the index of the currently active profile.'''
         self._unlock()
         data = self._read16(ADR_ACTIVE, 1)
         self._lock()
         return data[0]
 
     def get_poll_rates(self) -> list[int]:
+        '''Get the polling rates for all profiles.'''
         self._unlock()
         data = self._read64(ADR_POLLRATE, 10)
         self._lock()
         return [data[i] for i in range(0, 10, 2)]
 
     def set_poll_rates(self, rates: list[int]) -> None:
+        '''Set the polling rates for all profiles.'''
         gapped = [v for r in rates for v in (r, 0)]
         self._unlock()
         self._write64(ADR_POLLRATE, 10, *gapped)
         self._lock()
 
     def get_effects(self, profile: int) -> list[int]:
+        ''''Get the lighting effects for a given profile. Returns a list of 7 integers:
+            R, G, B, lightmode_low, speed, lightmode_high, brightness.'''
         self._unlock()
         effects = self._read16(ADR_EFFECTS[profile], 7)
         self._lock()
@@ -133,11 +152,16 @@ class Mouse:
         return effects
 
     def set_effects(self, profile: int, effects: list[int]) -> None:
+        '''Set the lighting effects for a given profile.
+           Expects a list of 7 ints: R, G, B, lightmode_low, speed, lightmode_high, brightness.'''
         self._unlock()
         self._write16(ADR_EFFECTS[profile], 7, *effects)
         self._lock()
 
     def get_keymap(self, profile: int, size: int) -> list[list[int]]:
+        '''Get the keymap for a given profile.
+           Returns a list of [up to] 20 lists of 3 integers, representing the button codes for each
+           button.'''
         addrs = ADR_KEYMAPS[profile]
         self._unlock()
         codes = [self._read16(addrs[i], 4) for i in range(size)]
@@ -145,11 +169,14 @@ class Mouse:
         return codes
 
     def print_keymap(self, profile: int, size: int) -> None:
+        '''Print the keymap for a given profile in a human-readable format.'''
         codes = self.get_keymap(profile, size)
         for i, code in enumerate(codes):
             print(f"{i:02} - 0x{code[0]:02x} 0x{code[1]:02x} 0x{code[2]:02x}")
 
     def set_keymap(self, profile: int, codes: list[list[int]]) -> None:
+        '''Set the keymap for a given profile. Expects a list of [up to] 20 lists of 3 integers,
+           representing the button codes for each button.'''
         addrs = ADR_KEYMAPS[profile]
         self._unlock()
         for addr, code in zip(addrs, codes):
@@ -157,6 +184,9 @@ class Mouse:
         self._lock()
 
     def get_dpis(self, profile: int) -> list[list[int]]:
+        '''Get the DPI levels for a given profile. Returns a list of [up to] 5 lists of 2 integers,
+           representing the low and high bytes of the DPI levels.
+           Levels that are not set will be returned as [0, 0].'''
         self._unlock()
         dpi_codes = self._read64(ADR_DPIS[profile], 32)
         self._lock()
@@ -166,6 +196,9 @@ class Mouse:
         return levels
 
     def set_dpis(self, profile: int, levels: list[list[int]]) -> None:
+        '''Set the DPI levels for a given profile. Expects a list of [up to] 5 lists of 2 integers,
+           representing the low and high bytes of the DPI levels.
+           Levels that are not set should be [0, 0].'''
         dpi_codes = [[1, l, h] for l, h in levels]
         while len(dpi_codes) < 5:
             dpi_codes.append([0, 0, 0])
@@ -177,12 +210,18 @@ class Mouse:
         self._lock()
 
     def get_scroll_speeds(self) -> list[int]:
+        '''Get the scroll wheel speeds for all profiles. Returns a list of 5 integers,
+           representing the scroll speeds for each profile.
+           Profiles that are not set will be returned as 0.'''
         self._unlock()
         data = self._read64(ADR_SCROLL, 10)
         self._lock()
         return [data[i] for i in range(0, 10, 2)]
 
     def set_scroll_speeds(self, speeds: list[int]) -> None:
+        '''Set the scroll wheel speeds for all profiles.
+           Expects a list of 5 integers, representing the scroll speeds for each profile.
+           Profiles that are not set should be 0.'''
         gapped = [v for s in speeds for v in (s, 0)]
         self._unlock()
         self._write64(ADR_SCROLL, 10, *gapped)
@@ -190,16 +229,17 @@ class Mouse:
 
     @staticmethod
     def find_devices() -> list[UsbDevice]:
+        ''''Find all connected Redragon mice and return a list of UsbDevice objects.'''
         devs = usb.core.find(idVendor=VENDOR_ID, find_all=True)
         assert isinstance(devs, types.GeneratorType)
         result: list[UsbDevice] = []
         for dev in devs:
             assert isinstance(dev, usb.core.Device)
             access = Mouse._test_access(dev)
-            for type in MouseType:
-                if dev.idProduct == type.value:
-                    device_type = type
-                    device_name = type.name
+            for mouse_type in MouseType:
+                if dev.idProduct == mouse_type.value:
+                    device_type = mouse_type
+                    device_name = mouse_type.name
                     supported = True
                     break
             else:
@@ -214,9 +254,9 @@ class Mouse:
 
         # Find duplicate names
         duplicates: set[str] = set()
-        for i in range(len(result)):
+        for i, dev_i in enumerate(result):
             for j in range(i + 1, len(result)):
-                name = result[i].name
+                name = dev_i.name
                 if name is not None and name == result[j].name:
                     duplicates.add(name)
 

@@ -1,5 +1,5 @@
+'''Example usage of the mouse library.'''
 import mouse
-
 
 m = mouse.Mouse(0xfc6d)  # Redragon M811 Aatrox
 

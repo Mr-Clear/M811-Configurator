@@ -1,7 +1,10 @@
+'''Downloads files in the background and caches them in the '.cache' directory.'''
+
 import os
 import logging
 import threading
 from typing import Callable
+from urllib.error import URLError
 from urllib.request import urlopen
 
 logger = logging.getLogger(__name__)
@@ -18,22 +21,22 @@ def download(url: str, callback: Callable[[bytes | Exception], None]):
     def _download():
         filename = os.path.join(cache_dir, os.path.basename(url))
         if not os.path.exists(filename):
-            logger.info(f"Downloading {url} to {filename}")
+            logger.info("Downloading %s to %s", url, filename)
             try:
                 with urlopen(url) as response, open(filename, "wb") as out_file:
                     data = response.read()
                     out_file.write(data)
-                    logger.debug(f"Downloaded {url} ({len(data)} bytes)")
-            except Exception as e:
-                logger.warning(f"Failed to download {url}: {e}")
+                    logger.debug("Downloaded %s (%d bytes)", url, len(data))
+            except (URLError, OSError) as e:
+                logger.warning("Failed to download %s: %s", url, e)
                 callback(e)
                 return
         else:
-            logger.debug(f"Using cached file for {url} at {filename}")
+            logger.debug("Using cached file for %s at %s", url, filename)
             try:
                 with open(filename, "rb") as f:
                     data = f.read()
-            except Exception as e:
+            except OSError as e:
                 callback(e)
                 return
         callback(data)
