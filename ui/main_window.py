@@ -1,72 +1,44 @@
 import logging
 import sys
-from dataclasses import dataclass
+
+from ui.mouse_selector_widget import MouseSelectorWidget
 
 logger = logging.getLogger(__name__)
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QCloseEvent, QColor, QFont, QIcon, QPainter, QPixmap
+from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import (QApplication, QComboBox, QHBoxLayout, QLabel,
                                QMainWindow, QPushButton, QSizePolicy,
                                QSplitter, QVBoxLayout, QWidget)
-from usb.core import USBError
 
+from mouse import PROFILE_COUNT, Mouse, UsbDevice
 from ui.button_widget import ButtonWidget
 from ui.downloader import download
-from mouse import PROFILE_COUNT, Mouse, MouseType, UsbDevice
+from ui.mouse_config import mouse_configs
 from ui.mouse_image import MouseImageWidget
 from ui.vertical_tab_wiget import HorizontalTabBar, VerticalTabWidget
 
 icon_source = "https://redragon.com/cdn/shop/files/small_logo.png?crop=left&height=64&width=64"
 
 
-@dataclass
-class MouseConfig:
-    image: str
-    buttons: list[str]
-    fully_supported: bool = True
-
-
-mouse_configs: dict[MouseType | None, MouseConfig] = {
-    MouseType.M811: MouseConfig(
-        image="res/M811.svg",
-        buttons=['LMB', 'RMB', 'MMB', 'Back', 'Forward', 'DPI+',
-                 'DPI-', 'Profile', '1', '2', '3', '4', '5', '6', '7', '8'],
-    ),
-    None: MouseConfig(
-        image="res/UnknownRedragon.svg",
-        buttons=[str(i) for i in range(1, 20)],
-        fully_supported=False,
-    ),
-}
-
-
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
 
-        self.selected_mouse_index = -1
         self.profile = 0
 
         self.setWindowTitle("M811 Configurator")
         self.resize(800, 600)
-        self.mouse: Mouse | None = None
-        self.mice: list[UsbDevice] = []
+        download(icon_source, self._set_app_icon)
 
         central_widget = QWidget(self)
         layout = QVBoxLayout(central_widget)
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        controls_layout = QHBoxLayout()
-        self.select_mouse_combo = QComboBox()
-        self.select_mouse_combo.currentIndexChanged.connect(
-            self._select_mouse_by_index)
-        refresh_button = QPushButton("Refresh")
-        refresh_button.clicked.connect(self._load_mice)
-        controls_layout.addWidget(QLabel("Select mouse:"))
-        controls_layout.addWidget(self.select_mouse_combo, 1)
-        controls_layout.addWidget(refresh_button)
-        layout.addLayout(controls_layout)
+        self.mouse_selector = MouseSelectorWidget()
+        self.mouse_selector.mouse_selected.connect(self._on_mouse_selected)
+        self.mouse_selector.mouse_deselected.connect(self._on_mouse_selected)
+        layout.addWidget(self.mouse_selector)
 
         self.mouse_image = MouseImageWidget()
         self.mouse_image.fixed_width = 400
@@ -135,60 +107,9 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.mouse_widget)
         self.setCentralWidget(central_widget)
 
-        self._load_mice()
+        self.mouse_selector.refresh_mice()
 
-        download(icon_source, self._set_app_icon)
-
-    @property
-    def current_usb_device(self) -> UsbDevice | None:
-        return self.mice[self.selected_mouse_index] if self.selected_mouse_index >= 0 and self.selected_mouse_index < len(self.mice) else None
-
-    def _load_mice(self):
-        current_device = self.current_usb_device
-
-        self.mice = Mouse.find_devices()
-        logger.info(f"Found {len(self.mice)} mice: {[mouse.name for mouse in self.mice]}")
-        self.select_mouse_combo.blockSignals(True)
-        self.select_mouse_combo.clear()
-
-        if not self.mice:
-            self.select_mouse_combo.addItem("No mice found")
-            self.select_mouse_combo.setEnabled(False)
-            self.mouse = None
-        else:
-            self.select_mouse_combo.setEnabled(True)
-
-        for index, mouse in enumerate(self.mice):
-            label = mouse.name or f"Device {mouse.dev.idProduct:04x}"
-            if not mouse.access:
-                label = f"{label} (inaccessible)"
-            self.select_mouse_combo.addItem(label)
-            if not mouse.access:
-                self.select_mouse_combo.setItemData(
-                    index, QColor("red"), Qt.ItemDataRole.ForegroundRole)
-
-        if current_device is not None:
-            for index, mouse in enumerate(self.mice):
-                if mouse.dev == current_device.dev:
-                    self.select_mouse_combo.setCurrentIndex(index)
-                    break
-
-        if not self.mice:
-            self._select_mouse(None)
-        if not self.current_usb_device and self.mice:
-            logger.debug("No previously selected mouse found, selecting first available mouse.")
-            self.select_mouse_combo.setCurrentIndex(0)
-            self._select_mouse_by_index(0)
-
-        self.select_mouse_combo.blockSignals(False)
-
-    def _select_mouse_by_index(self, index: int) -> None:
-        if index < 0 or index >= len(self.mice):
-            self._select_mouse(None)
-        else:
-            self._select_mouse(self.mice[index])
-
-    def _select_mouse(self, mouse: UsbDevice | None) -> None:
+    def _on_mouse_selected(self, mouse: UsbDevice | None = None) -> None:
         logger.debug(f"Selected mouse: {mouse.name if mouse is not None else None}")
         type = mouse.type if mouse is not None else None
         self.mouse_config = mouse_configs.get(type, mouse_configs[None])
@@ -231,23 +152,6 @@ class MainWindow(QMainWindow):
         logger.debug(f"Selected profile: {index + 1}")
         self.profile = index
         self._read_mouse()
-
-    def _set_image(self, data: bytes | Exception) -> None:
-        if isinstance(data, Exception):
-            logger.error(f"Failed to download image: {data}")
-            return
-
-        pixmap = QPixmap()
-        if not pixmap.loadFromData(data):
-            logger.error("Failed to load image from downloaded data")
-            return
-
-        pixmap = pixmap.scaledToWidth(
-            400, Qt.TransformationMode.SmoothTransformation)
-        self.mouse_image.setSizePolicy(
-            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.mouse_image.setFixedSize(pixmap.size())
-        self.mouse_image.setPixmap(pixmap)
 
     def _read_mouse(self) -> None:
         if self.mouse is None:
