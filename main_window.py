@@ -1,5 +1,8 @@
+import logging
 import sys
 from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCloseEvent, QColor, QFont, QIcon, QPainter, QPixmap
@@ -144,6 +147,7 @@ class MainWindow(QMainWindow):
         current_device = self.current_usb_device
 
         self.mice = Mouse.find_devices()
+        logger.info(f"Found {len(self.mice)} mice: {[mouse.name for mouse in self.mice]}")
         self.select_mouse_combo.blockSignals(True)
         self.select_mouse_combo.clear()
 
@@ -169,12 +173,10 @@ class MainWindow(QMainWindow):
                     self.select_mouse_combo.setCurrentIndex(index)
                     break
 
-        print(
-            f"Selected mouse: {self.current_usb_device}, Mice count: {len(self.mice)}")
         if not self.mice:
             self._select_mouse(None)
         if not self.current_usb_device and self.mice:
-            print("No previously selected mouse found, selecting first available mouse.")
+            logger.debug("No previously selected mouse found, selecting first available mouse.")
             self.select_mouse_combo.setCurrentIndex(0)
             self._select_mouse_by_index(0)
 
@@ -187,7 +189,7 @@ class MainWindow(QMainWindow):
             self._select_mouse(self.mice[index])
 
     def _select_mouse(self, mouse: UsbDevice | None) -> None:
-        print(f"Selected mouse: {mouse.name if mouse is not None else 'None'}")
+        logger.debug(f"Selected mouse: {mouse.name if mouse is not None else None}")
         type = mouse.type if mouse is not None else None
         self.mouse_config = mouse_configs.get(type, mouse_configs[None])
 
@@ -226,18 +228,18 @@ class MainWindow(QMainWindow):
             self.mouse_widget.setEnabled(False)
 
     def _select_profile(self, index: int) -> None:
-        print(f"Selected profile: {index}")
+        logger.debug(f"Selected profile: {index + 1}")
         self.profile = index
         self._read_mouse()
 
     def _set_image(self, data: bytes | Exception) -> None:
         if isinstance(data, Exception):
-            print(f"Failed to download image: {data}")
+            logger.error(f"Failed to download image: {data}")
             return
 
         pixmap = QPixmap()
         if not pixmap.loadFromData(data):
-            print("Failed to load image from downloaded data")
+            logger.error("Failed to load image from downloaded data")
             return
 
         pixmap = pixmap.scaledToWidth(
@@ -247,26 +249,11 @@ class MainWindow(QMainWindow):
         self.mouse_image.setFixedSize(pixmap.size())
         self.mouse_image.setPixmap(pixmap)
 
-    def _unregister_mouse(self) -> None:
-        if self.mouse is None:
-            return
-        try:
-            self.mouse.dev.detach_kernel_driver(2)
-        except USBError:
-            pass
-
-    def _register_mouse(self) -> None:
-        if self.mouse is None:
-            return
-        try:
-            self.mouse.dev.attach_kernel_driver(2)
-        except USBError:
-            pass
-
     def _read_mouse(self) -> None:
         if self.mouse is None:
             return
 
+        logger.info(f"Reading configuration from mouse {self.mouse.dev.idVendor:04x}:{self.mouse.dev.idProduct:04x} at /dev/bus/usb/{self.mouse.dev.bus:03d}/{self.mouse.dev.address:03d}")
         keymap = self.mouse.get_keymap(
             self.profile, len(self.mouse_config.buttons))
         self.buttons_widget.clear()
@@ -276,18 +263,14 @@ class MainWindow(QMainWindow):
             button_widget = ButtonWidget(keys)
             self.buttons_widget.addTab(button_widget, button_name)
 
-    def closeEvent(self, event: QCloseEvent) -> None:
-        self._register_mouse()
-        super().closeEvent(event)
-
     def _set_app_icon(self, data: bytes | Exception) -> None:
         if isinstance(data, Exception):
-            print(f"Failed to download application icon: {data}")
+            logger.error("Failed to download application icon: %s", data)
             return
 
         app_icon = QPixmap()
         if not app_icon.loadFromData(data):
-            print("Failed to load application icon from downloaded data")
+            logger.error("Failed to load application icon from downloaded data")
             return
 
         circled_icon = QPixmap(app_icon.size())

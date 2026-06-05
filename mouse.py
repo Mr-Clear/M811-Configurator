@@ -229,16 +229,11 @@ class Mouse:
     @staticmethod
     def _test_access(dev: usb.core.Device) -> bool:
         try:
-            print(
-                f"Kernel driver free: {dev.is_kernel_driver_active(INTERFACE)} for device {dev.idVendor:04x}:{dev.idProduct:04x} at /dev/bus/usb/{dev.bus:03d}/{dev.address:03d}")
             if dev.is_kernel_driver_active(INTERFACE):
                 dev.detach_kernel_driver(INTERFACE)
-                print(f"Kernel driver detached")
             dev.ctrl_transfer(0xA1, 0x01, 0x0302, INTERFACE, 16, TIMEOUT)
             return True
         except usb.core.USBError:
-            print(
-                f"Access test failed for device {dev.idVendor:04x}:{dev.idProduct:04x} at /dev/bus/usb/{dev.bus:03d}/{dev.address:03d}")
             return False
 
     def _read16(self, addr: tuple[int, int], n: int) -> list[int]:

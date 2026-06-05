@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import xml.etree.ElementTree as ET
 
 import svgpathtools
@@ -8,6 +9,8 @@ from PySide6.QtGui import QColor, QMouseEvent, QPainter, QPainterPath, QPixmap
 from PySide6.QtWidgets import QLabel, QWidget
 
 from downloader import download
+
+logger = logging.getLogger(__name__)
 
 _XLINK_HREF = '{http://www.w3.org/1999/xlink}href'
 _HREF = 'href'
@@ -105,6 +108,7 @@ class MouseImageWidget(QLabel):
         - ``<path id="button1">``, ``<path id="button2">`` … define hit areas.
           Missing indices are skipped; the list is built up to the highest found.
         """
+        logger.debug(f"Loading SVG: {svg_path}")
         tree = ET.parse(svg_path)
         root = tree.getroot()
 
@@ -217,11 +221,11 @@ class MouseImageWidget(QLabel):
 
     def _on_image_downloaded(self, data: bytes | Exception) -> None:
         if isinstance(data, Exception):
-            print(f"MouseImageWidget: failed to download image: {data}")
+            logger.error(f"MouseImageWidget: failed to download image: {data}")
             return
         pixmap = QPixmap()
         if not pixmap.loadFromData(data):
-            print("MouseImageWidget: failed to decode image data")
+            logger.error("MouseImageWidget: failed to decode image data")
             return
         self._base_pixmap = pixmap
         self._apply_size()

@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 
+import logging
+
 from main_window import start_app
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%H:%M:%S",
+)
 
 if __name__ == "__main__":
     raise SystemExit(start_app())
