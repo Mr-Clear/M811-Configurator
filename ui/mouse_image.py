@@ -8,7 +8,7 @@ from PySide6.QtCore import QEvent, QPointF, QRectF, Qt, Signal, Slot
 from PySide6.QtGui import QColor, QMouseEvent, QPainter, QPainterPath, QPixmap
 from PySide6.QtWidgets import QLabel, QWidget
 
-from downloader import download
+from ui.downloader import download
 
 logger = logging.getLogger(__name__)
 

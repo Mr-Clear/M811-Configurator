@@ -2,7 +2,7 @@
 
 import logging
 
-from main_window import start_app
+from ui.main_window import start_app
 
 logging.basicConfig(
     level=logging.DEBUG,

@@ -11,11 +11,11 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QHBoxLayout, QLabel,
                                QSplitter, QVBoxLayout, QWidget)
 from usb.core import USBError
 
-from button_widget import ButtonWidget
-from downloader import download
+from ui.button_widget import ButtonWidget
+from ui.downloader import download
 from mouse import PROFILE_COUNT, Mouse, MouseType, UsbDevice
-from mouse_image import MouseImageWidget
-from vertical_tab_wiget import HorizontalTabBar, VerticalTabWidget
+from ui.mouse_image import MouseImageWidget
+from ui.vertical_tab_wiget import HorizontalTabBar, VerticalTabWidget
 
 icon_source = "https://redragon.com/cdn/shop/files/small_logo.png?crop=left&height=64&width=64"
 
