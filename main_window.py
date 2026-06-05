@@ -2,9 +2,10 @@ import sys
 from dataclasses import dataclass
 from urllib.request import urlopen
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import (QBrush, QColor, QFont, QIcon, QPainter, QPen,
-                           QPixmap, QPolygon)
+import svgpathtools
+from PySide6.QtCore import QPointF, Qt
+from PySide6.QtGui import (QBrush, QColor, QFont, QIcon, QPainter,
+                           QPainterPath, QPen, QPixmap, QPolygon)
 from PySide6.QtWidgets import (QApplication, QComboBox, QFormLayout,
                                QHBoxLayout, QLabel, QMainWindow, QPushButton,
                                QScrollArea, QSizePolicy, QSplitter, QTabWidget,
@@ -14,30 +15,29 @@ from usb.core import USBError
 from button_widget import ButtonWidget
 from downloader import download
 from mouse import PROFILE_COUNT, Mouse, MouseType, UsbDevice
-from vertical_tab_wiget import VerticalTabWidget
+from mouse_image import MouseImageWidget
+from vertical_tab_wiget import HorizontalTabBar, VerticalTabWidget
 
 icon_source = "https://redragon.com/cdn/shop/files/small_logo.png?crop=left&height=64&width=64"
 
 @dataclass
 class MouseConfig:
-    image_source: str
+    image: str
     buttons: list[str]
-    button_areas: list[QPolygon] | None = None
     fully_supported: bool = True
 
 
 mouse_configs: dict[MouseType | None, MouseConfig] = {
     MouseType.M811: MouseConfig(
-        image_source="https://redragonshop.com/cdn/shop/products/MMOGamingMouse_2.png",
-        buttons = ['LMB', 'RMB', 'MMB', 'Forward', 'Backward', 'DPI+', 'DPI-', '?', '1', '2', '3', '4', '5', '6', '7', '8'],
+        image="res/M811.svg",
+        buttons = ['LMB', 'RMB', 'MMB', 'Back', 'Forward', 'DPI+', 'DPI-', 'Profile', '1', '2', '3', '4', '5', '6', '7', '8'],
     ),
     None: MouseConfig(
-        image_source="https://redragon.com/cdn/shop/files/small_logo.png",
+        image="res/UnknownRedragon.svg",
         buttons = [str(i) for i in range(1, 20)],
         fully_supported=False,
     ),
 }
-
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
@@ -65,8 +65,10 @@ class MainWindow(QMainWindow):
         controls_layout.addWidget(refresh_button)
         layout.addLayout(controls_layout)
 
-        self.image_label = QLabel()
-        self.image_label.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        self.mouse_image = MouseImageWidget()
+        self.mouse_image.fixed_width = 400
+        self.mouse_image.button_clicked.connect(self._on_button_clicked)
+        self.mouse_image.button_hovered.connect(self._on_button_hovered)
 
         self.warning_label = QLabel()
         self.warning_label.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
@@ -105,7 +107,7 @@ class MainWindow(QMainWindow):
         splitter_left.setLayout(QVBoxLayout())
         splitter_left.layout().setAlignment(Qt.AlignmentFlag.AlignTop)
         splitter_left.layout().setContentsMargins(0, 0, 0, 0)
-        splitter_left.layout().addWidget(self.image_label)
+        splitter_left.layout().addWidget(self.mouse_image)
         splitter.addWidget(splitter_left)
         splitter.setStretchFactor(0, 0)
 
@@ -118,6 +120,7 @@ class MainWindow(QMainWindow):
 
         self.buttons_widget = VerticalTabWidget()
         self.buttons_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.buttons_widget.currentChanged.connect(self._on_button_selected)
         splitter_right.layout().addWidget(self.buttons_widget)
 
         self.mouse_widget.layout().addWidget(splitter)
@@ -177,13 +180,13 @@ class MainWindow(QMainWindow):
         else:
             self._select_mouse(self.mice[index])
 
-    def _select_mouse(self, mouse: UsbDevice) -> None:
+    def _select_mouse(self, mouse: UsbDevice |None) -> None:
         print(f"Selected mouse: {mouse.name if mouse is not None else 'None'}")
         type = mouse.type if mouse is not None else None
         self.mouse_config = mouse_configs.get(type, mouse_configs[None])
 
         if mouse:
-            download(self.mouse_config.image_source, self._set_image)
+            self.mouse_image.load_svg(self.mouse_config.image)
         else:
             pixmap = QPixmap(400, 300)
             pixmap.fill(Qt.GlobalColor.transparent)
@@ -192,7 +195,7 @@ class MainWindow(QMainWindow):
             painter.setFont(QFont("Arial", 32))
             painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No mouse selected")
             painter.end()
-            self.image_label.setPixmap(pixmap)
+            self.mouse_image.setPixmap(pixmap)
 
         if mouse and mouse.access:
             self.mouse = Mouse.from_device(mouse.dev)
@@ -200,10 +203,9 @@ class MainWindow(QMainWindow):
                 self.warning_label.setText("This mouse model is not fully supported. Some features may not work correctly.<br>\n" \
                                            "You can raise an issue on GitHub: <a href='https://github.com/Mr-Clear/M811-Configurator' style='font-family: monospace;'>https://github.com/Mr-Clear/M811-Configurator</a>.")
                 self.warning_label.setVisible(True)
-                self.mouse_widget.setEnabled(False)
             else:
                 self.warning_label.setVisible(False)
-                self.mouse_widget.setEnabled(True)
+            self.mouse_widget.setEnabled(True)
             self._read_mouse()
         elif mouse and not mouse.access:
             self.mouse = None
@@ -231,9 +233,9 @@ class MainWindow(QMainWindow):
             return
 
         pixmap = pixmap.scaledToWidth(400, Qt.TransformationMode.SmoothTransformation)
-        self.image_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.image_label.setFixedSize(pixmap.size())
-        self.image_label.setPixmap(pixmap)
+        self.mouse_image.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.mouse_image.setFixedSize(pixmap.size())
+        self.mouse_image.setPixmap(pixmap)
 
     def _unregister_mouse(self) -> None:
         if self.mouse is None:
@@ -290,13 +292,24 @@ class MainWindow(QMainWindow):
         painter.end()
         self.setWindowIcon(QIcon(circled_icon))
 
+    def _on_button_selected(self, button_index: int) -> None:
+        self.mouse_image.set_selected_button(button_index)
+
+    def _on_button_clicked(self, button_index: int) -> None:
+        if 0 <= button_index < len(self.mouse_config.buttons):
+            self.buttons_widget.setCurrentIndex(button_index)
+
+    def _on_button_hovered(self, button_index: int) -> None:
+        tab_bar = self.buttons_widget.tabBar()
+        assert isinstance(tab_bar, HorizontalTabBar)
+        tab_bar.setHoveredTab(button_index)
+
     @staticmethod
     def create_inaccessible_warning_text(dev: UsbDevice) -> str:
         return f"Selected mouse is not accessible. Please check permissions of <span style='font-family: monospace;'>/dev/bus/usb/{dev.dev.bus:03d}/{dev.dev.address:03d}</span>.<br>\n" \
                f"To grant access, you can create a udev rule like this in e.g. <span style='font-family: monospace;'>/etc/udev/rules.d/99-mouse.rules</span>:<br>\n" \
                f"<span style='font-family: monospace;'>SUBSYSTEM==\"usb\", ATTRS{{idVendor}}==\"{dev.dev.idVendor:04x}\", ATTRS{{idProduct}}==\"{dev.dev.idProduct:04x}\", MODE=\"0666\"</span><br>\n" \
                f"After creating the rule, reload udev rules with <span style='font-family: monospace;'>sudo udevadm control --reload</span> and re-plug the mouse."
-
 
 def start_app() -> int:
     app = QApplication(sys.argv)

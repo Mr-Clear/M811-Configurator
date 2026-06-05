@@ -8,8 +8,17 @@ from PySide6.QtWidgets import (
 )
 
 
-class _HorizontalTabBar(QTabBar):
+class HorizontalTabBar(QTabBar):
 	"""West-positioned tab bar that draws labels horizontally (not rotated)."""
+
+	def __init__(self, parent=None) -> None:
+		super().__init__(parent)
+		self._hovered_tab = -1
+
+	def setHoveredTab(self, index: int) -> None:
+		if self._hovered_tab != index:
+			self._hovered_tab = index
+			self.update()
 
 	def tabSizeHint(self, index: int) -> QSize:
 		s = super().tabSizeHint(index)
@@ -41,12 +50,16 @@ class _HorizontalTabBar(QTabBar):
 			self.initStyleOption(label_opt, index)
 			label_opt.rect = r.adjusted(0, -4, 0, 4)
 			label_opt.shape = QTabBar.Shape.RoundedNorth
+			if index == self._hovered_tab:
+				bold_font = painter.font()
+				bold_font.setBold(True)
+				painter.setFont(bold_font)
 			painter.drawControl(QStyle.ControlElement.CE_TabBarTabLabel, label_opt)
+			if index == self._hovered_tab:
+				painter.setFont(self.font())
 
-
-# Re-export as a plain QTabWidget subclass so callers can use it as a drop-in
 class VerticalTabWidget(QTabWidget):
 	def __init__(self, parent=None) -> None:
 		super().__init__(parent)
-		self.setTabBar(_HorizontalTabBar())
+		self.setTabBar(HorizontalTabBar())
 		self.setTabPosition(QTabWidget.TabPosition.West)
