@@ -1,8 +1,9 @@
 ''' Main application window. '''
 import logging
 import sys
+from threading import Lock
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import (QApplication, QComboBox, QHBoxLayout, QLabel,
                                QMainWindow, QPushButton, QSizePolicy,
@@ -35,6 +36,9 @@ class MainWindow(QMainWindow):
         self.warning_label: QLabel
         self.mouse_widget: QWidget
         self.buttons_widget: VerticalTabWidget
+        self.active_profile_label: QLabel
+        # Mutext that protects access to the mouse object
+        self.mouse_mutex = Lock()
 
         self.setWindowTitle("M811 Configurator")
         self.resize(800, 600)
@@ -90,6 +94,12 @@ class MainWindow(QMainWindow):
         profiles_combo.currentIndexChanged.connect(self._select_profile)
         profile_widget_layout.addWidget(profiles_combo)
 
+        profile_widget_layout.addWidget(QLabel("Active Profile:"))
+        self.active_profile_label = QLabel("❓")
+        profile_widget_layout.addWidget(self.active_profile_label)
+
+        profile_widget_layout.addStretch(1)
+
         upload_button = QPushButton("Upload Changes")
         upload_button.setEnabled(False)
         profile_widget_layout.addWidget(upload_button)
@@ -136,7 +146,9 @@ class MainWindow(QMainWindow):
 
         if mouse:
             self.mouse_image.load_svg(self.mouse_config.image)
+            self._start_poll_active_profile()
         else:
+            self._stop_poll_active_profile()
             pixmap = QPixmap(400, 300)
             pixmap.fill(Qt.GlobalColor.transparent)
             painter = QPainter(pixmap)
@@ -225,6 +237,29 @@ class MainWindow(QMainWindow):
         tab_bar = self.buttons_widget.tabBar()
         assert isinstance(tab_bar, HorizontalTabBar)
         tab_bar.set_hovered_tab(button_index)
+
+    def _start_poll_active_profile(self):
+        self._stop_poll_active_profile()
+        logger.debug("Starting active profile polling")
+        self.active_profile_timer = QTimer(self)
+        self.active_profile_timer.timeout.connect(self._poll_active_profile)
+        self.active_profile_timer.start(200)
+
+    def _stop_poll_active_profile(self):
+        if hasattr(self, 'active_profile_timer'):
+            logger.debug("Stopping active profile polling")
+            self.active_profile_timer.stop()
+            del self.active_profile_timer
+
+    def _poll_active_profile(self):
+        if self.mouse is None:
+            self.active_profile_label.setText("❓")
+            return
+
+        with self.mouse_mutex:
+            active_profile = self.mouse.get_active_profile()
+        ICONS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"]
+        self.active_profile_label.setText(ICONS[active_profile])
 
     @staticmethod
     def _create_inaccessible_warning_text(dev: UsbDevice) -> str:

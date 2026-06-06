@@ -25,6 +25,7 @@ class MouseSelectorWidget(QWidget):
         self.selected_mouse_index = -1
 
         layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
         self.select_mouse_combo = QComboBox()
         self.select_mouse_combo.currentIndexChanged.connect(
             self._select_mouse_by_index)
