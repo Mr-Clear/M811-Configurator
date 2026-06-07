@@ -148,7 +148,6 @@ class Mouse:
         self._unlock()
         effects = self._read16(ADR_EFFECTS[profile], 7)
         self._lock()
-        # R, G, B, lightmode_low, speed, lightmode_high, brightness
         return effects
 
     def set_effects(self, profile: int, effects: list[int]) -> None:
@@ -184,7 +183,7 @@ class Mouse:
         self._lock()
 
     def get_dpis(self, profile: int) -> list[list[int]]:
-        '''Get the DPI levels for a given profile. Returns a list of [up to] 5 lists of 2 integers,
+        '''Get the DPI levels for a given profile. Returns a list of 5 lists of 2 integers,
            representing the low and high bytes of the DPI levels.
            Levels that are not set will be returned as [0, 0].'''
         self._unlock()
