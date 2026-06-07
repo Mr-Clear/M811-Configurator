@@ -6,8 +6,10 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Callable, Generator
 
-from mouse import PROFILE_COUNT, Mouse
+from mouse import PROFILE_COUNT as MOUSE_PROFILE_COUNT
+from mouse import Mouse, MouseType
 from ui.keyboard import Modifier, ScanCode
+from ui.mouse_config import MouseConfig, mouse_configs
 
 DPI_VALUES: dict[int, list[int]] = {
     200: [0x4, 0],
@@ -103,6 +105,8 @@ DPI_VALUES: dict[int, list[int]] = {
     12200: [0x8a, 1],
     12400: [0x8c, 1],
 }
+
+PROFILE_COUNT = MOUSE_PROFILE_COUNT
 
 class Button(ABC):
     ''' Base class for button definitions. '''
@@ -446,7 +450,9 @@ class ButtonFireKey(Button):
         return "Fire Key"
 
     def to_raw(self) -> list[int]:
-        return [0x99, self.key.value if isinstance(self.key, ButtonMouseButton.Type) else self.key.code, self.repeat_count, self.delay // 10]
+        return [0x99, self.key.value
+                if isinstance(self.key, ButtonFireKey.FireMouseButton)
+                else self.key.code, self.repeat_count, self.delay // 10]
 
     def __str__(self) -> str:
         return f'({self.key.name}, times {self.repeat_count}, delay {self.delay}ms)'
@@ -467,28 +473,6 @@ class ButtomCustom(Button):
 
     def __str__(self) -> str:
         return f'{self.data}'
-
-@dataclass
-class Effect:
-    ''' Represents a single effect on the mouse. '''
-    r: int
-    g: int
-    b: int
-    lightmode_low: int
-    speed: int
-    lightmode_high: int
-    brightness: int
-
-    @classmethod
-    def from_list(cls, data: list[int]) -> Effect:
-        ''' Creates an Effect from a list of integers. '''
-        if len(data) != 7:
-            raise ValueError('Effect data must be a list of 7 integers.')
-        return cls(*data)
-
-    def to_list(self) -> list[int]:
-        ''' Converts the Effect to a list of integers. '''
-        return [self.r, self.g, self.b, self.lightmode_low, self.speed, self.lightmode_high, self.brightness]
 
 
 class PollRate(Enum):
@@ -541,12 +525,12 @@ class ProfileData:
     @property
     def effects(self) -> Effect:
         ''' The effects of the profile. '''
-        return Effect.from_list(self._raw_data.effects)
+        return Effect.from_raw(self._raw_data.effects)
 
     @effects.setter
     def effects(self, value: Effect):
         ''' Sets the effects of the profile. '''
-        self._raw_data.effects = value.to_list()
+        self._raw_data.effects = value.to_raw()
 
     @property
     def dpis(self) -> list[int]:
@@ -570,6 +554,10 @@ class ProfileData:
         if button_index < 0 or button_index >= len(self._raw_data.keymaps):
             raise ValueError('Button index out of range.')
         self._raw_data.keymaps[button_index] = button.to_raw()
+
+    def buttons(self) -> Generator[Button]:
+        for button_index in range(len(self._raw_data.keymaps)):
+            yield self.get_button(button_index)
 
     @property
     def _raw_data(self) -> MouseData.RawProfileData:
@@ -635,25 +623,90 @@ class MouseData:
         profiles: list[MouseData.RawProfileData]
         scroll_speeds: list[int]
 
+        def deep_copy(self) -> MouseData.RawMouseData:
+            ''' Creates a deep copy of the RawMouseData. '''
+            return MouseData.RawMouseData(
+                self.active_pofile,
+                self.poll_rates.copy(),
+                [MouseData.RawProfileData(profile.effects.copy(),
+                                          profile.keymaps.copy(),
+                                          profile.dpis.copy())
+                 for profile in self.profiles],
+                self.scroll_speeds.copy()
+            )
+
     class Status(Enum):
         IDLE = 0
         LOADING = 1
         SAVING = 2
+        NO_ACCESS = 3
 
-    def __init__(self, mouse: Mouse, button_count: int):
+    def __init__(self, mouse: Mouse, type: MouseType):
         self._mouse = mouse
-        self._button_count = button_count
+        self._type = type
+        if type not in mouse_configs:
+            self._button_count = len(mouse_configs[None].buttons)
+        else:
+            self._button_count = len(mouse_configs[type].buttons)
         self._data_on_mouse: MouseData.RawMouseData | None = None
         self._data_in_ui: MouseData.RawMouseData | None = None
         self._status: MouseData.Status = MouseData.Status.IDLE
 
-    def load_from_mouse(self, callback: Callable[[MouseData], None]):
-        ''' Loads the data from the mouse in background. '''
-        callback(self)
+    def load_from_mouse(self, progress_callback: Callable[[str], None] | None = None):
+        ''' Loads all data from the mouse in background. '''
+        if progress_callback:
+            progress_callback("Loading overall data...")
+        active_profile = self._mouse.get_active_profile()
+        poll_rates = self._mouse.get_poll_rates()
+        scroll_speeds = self._mouse.get_scroll_speeds()
+        profiles: list[MouseData.RawProfileData] = []
+        for profile_index in range(PROFILE_COUNT):
+            if progress_callback:
+                progress_callback(f"Loading profile {profile_index + 1}/{PROFILE_COUNT}...")
+            effects = self._mouse.get_effects(profile_index)
+            keymaps = self._mouse.get_keymap(profile_index, self._button_count)
+            dpis = self._mouse.get_dpis(profile_index)
+            profiles.append(MouseData.RawProfileData(effects, keymaps, dpis))
+        self._data_on_mouse = MouseData.RawMouseData(active_profile,
+                                                     poll_rates,
+                                                     profiles,
+                                                     scroll_speeds)
+        self._data_in_ui = self._data_on_mouse.deep_copy()
 
-    def save_to_mouse(self, callback: Callable[[MouseData], None]):
-        ''' Saves the data to the mouse in background. '''
-        callback(self)
+    def save_to_mouse(self, progress_callback: Callable[[str], None] | None = None):
+        ''' Saves unsaved data to the mouse in background. '''
+        if self._data_in_ui is None:
+            raise ValueError('No data to save.')
+        if not self._data_on_mouse or self._data_in_ui.poll_rates != self._data_on_mouse.poll_rates:
+            if progress_callback:
+                progress_callback("Saving poll rates...")
+            self._mouse.set_poll_rates(self._data_in_ui.poll_rates)
+        if not self._data_on_mouse or self._data_in_ui.scroll_speeds != self._data_on_mouse.scroll_speeds:
+            if progress_callback:
+                progress_callback("Saving scroll speeds...")
+            self._mouse.set_scroll_speeds(self._data_in_ui.scroll_speeds)
+        for profile_index in range(PROFILE_COUNT):
+            if not self._data_on_mouse or self._data_in_ui.profiles[profile_index] != self._data_on_mouse.profiles[profile_index]:
+                if progress_callback:
+                    progress_callback(f"Saving profile {profile_index + 1}/{PROFILE_COUNT}...")
+                self._mouse.set_effects(profile_index, self._data_in_ui.profiles[profile_index].effects)
+                self._mouse.set_keymap(profile_index, self._data_in_ui.profiles[profile_index].keymaps)
+                self._mouse.set_dpis(profile_index, self._data_in_ui.profiles[profile_index].dpis)
+        self._data_on_mouse = self._data_in_ui.deep_copy()
+
+    def load_active_profile(self):
+        ''' Loads the active profile index from the mouse. '''
+        profile = self._mouse.get_active_profile()
+        if self._data_on_mouse:
+            self._data_on_mouse.active_pofile = profile
+        if self._data_in_ui:
+            self._data_in_ui.active_pofile = profile
+        return profile
+
+    @property
+    def mouse_type(self) -> MouseType:
+        ''' The type of the mouse. '''
+        return self._type
 
     @property
     def button_count(self) -> int:
@@ -661,9 +714,28 @@ class MouseData:
         return self._button_count
 
     @property
+    def usb_path(self) -> tuple[int, int]:
+        ''' The USB path of the mouse. '''
+        return (self._mouse.dev.bus if self._mouse.dev.bus is not None else -1,
+                self._mouse.dev.address if self._mouse.dev.address is not None else -1)
+
+    @property
+    def usb_id(self) -> tuple[int, int]:
+        ''' The USB ID of the mouse. '''
+        return (self._mouse.dev.idVendor, self._mouse.dev.idProduct)
+
+    @property
     def status(self) -> Status:
         ''' The current status of the data. '''
         return self._status
+
+    def get_profile_data(self, profile_index: int) -> ProfileData:
+        ''' Gets the data for a given profile index. '''
+        if self._data_in_ui is None:
+            raise ValueError('Data not loaded from mouse yet.')
+        if profile_index < 0 or profile_index >= PROFILE_COUNT:
+            raise ValueError('Profile index out of range.')
+        return ProfileData(self._data_in_ui, profile_index)
 
     def data_valid(self) -> bool:
         ''' Checks if the data in the UI is valid. '''

@@ -1,7 +1,7 @@
 '''Custom widget to show and modify mouse button data.'''
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QWidget
 
-Button = list[int]
+from ui.mouse_data import Button
 
 
 class ButtonWidget(QWidget):
@@ -15,4 +15,4 @@ class ButtonWidget(QWidget):
 
     def set_data(self, data: Button) -> None:
         '''Set the button data to display.'''
-        self._label.setText(" ".join(f"{b:02X}" for b in data[:4]))
+        self._label.setText(str(data))

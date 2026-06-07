@@ -93,6 +93,14 @@ class MouseType(Enum):
     M612 = 0xfc61
     M811 = 0xfc6d
 
+    @staticmethod
+    def from_product_id(product_id: int) -> "MouseType | None":
+        '''Get the MouseType corresponding to a given USB product ID, or None if not recognized.'''
+        for mouse_type in MouseType:
+            if mouse_type.value == product_id:
+                return mouse_type
+        return None
+
 
 @dataclass
 class UsbDevice:

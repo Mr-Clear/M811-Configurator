@@ -7,14 +7,15 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QLabel, QPushButton,
                                QWidget)
 
-from mouse import Mouse, UsbDevice
+from mouse import Mouse, MouseType, UsbDevice
+from ui.mouse_data import MouseData
 
 logger = logging.getLogger(__name__)
 
 
 class MouseSelectorWidget(QWidget):
     '''Widget for selecting a mouse from the list of connected USB devices.'''
-    mouse_selected = Signal(UsbDevice)
+    mouse_selected = Signal(MouseData, str)
     mouse_deselected = Signal()
 
     def __init__(self, parent: QWidget | None = None):
@@ -87,4 +88,12 @@ class MouseSelectorWidget(QWidget):
         if index < 0 or index >= len(self.mice):
             self.mouse_deselected.emit()
         else:
-            self.mouse_selected.emit(self.mice[index])
+            mouse_type = MouseType.from_product_id(self.mice[index].dev.idProduct)
+            if mouse_type is None:
+                logger.error("Selected device has unrecognized product ID: 0x%04x",
+                             self.mice[index].dev.idProduct)
+                self.mouse_deselected.emit()
+                return
+            mouse_data = MouseData(Mouse.from_device(self.mice[index].dev), mouse_type)
+            self.mouse_selected.emit(mouse_data, self.mice[index].name
+                                                 or f"Device {self.mice[index].dev.idProduct:04x}")

@@ -1,7 +1,6 @@
 ''' Main application window. '''
 import logging
 import sys
-from threading import Lock
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
@@ -9,10 +8,10 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QHBoxLayout, QLabel,
                                QMainWindow, QPushButton, QSizePolicy,
                                QSplitter, QVBoxLayout, QWidget)
 
-from mouse import PROFILE_COUNT, Mouse, UsbDevice
 from ui.button_widget import ButtonWidget
 from ui.downloader import download
 from ui.mouse_config import mouse_configs
+from ui.mouse_data import PROFILE_COUNT, MouseData, ProfileData
 from ui.mouse_image import MouseImageWidget
 from ui.mouse_selector_widget import MouseSelectorWidget
 from ui.vertical_tab_wiget import HorizontalTabBar, VerticalTabWidget
@@ -30,15 +29,13 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.profile = 0
-        self.mouse: Mouse | None = None
+        self.mouse: MouseData | None = None
         self.mouse_config = mouse_configs[None]
         self.mouse_image: MouseImageWidget
         self.warning_label: QLabel
         self.mouse_widget: QWidget
         self.buttons_widget: VerticalTabWidget
         self.active_profile_label: QLabel
-        # Mutext that protects access to the mouse object
-        self.mouse_mutex = Lock()
 
         self.setWindowTitle("M811 Configurator")
         self.resize(800, 600)
@@ -138,10 +135,10 @@ class MainWindow(QMainWindow):
 
         return splitter
 
-    def _on_mouse_selected(self, mouse: UsbDevice | None = None) -> None:
-        logger.debug("Selected mouse: %s",
-                     mouse.name if mouse is not None else "None")
-        mouse_type = mouse.type if mouse is not None else None
+    def _on_mouse_selected(self, mouse: MouseData | None, name: str | None) -> None:
+        self.mouse = mouse
+        logger.debug("Selected mouse: %s", name if name is not None else "None")
+        mouse_type = mouse.mouse_type if mouse is not None else None
         self.mouse_config = mouse_configs.get(mouse_type, mouse_configs[None])
 
         if mouse:
@@ -159,8 +156,7 @@ class MainWindow(QMainWindow):
             painter.end()
             self.mouse_image.setPixmap(pixmap)
 
-        if mouse and mouse.access:
-            self.mouse = Mouse.from_device(mouse.dev)
+        if mouse and mouse.status != MouseData.Status.NO_ACCESS:
             if not self.mouse_config.fully_supported:
                 self.warning_label.setText(MainWindow._create_unsupported_warning_text())
                 self.warning_label.setVisible(True)
@@ -168,7 +164,7 @@ class MainWindow(QMainWindow):
                 self.warning_label.setVisible(False)
             self.mouse_widget.setEnabled(True)
             self._read_mouse()
-        elif mouse and not mouse.access:
+        elif mouse and mouse.status == MouseData.Status.NO_ACCESS:
             self.mouse = None
             self.warning_label.setText(
                 self._create_inaccessible_warning_text(mouse))
@@ -188,16 +184,13 @@ class MainWindow(QMainWindow):
         if self.mouse is None:
             return
 
-        logger.info("Reading configuration from mouse %04x:%04x at /dev/bus/usb/%03d/%03d",
-                    self.mouse.dev.idVendor, self.mouse.dev.idProduct,
-                    self.mouse.dev.bus, self.mouse.dev.address)
-        keymap = self.mouse.get_keymap(
-            self.profile, len(self.mouse_config.buttons))
+        self.mouse.load_from_mouse()
+
         self.buttons_widget.clear()
-        for button_index, keys in enumerate(keymap):
+        for button_index, button in enumerate(self.mouse.get_profile_data(self.profile).buttons()):
             button_name = self.mouse_config.buttons[button_index] if button_index < len(
                 self.mouse_config.buttons) else f"Button {button_index+1}"
-            button_widget = ButtonWidget(keys)
+            button_widget = ButtonWidget(button)
             self.buttons_widget.addTab(button_widget, button_name)
 
     def _set_app_icon(self, data: bytes | Exception) -> None:
@@ -256,17 +249,16 @@ class MainWindow(QMainWindow):
             self.active_profile_label.setText("❓")
             return
 
-        with self.mouse_mutex:
-            active_profile = self.mouse.get_active_profile()
+        active_profile = self.mouse.load_active_profile()
         ICONS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"]
         self.active_profile_label.setText(ICONS[active_profile])
 
     @staticmethod
-    def _create_inaccessible_warning_text(dev: UsbDevice) -> str:
+    def _create_inaccessible_warning_text(mouse: MouseData) -> str:
         # pylint: disable=line-too-long
-        return f"Selected mouse is not accessible. Please check permissions of <span style='font-family: monospace;'>/dev/bus/usb/{dev.dev.bus:03d}/{dev.dev.address:03d}</span>.<br>\n" \
+        return f"Selected mouse is not accessible. Please check permissions of <span style='font-family: monospace;'>/dev/bus/usb/{mouse.usb_path[0]:03d}/{mouse.usb_path[1]:03d}</span>.<br>\n" \
             f"To grant access, you can create a udev rule like this in e.g. <span style='font-family: monospace;'>/etc/udev/rules.d/99-mouse.rules</span>:<br>\n" \
-            f"<span style='font-family: monospace;'>SUBSYSTEM==\"usb\", ATTRS{{idVendor}}==\"{dev.dev.idVendor:04x}\", ATTRS{{idProduct}}==\"{dev.dev.idProduct:04x}\", MODE=\"0666\"</span><br>\n" \
+            f"<span style='font-family: monospace;'>SUBSYSTEM==\"usb\", ATTRS{{idVendor}}==\"{mouse.usb_id[0]:04x}\", ATTRS{{idProduct}}==\"{mouse.usb_id[1]:04x}\", MODE=\"0666\"</span><br>\n" \
             f"After creating the rule, reload udev rules with <span style='font-family: monospace;'>sudo udevadm control --reload</span> and re-plug the mouse."
 
     @staticmethod
