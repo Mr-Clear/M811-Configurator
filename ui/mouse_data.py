@@ -111,9 +111,9 @@ PROFILE_COUNT = MOUSE_PROFILE_COUNT
 class Button(ABC):
     ''' Base class for button definitions. '''
 
-    def __init__(self, data: list[int]):
+    def __init__(self, data: list[int] | None):
         ''' Creates a Button from a list of integers. '''
-        if len(data) != 4:
+        if data is not None and len(data) != 4:
             raise ValueError('Button data must be a list of 4 integers.')
 
     @classmethod
@@ -150,7 +150,8 @@ class Button(ABC):
         ''' Returns a list of all button types. '''
         return cls.__subclasses__()
 
-    def get_type(self) -> type[Button]:
+    @property
+    def button_type(self) -> type[Button]:
         ''' Returns the type of the button. '''
         for button_type in Button.get_all_button_types():
             if isinstance(self, button_type):
@@ -159,7 +160,7 @@ class Button(ABC):
 
     def get_type_name(self) -> str:
         ''' Returns the name of the button type. '''
-        return self.get_type().__name__
+        return self.button_type.__name__
 
     def get_type_index(self) -> int:
         ''' Returns the index of the button type. '''
@@ -173,7 +174,9 @@ class Button(ABC):
 class ButtonOff(Button):
     ''' Button without functionality. '''
 
-    def __init__(self, data: list[int]):
+    def __init__(self, data: list[int] | None):
+        if data is None:
+            data = [0x00, 0x00, 0x00, 0x00]
         if len(data) != 4:
             raise ValueError('ButtonOff data must be a list of 4 integers.')
         if data != [0x00, 0x00, 0x00, 0x00]:
@@ -201,7 +204,9 @@ class ButtonMouseButton(Button):
         SCROLL_UP = 0x8B
         SCROLL_DOWN = 0x8C
 
-    def __init__(self, data: list[int]):
+    def __init__(self, data: list[int] | None):
+        if data is None:
+            data = [ButtonMouseButton.Type.LEFT.value, 0x00, 0x00, 0x00]
         if len(data) != 4:
             raise ValueError('MouseButton data must be a list of 4 integers.')
         if data[1] != 0x00 or data[2] != 0x00 or data[3] != 0x00:
@@ -252,7 +257,9 @@ class ButtonMouseFunction(Button):
         Type.DPI_LED_MODE: "DPI LED Mode",
     }
 
-    def __init__(self, data: list[int]):
+    def __init__(self, data: list[int] | None):
+        if data is None:
+            data = ButtonMouseFunction.Type.DPI_PLUS.value
         if len(data) != 4:
             raise ValueError(
                 'MouseFunction data must be a list of 4 integers.')
@@ -275,7 +282,9 @@ class ButtonMouseFunction(Button):
 class ButtonKeyPress(Button):
     ''' Button that is mapped to a keyboard key including modifiers. '''
 
-    def __init__(self, data: list[int]):
+    def __init__(self, data: list[int] | None):
+        if data is None:
+            data = [0x90, 0x00, ScanCode.A.value[0], 0x00]
         if len(data) != 4:
             raise ValueError('KeyPress data must be a list of 4 integers.')
         if data[0] != 0x90 and data[0] != 0x8f:
@@ -347,7 +356,9 @@ class ButtonSpecialKey(Button):
         Type.MAIL: "Mail",
     }
 
-    def __init__(self, data: list[int]):
+    def __init__(self, data: list[int] | None):
+        if data is None:
+            data = ButtonSpecialKey.Type.MEDIA_PLAY_PAUSE.value
         if len(data) != 4:
             raise ValueError('SpecialKey data must be a list of 4 integers.')
         if data in [function.value for function in ButtonSpecialKey.Type]:
@@ -373,7 +384,9 @@ class ButtonMacro(Button):
         HOLD = 0x80
         TOGGLE = 0x40
 
-    def __init__(self, data: list[int]):
+    def __init__(self, data: list[int] | None):
+        if data is None:
+            data = [0x91, 0x00, 0x01, 0x00]
         if len(data) != 4:
             raise ValueError('Macro data must be a list of 4 integers.')
         if data[0] != 0x91:
@@ -406,22 +419,29 @@ class ButtonMacro(Button):
 class ButtonSniper(Button):
     ''' Button that sets the DPI to a predefined sniper level while held. '''
 
-    def __init__(self, data: list[int]):
+    def __init__(self, data: list[int] | None):
+        if data is None:
+            data = [0x9a, 0x01, 0x04, 0x04]
         if len(data) != 4:
             raise ValueError('Sniper data must be a list of 4 integers.')
         if data[0] != 0x9a:
             raise ValueError(f"Invalid Sniper data: {data}")
-        self.dpi_level = [data[2], data[1]]
+        self.dpi_level = [data[2], data[1] - 1]
 
     @classmethod
     def type_name(cls) -> str:
         return "Sniper"
 
+    @property
+    def dpi(self) -> int:
+        ''' The DPI level of the sniper button. '''
+        return MouseData.RawProfileData.dpi_to_int(self.dpi_level)
+
     def to_raw(self) -> list[int]:
-        return [0x9a, self.dpi_level[1], self.dpi_level[0], 0x00]
+        return [0x9a, self.dpi_level[1] + 1, self.dpi_level[0], self.dpi_level[0]]
 
     def __str__(self) -> str:
-        return f'{self.dpi_level}'
+        return f'{self.dpi} DPI'
 
 class ButtonFireKey(Button):
     ''' Presses a key repeatedly '''
@@ -430,7 +450,9 @@ class ButtonFireKey(Button):
         RIGHT = 0x82
         MIDDLE = 0x84
 
-    def __init__(self, data: list[int]):
+    def __init__(self, data: list[int] | None):
+        if data is None:
+            data = [0x99, 0x81, 0x03, 0x0A]
         if len(data) != 4:
             raise ValueError('FireKey data must be a list of 4 integers.')
         if data[0] != 0x99:
@@ -459,7 +481,9 @@ class ButtonFireKey(Button):
 
 class ButtomCustom(Button):
     ''' Button with a custom function defined by the user. '''
-    def __init__(self, data: list[int]):
+    def __init__(self, data: list[int] | None):
+        if data is None:
+            data = [0x00, 0x00, 0x00, 0x00]
         if len(data) != 4:
             raise ValueError('Custom button data must be a list of 4 integers.')
         self.data = data
