@@ -8,13 +8,12 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QHBoxLayout, QLabel,
                                QMainWindow, QPushButton, QSizePolicy,
                                QSplitter, QVBoxLayout, QWidget)
 
-from ui.button_widget import ButtonWidget
+from ui.buttons_widget import ButtonsWidget
 from ui.downloader import download
-from ui.mouse_config import mouse_configs
-from ui.mouse_data import PROFILE_COUNT, MouseData, ProfileData
+from ui.mouse_config import get_mouse_config
+from ui.mouse_data import PROFILE_COUNT, MouseData
 from ui.mouse_image import MouseImageWidget
 from ui.mouse_selector_widget import MouseSelectorWidget
-from ui.vertical_tab_wiget import HorizontalTabBar, VerticalTabWidget
 
 logger = logging.getLogger(__name__)
 
@@ -30,11 +29,11 @@ class MainWindow(QMainWindow):
 
         self.profile = 0
         self.mouse: MouseData | None = None
-        self.mouse_config = mouse_configs[None]
+        self.mouse_config = get_mouse_config(None)
         self.mouse_image: MouseImageWidget
         self.warning_label: QLabel
         self.mouse_widget: QWidget
-        self.buttons_widget: VerticalTabWidget
+        self.buttons_widget: ButtonsWidget
         self.active_profile_label: QLabel
 
         self.setWindowTitle("M811 Configurator")
@@ -125,10 +124,10 @@ class MainWindow(QMainWindow):
         splitter_right_layout = QVBoxLayout(splitter_right)
         splitter_right_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         splitter_right_layout.setContentsMargins(0, 0, 0, 0)
-        self.buttons_widget = VerticalTabWidget()
+        self.buttons_widget = ButtonsWidget()
         self.buttons_widget.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.buttons_widget.currentChanged.connect(self._on_button_selected)
+        self.buttons_widget.selected_button_changed.connect(self._on_button_selected)
         splitter_right_layout.addWidget(self.buttons_widget)
         splitter.addWidget(splitter_right)
         splitter.setStretchFactor(1, 1)
@@ -139,11 +138,12 @@ class MainWindow(QMainWindow):
         self.mouse = mouse
         logger.debug("Selected mouse: %s", name if name is not None else "None")
         mouse_type = mouse.mouse_type if mouse is not None else None
-        self.mouse_config = mouse_configs.get(mouse_type, mouse_configs[None])
+        self.mouse_config = get_mouse_config(mouse_type)
 
         if mouse:
             self.mouse_image.load_svg(self.mouse_config.image)
             self._start_poll_active_profile()
+            mouse.load_from_mouse(lambda progress: logger.debug("Loading mouse data: %s", progress))
         else:
             self._stop_poll_active_profile()
             pixmap = QPixmap(400, 300)
@@ -178,20 +178,14 @@ class MainWindow(QMainWindow):
     def _select_profile(self, index: int) -> None:
         logger.debug("Selected profile: %d", index + 1)
         self.profile = index
-        self._read_mouse()
+        self.buttons_widget.set_selected_profile_index(index)
 
     def _read_mouse(self) -> None:
         if self.mouse is None:
             return
 
         self.mouse.load_from_mouse()
-
-        self.buttons_widget.clear()
-        for button_index, button in enumerate(self.mouse.get_profile_data(self.profile).buttons()):
-            button_name = self.mouse_config.buttons[button_index] if button_index < len(
-                self.mouse_config.buttons) else f"Button {button_index+1}"
-            button_widget = ButtonWidget(button)
-            self.buttons_widget.addTab(button_widget, button_name)
+        self.buttons_widget.set_data(self.mouse)
 
     def _set_app_icon(self, data: bytes | Exception) -> None:
         if isinstance(data, Exception):
@@ -224,12 +218,10 @@ class MainWindow(QMainWindow):
 
     def _on_button_clicked(self, button_index: int) -> None:
         if 0 <= button_index < len(self.mouse_config.buttons):
-            self.buttons_widget.setCurrentIndex(button_index)
+            self.buttons_widget.set_selected_button_index(button_index)
 
     def _on_button_hovered(self, button_index: int) -> None:
-        tab_bar = self.buttons_widget.tabBar()
-        assert isinstance(tab_bar, HorizontalTabBar)
-        tab_bar.set_hovered_tab(button_index)
+        self.buttons_widget.set_hovered_button_index(button_index)
 
     def _start_poll_active_profile(self):
         self._stop_poll_active_profile()

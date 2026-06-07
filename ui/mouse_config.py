@@ -23,3 +23,7 @@ mouse_configs: dict[MouseType | None, MouseConfig] = {
         fully_supported=False,
     ),
 }
+
+def get_mouse_config(mouse_type: MouseType | None) -> MouseConfig:
+    '''Get the MouseConfig for a given MouseType, or a default config if the type is unknown.'''
+    return mouse_configs.get(mouse_type, mouse_configs[None])

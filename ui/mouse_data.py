@@ -9,7 +9,7 @@ from typing import Callable, Generator
 from mouse import PROFILE_COUNT as MOUSE_PROFILE_COUNT
 from mouse import Mouse, MouseType
 from ui.keyboard import Modifier, ScanCode
-from ui.mouse_config import MouseConfig, mouse_configs
+from ui.mouse_config import get_mouse_config
 
 DPI_VALUES: dict[int, list[int]] = {
     200: [0x4, 0],
@@ -644,10 +644,7 @@ class MouseData:
     def __init__(self, mouse: Mouse, type: MouseType):
         self._mouse = mouse
         self._type = type
-        if type not in mouse_configs:
-            self._button_count = len(mouse_configs[None].buttons)
-        else:
-            self._button_count = len(mouse_configs[type].buttons)
+        self._button_count = len(get_mouse_config(type).buttons)
         self._data_on_mouse: MouseData.RawMouseData | None = None
         self._data_in_ui: MouseData.RawMouseData | None = None
         self._status: MouseData.Status = MouseData.Status.IDLE
