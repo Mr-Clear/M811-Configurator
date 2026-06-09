@@ -204,6 +204,10 @@ class ButtonMouseButton(Button):
         SCROLL_UP = 0x8B
         SCROLL_DOWN = 0x8C
 
+        @property
+        def name(self) -> str:
+            return self._name_.replace("_", " ").title()
+
     def __init__(self, data: list[int] | None):
         if data is None:
             data = [ButtonMouseButton.Type.LEFT.value, 0x00, 0x00, 0x00]
@@ -213,17 +217,17 @@ class ButtonMouseButton(Button):
             raise ValueError(f"Invalid MouseButton data: {data}")
         if data[0] not in [button.value for button in ButtonMouseButton.Type]:
             raise ValueError(f"Invalid mouse button type: {data[0]}")
-        self.type = ButtonMouseButton.Type(data[0])
+        self.mouse_button_type = ButtonMouseButton.Type(data[0])
 
     @classmethod
     def type_name(cls) -> str:
         return "Mouse Button"
 
     def to_raw(self) -> list[int]:
-        return [self.type.value, 0x00, 0x00, 0x00]
+        return [self.mouse_button_type.value, 0x00, 0x00, 0x00]
 
     def __str__(self) -> str:
-        return f"{self.type.name.title()}"
+        return f"{self.mouse_button_type.name.title()}"
 
 
 class ButtonMouseFunction(Button):
@@ -243,19 +247,25 @@ class ButtonMouseFunction(Button):
         RESET_SETTINGS = [0x9b, 0x02, 0x00, 0x00]
         DPI_LED_MODE = [0x9b, 0x02, 0x00, 0x00]
 
-    NAMES = {
-        Type.DPI_PLUS: "DPI+",
-        Type.DPI_MINUS: "DPI-",
-        Type.SWITCH_PROFILE: "Switch Profile",
-        Type.PROFILE_PLUS: "Profile +",
-        Type.PROFILE_MINUS: "Profile -",
-        Type.DPI_SWITCH: "DPI Switch",
-        Type.LED_SWITCH: "LED Switch",
-        Type.POLL_RATE_PLUS: "Poll Rate +",
-        Type.POLL_RATE_MINUS: "Poll Rate -",
-        Type.RESET_SETTINGS: "Reset Settings",
-        Type.DPI_LED_MODE: "DPI LED Mode",
-    }
+        @staticmethod
+        def names() -> dict[ButtonMouseFunction.Type, str]:
+            return {
+                ButtonMouseFunction.Type.DPI_PLUS: "DPI+",
+                ButtonMouseFunction.Type.DPI_MINUS: "DPI-",
+                ButtonMouseFunction.Type.SWITCH_PROFILE: "Switch Profile",
+                ButtonMouseFunction.Type.PROFILE_PLUS: "Profile+",
+                ButtonMouseFunction.Type.PROFILE_MINUS: "Profile-",
+                ButtonMouseFunction.Type.DPI_SWITCH: "DPI Switch",
+                ButtonMouseFunction.Type.LED_SWITCH: "LED Switch",
+                ButtonMouseFunction.Type.POLL_RATE_PLUS: "Poll Rate+",
+                ButtonMouseFunction.Type.POLL_RATE_MINUS: "Poll Rate-",
+                ButtonMouseFunction.Type.RESET_SETTINGS: "Reset Settings",
+                ButtonMouseFunction.Type.DPI_LED_MODE: "DPI LED Mode",
+            }
+
+        @property
+        def name(self) -> str:
+            return ButtonMouseFunction.Type.names()[self]
 
     def __init__(self, data: list[int] | None):
         if data is None:
@@ -276,7 +286,7 @@ class ButtonMouseFunction(Button):
         return self.type.value
 
     def __str__(self) -> str:
-        return f"{ButtonMouseFunction.NAMES[self.type]}"
+        return f"{self.type.name}"
 
 
 class ButtonKeyPress(Button):
@@ -289,28 +299,54 @@ class ButtonKeyPress(Button):
             raise ValueError('KeyPress data must be a list of 4 integers.')
         if data[0] != 0x90 and data[0] != 0x8f:
             raise ValueError(f"Invalid KeyPress data: {data}")
-        self.modifiers = data[1]
-        self.scan_code = data[2]
-        if self.scan_code not in [scan_code.code for scan_code in ScanCode]:
-            raise ValueError(f"Invalid scan code: {self.scan_code:#02x}")
+        self._modifiers = data[1]
+        self._scan_code = data[2]
+        if self._scan_code not in [scan_code.code for scan_code in ScanCode]:
+            raise ValueError(f"Invalid scan code: {self._scan_code:#02x}")
 
     @classmethod
     def type_name(cls) -> str:
         return "Key Press"
 
+    @property
+    def key(self) -> ScanCode:
+        ''' The scan code of the key press. '''
+        return ScanCode.from_code(self._scan_code)
+    @key.setter
+    def key(self, scan_code: ScanCode) -> None:
+        ''' Set the scan code of the key press. '''
+        self._scan_code = scan_code.code
+
+    @property
+    def modifiers(self) -> set[Modifier]:
+        ''' The modifiers of the key press. '''
+        modifiers: set[Modifier] = set()
+        for modifier in Modifier:
+            if self._modifiers & modifier.value:
+                modifiers.add(modifier)
+        return modifiers
+
+    @modifiers.setter
+    def modifiers(self, modifiers: set[Modifier]) -> None:
+        ''' Set the modifiers of the key press. '''
+        i = 0
+        for modifier in modifiers:
+            i |= modifier.value
+        self._modifiers = i
+
     def to_raw(self) -> list[int]:
-        return [0x90 if self.modifiers == 0 else 0x8f, self.modifiers, self.scan_code, 0x00]
+        return [0x90 if self._modifiers == 0 else 0x8f, self._modifiers, self._scan_code, 0x00]
 
     def _modifiers_str(self) -> str:
         modifiers_str = ""
         for modifier in Modifier:
-            if self.modifiers & modifier.value:
+            if self._modifiers & modifier.value:
                 modifiers_str += modifier.name + "+"
         return modifiers_str[:-1] if modifiers_str else ""
 
     def __str__(self) -> str:
         modifiers_str = self._modifiers_str()
-        scan_code_str = f"{ScanCode.from_code(self.scan_code).key_name()} ({self.scan_code:#02x})"
+        scan_code_str = f"{ScanCode.from_code(self._scan_code).key_name()} ({self._scan_code:#02x})"
         if modifiers_str:
             return f"{modifiers_str}+{scan_code_str}"
         else:
@@ -337,24 +373,30 @@ class ButtonSpecialKey(Button):
         BROWSER_FAVORITES = [0x8e, 0x01, 0xFF, 0x25]
         MAIL = [0x8e, 0x01, 0xFF, 0x26]
 
-    NAMES = {
-        Type.MEDIA_NEXT: "Next",
-        Type.MEDIA_PREVIOUS: "Previous",
-        Type.MEDIA_STOP: "Stop",
-        Type.MEDIA_PLAY_PAUSE: "Play/Pause",
-        Type.MEDIA_VOLUME_UP: "Volume Up",
-        Type.MEDIA_VOL_DOWN: "Volume Down",
-        Type.MEDIA_MUTE: "Mute",
+        @staticmethod
+        def names():
+            return {
+                ButtonSpecialKey.Type.MEDIA_NEXT: "Next",
+                ButtonSpecialKey.Type.MEDIA_PREVIOUS: "Previous",
+                ButtonSpecialKey.Type.MEDIA_STOP: "Stop",
+                ButtonSpecialKey.Type.MEDIA_PLAY_PAUSE: "Play/Pause",
+                ButtonSpecialKey.Type.MEDIA_VOLUME_UP: "Volume Up",
+                ButtonSpecialKey.Type.MEDIA_VOL_DOWN: "Volume Down",
+                ButtonSpecialKey.Type.MEDIA_MUTE: "Mute",
 
-        Type.BROWSER_HOME: "Browser Home",
-        Type.BROWSER_BACK: "Browser Back",
-        Type.BROWSER_FORWARD: "Browser Forward",
-        Type.BROWSER_STOP: "Browser Stop",
-        Type.BROWSER_REFRESH: "Browser Refresh",
-        Type.BROWSER_SEARCH: "Browser Search",
-        Type.BROWSER_FAVORITES: "Browser Favorites",
-        Type.MAIL: "Mail",
-    }
+                ButtonSpecialKey.Type.BROWSER_HOME: "Browser Home",
+                ButtonSpecialKey.Type.BROWSER_BACK: "Browser Back",
+                ButtonSpecialKey.Type.BROWSER_FORWARD: "Browser Forward",
+                ButtonSpecialKey.Type.BROWSER_STOP: "Browser Stop",
+                ButtonSpecialKey.Type.BROWSER_REFRESH: "Browser Refresh",
+                ButtonSpecialKey.Type.BROWSER_SEARCH: "Browser Search",
+                ButtonSpecialKey.Type.BROWSER_FAVORITES: "Browser Favorites",
+                ButtonSpecialKey.Type.MAIL: "Mail",
+            }
+
+        @property
+        def name(self) -> str:
+            return self.names()[self]
 
     def __init__(self, data: list[int] | None):
         if data is None:
@@ -374,11 +416,14 @@ class ButtonSpecialKey(Button):
         return self.type.value
 
     def __str__(self) -> str:
-        return f"{ButtonSpecialKey.NAMES[self.type]}"
+        return f"{self.type.name}"
 
 
 class ButtonMacro(Button):
     ''' Button that is mapped to a macro. '''
+    MACRO_COUNT = 16
+    MAX_REPEAT = 255
+
     class Type(Enum):
         REPEAT = 0x00
         HOLD = 0x80
@@ -407,6 +452,39 @@ class ButtonMacro(Button):
     @classmethod
     def type_name(cls) -> str:
         return "Macro"
+
+    @property
+    def id(self) -> int:
+        ''' The ID of the macro. '''
+        return self.macro_id
+    @id.setter
+    def id(self, macro_id: int) -> None:
+        ''' Set the ID of the macro. '''
+        if macro_id < 1 or macro_id > ButtonMacro.MACRO_COUNT:
+            raise ValueError(f"Invalid macro ID: {macro_id}")
+        self.macro_id = macro_id
+
+    @property
+    def type(self) -> Type:
+        ''' The type of the macro. '''
+        return self.macro_type
+    @type.setter
+    def type(self, macro_type: Type) -> None:
+        ''' Set the type of the macro. '''
+        self.macro_type = macro_type
+
+    @property
+    def repeat(self) -> int:
+        ''' The repeat count of the macro. '''
+        return self.repeat_count
+    @repeat.setter
+    def repeat(self, repeat_count: int) -> None:
+        ''' Set the repeat count of the macro. '''
+        if self.macro_type != ButtonMacro.Type.REPEAT:
+            raise ValueError("Repeat count can only be set for repeat macros.")
+        if repeat_count < 1 or repeat_count > ButtonMacro.MAX_REPEAT:
+            raise ValueError(f"Invalid repeat count: {repeat_count}")
+        self.repeat_count = repeat_count
 
     def to_raw(self) -> list[int]:
         return [0x91, self.macro_id | self.macro_type.value, 0x00, 0x00]

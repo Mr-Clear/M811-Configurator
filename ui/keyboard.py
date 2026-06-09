@@ -181,5 +181,18 @@ LAYOUT_RELATED_KEY_NAMES: dict[Layout, dict[ScanCode, str]] = {
         ScanCode.Minus: "ß",
         ScanCode.Equal: "´",
         ScanCode.Slash: "-",
+
+        ScanCode.LCtrl: "LStrg",
+        ScanCode.RCtrl: "RStrg",
+        ScanCode.LAlt: "Alt",
+        ScanCode.RAlt: "AltGr",
+        ScanCode.PrintScreen: "Druck",
+        ScanCode.ScrollLock: "Rollen",
+        ScanCode.Insert: "Einfg",
+        ScanCode.Delete: "Entf",
+        ScanCode.Home: "Pos1",
+        ScanCode.End: "Ende",
+        ScanCode.PageUp: "Bild↑",
+        ScanCode.PageDown: "Bild↓",
     },
 }
