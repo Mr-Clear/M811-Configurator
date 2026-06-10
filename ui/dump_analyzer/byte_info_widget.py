@@ -1,11 +1,8 @@
 #! /usr/bin/env python3
 ''' Widget to show information about a byte in the dump. '''
 
-import sys
-
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QApplication, QHBoxLayout, QLabel,
-                               QStackedWidget, QWidget)
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QStackedWidget, QWidget
 
 
 class ByteInfoWidget(QWidget):
@@ -71,13 +68,3 @@ class ByteInfoWidget(QWidget):
             self._hex2_label.setText('   N/A')
             self._dec2_label.setText('  N/A')
         self._stack.setCurrentWidget(self._stack_byte)
-
-def start_app() -> int:
-    '''Creates the main window and starts the application event loop.'''
-    app = QApplication(sys.argv)
-    window = DumpAnalyzer()
-    window.show()
-    return app.exec()
-
-if __name__ == "__main__":
-    raise SystemExit(start_app())
