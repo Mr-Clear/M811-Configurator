@@ -9,6 +9,7 @@ from PySide6.QtGui import (QColor, QCursor, QFont, QFontMetrics, QMouseEvent,
                            QShowEvent, QWheelEvent)
 from PySide6.QtWidgets import QWidget
 
+from ui.config import Config
 
 class HexViewer(QWidget):
     byte_hovered = Signal(int)
@@ -33,6 +34,7 @@ class HexViewer(QWidget):
 
     def __init__(self, data: bytes, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        self._config = Config.instance()
         self._data: bytes = data
         self._padding = 4
         self._current_size_hint: HexViewer.SizeHint = HexViewer.SizeHint(0, 0, 0)
@@ -53,12 +55,53 @@ class HexViewer(QWidget):
         self.setFont(font)
         self.setMouseTracking(True)
 
+    def set_data(self, data: bytes) -> None:
+        '''Set the data to be displayed in the hex viewer.'''
+        self._data = data
+        self._set_selected_byte(None)
+        self._set_hover_byte(None)
+        self._calculate_size()
+        self.repaint()
+
+    def set_font(self, font: QFont) -> None:
+        self.setFont(font)
+        self._calculate_size()
+        self.repaint()
+
+    def get_byte_index_at_position(self, pos: QPoint | QPointF, line_start: bool) -> int | None:
+        size_hint = self._current_size_hint
+        line = int(pos.y()) // self.fontMetrics().height()
+        if line < 0 or line >= (len(self._data) + size_hint.bytes_per_line - 1) // size_hint.bytes_per_line:
+            return None
+        if line_start:
+            return line * size_hint.bytes_per_line
+        if pos.x() >= self._start_hex and pos.x() <= self._end_hex:
+            column = (int(pos.x()) - self._start_hex) // self.fontMetrics().horizontalAdvance('00 ')
+            byte_index = line * size_hint.bytes_per_line + column
+            if byte_index < len(self._data):
+                return byte_index
+
+        elif pos.x() >= self._start_ascii and pos.x() <= self._end_ascii:
+            column = (int(pos.x()) - self._start_ascii) // self.fontMetrics().horizontalAdvance(' ')
+            byte_index = line * size_hint.bytes_per_line + column
+            if byte_index < len(self._data):
+                return byte_index
+        return None
+
     def _init_colors(self) -> None:
-        palette = self.palette()
-        self._colors[HexViewer.Colors.NORMAL] = palette.color(QPalette.ColorRole.WindowText)
-        self._colors[HexViewer.Colors.HOVER] = palette.color(QPalette.ColorRole.Highlight)
-        self._colors[HexViewer.Colors.SELECTED] = palette.color(QPalette.ColorRole.PlaceholderText)
-        self._colors[HexViewer.Colors.NULL_VALUE] = palette.color(QPalette.ColorRole.Dark)
+        colors = self._config.hex_viewer_colors
+        if colors:
+            self._colors[self.Colors.NORMAL] = QColor(colors.get("normal", "#000000"))
+            self._colors[self.Colors.HOVER] = QColor(colors.get("hover", "#0000FF"))
+            self._colors[self.Colors.SELECTED] = QColor(colors.get("selected", "#FF0000"))
+            self._colors[self.Colors.NULL_VALUE] = QColor(colors.get("null_value", "#888888"))
+        else:
+            palette = self.palette()
+            self._colors[HexViewer.Colors.NORMAL] = palette.color(QPalette.ColorRole.WindowText)
+            self._colors[HexViewer.Colors.HOVER] = palette.color(QPalette.ColorRole.Highlight)
+            self._colors[HexViewer.Colors.SELECTED] = palette.color(QPalette.ColorRole.PlaceholderText)
+            self._colors[HexViewer.Colors.NULL_VALUE] = palette.color(QPalette.ColorRole.Dark)
+            self._config.hex_viewer_colors = {k.name.lower(): v.name() for k, v in self._colors.items()}
 
     def _calculate_size(self) -> SizeHint:
         font_metrics = QFontMetrics(self.font())
@@ -86,31 +129,6 @@ class HexViewer(QWidget):
         height = lines * line_height + 2 * self._padding
         self._current_size_hint = self.SizeHint(last_width + 2 * self._padding, height, count)
         return self._current_size_hint
-
-    def set_font(self, font: QFont) -> None:
-        self.setFont(font)
-        self._calculate_size()
-        self.repaint()
-
-    def get_byte_index_at_position(self, pos: QPoint | QPointF, line_start: bool) -> int | None:
-        size_hint = self._current_size_hint
-        line = int(pos.y()) // self.fontMetrics().height()
-        if line < 0 or line >= (len(self._data) + size_hint.bytes_per_line - 1) // size_hint.bytes_per_line:
-            return None
-        if line_start:
-            return line * size_hint.bytes_per_line
-        if pos.x() >= self._start_hex and pos.x() <= self._end_hex:
-            column = (int(pos.x()) - self._start_hex) // self.fontMetrics().horizontalAdvance('00 ')
-            byte_index = line * size_hint.bytes_per_line + column
-            if byte_index < len(self._data):
-                return byte_index
-
-        elif pos.x() >= self._start_ascii and pos.x() <= self._end_ascii:
-            column = (int(pos.x()) - self._start_ascii) // self.fontMetrics().horizontalAdvance(' ')
-            byte_index = line * size_hint.bytes_per_line + column
-            if byte_index < len(self._data):
-                return byte_index
-        return None
 
     def _get_hex_position(self, pos: int) -> QPoint:
         size_hint = self._current_size_hint

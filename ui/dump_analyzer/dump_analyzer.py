@@ -3,21 +3,34 @@
 
 import sys
 
-from PySide6.QtWidgets import (QApplication, QMainWindow, QScrollArea,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QFileDialog, QMainWindow,
+                               QScrollArea, QVBoxLayout, QWidget)
 
 from .byte_info_widget import ByteInfoWidget
 from .hex_viewer import HexViewer
 
+from ui.config import Config
 
 class DumpAnalyzer (QMainWindow):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._data: bytes
-        self._data = bytes(i % 256 for i in range(0x1C00))
+
+        self._config = Config.instance()
+        self._data: bytes = bytes()
         self._hex_viewer: HexViewer
 
         self._init_ui()
+
+        if self._config.last_opened_dump:
+            try:
+                with open(self._config.last_opened_dump, "rb") as f:
+                    self._data = f.read()
+                self._hex_viewer.set_data(self._data)
+            except Exception as e:
+                print(f"Failed to load last opened dump: {e}")
+        if not hasattr(self, "_data") or not self._data:
+            self._data = bytes(i % 256 for i in range(0x1C00))
+        self._hex_viewer.set_data(self._data)
 
     def _init_ui(self) -> None:
         '''Initialize the user interface.'''
@@ -45,6 +58,14 @@ class DumpAnalyzer (QMainWindow):
         self._selected_byte_info = ByteInfoWidget("Selected:", self)
         layout.addWidget(self._selected_byte_info, 0)
 
+        self._init_menu()
+
+    def _init_menu(self) -> None:
+        '''Initialize the menu bar.'''
+        file = self.menuBar().addMenu("File")
+        file_open = file.addAction("Open Dump...")
+        file_open.triggered.connect(self._open_dump)
+
     def _get_byte_values(self, byte_index: int) -> tuple[int | None, int | None]:
         '''Get the byte value and the next byte value for a given byte index.'''
         if 0 <= byte_index < len(self._data):
@@ -69,6 +90,15 @@ class DumpAnalyzer (QMainWindow):
         '''Handle byte clicked event.'''
         byte_value, byte2_value = self._get_byte_values(byte_index)
         self._selected_byte_info.set_byte(byte_index, byte_value, byte2_value)
+
+    def _open_dump(self) -> None:
+        '''Open a dump file.'''
+        file_name, _ = QFileDialog.getOpenFileName(self, "Open Dump", "", "All Files (*)")
+        if file_name:
+            with open(file_name, "rb") as f:
+                self._data = f.read()
+            self._hex_viewer.set_data(self._data)
+            self._config.last_opened_dump = file_name
 
 def start_app() -> int:
     '''Creates the main window and starts the application event loop.'''
