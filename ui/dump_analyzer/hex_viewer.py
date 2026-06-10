@@ -1,7 +1,5 @@
-#! /usr/bin/env python3
-''' Window to show and analyze dumps from the mouse. '''
+''' Widget for displaying binary data in a hex viewer format. '''
 
-import sys
 from dataclasses import dataclass
 from enum import Enum
 
@@ -9,50 +7,8 @@ from PySide6.QtCore import QEvent, QPoint, QPointF, QSize, QTimer, Signal
 from PySide6.QtGui import (QColor, QCursor, QFont, QFontMetrics, QMouseEvent,
                            QPainter, QPaintEvent, QPalette, QResizeEvent,
                            QShowEvent, QWheelEvent)
-from PySide6.QtWidgets import (QApplication, QHBoxLayout, QLabel, QMainWindow,
-                               QScrollArea, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import QWidget
 
-
-class DumpAnalyzer (QMainWindow):
-    def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self._data: bytes
-        self._data = bytes(i % 256 for i in range(0x1C00))
-        self._hex_viewer: HexViewer
-
-        palette = self.palette()
-        for group in QPalette.ColorGroup:
-            if group in [QPalette.ColorGroup.NColorGroups, QPalette.ColorGroup.All]:
-                continue
-            print(f'Palette group: {group}')
-            for role in QPalette.ColorRole:
-                if role == QPalette.ColorRole.NColorRoles:
-                    continue
-                print(f'  {role:>28}, color: {palette.color(group, role).name()}')
-
-        self._init_ui()
-
-    def _init_ui(self) -> None:
-        '''Initialize the user interface.'''
-
-        self.setWindowTitle("Dump Analyzer")
-        self.resize(800, 600)
-
-        central_widget = QWidget(self)
-        self.setCentralWidget(central_widget)
-        layout = QVBoxLayout(central_widget)
-
-        scroll_area = QScrollArea(self)
-        scroll_area.setWidgetResizable(True)
-        layout.addWidget(scroll_area)
-
-        self._hex_viewer = HexViewer(self._data)
-        self._hex_viewer.byte_clicked.connect(self._on_byte_clicked)
-        scroll_area.setWidget(self._hex_viewer)
-
-    def _on_byte_clicked(self, byte_index: int) -> None:
-        '''Handle byte clicked event.'''
-        print(f'Byte clicked: 0x{byte_index:04X} ({byte_index})')
 
 class HexViewer(QWidget):
     byte_hovered = Signal(int)
@@ -173,25 +129,25 @@ class HexViewer(QWidget):
         return QPoint(x, y)
 
     def _check_hover_byte(self, point: QPoint | QPointF) -> None:
-        byte = self.get_byte_index_at_position(point, False)
-        self._set_hover_byte(byte)
+        byte_idx = self.get_byte_index_at_position(point, False)
+        self._set_hover_byte(byte_idx)
 
     def _update_hover_from_cursor(self) -> None:
         local_pos = self.mapFromGlobal(QCursor.pos())
         self._check_hover_byte(local_pos)
 
-    def _set_selected_byte(self, byte: int | None) -> None:
-        if byte != self._selected_byte:
-            self._selected_byte = byte
-            if byte is not None:
-                self.byte_clicked.emit(byte)
+    def _set_selected_byte(self, byte_idx: int | None) -> None:
+        if byte_idx != self._selected_byte:
+            self._selected_byte = byte_idx
+            if byte_idx is not None:
+                self.byte_clicked.emit(byte_idx)
             self.repaint()
 
-    def _set_hover_byte(self, byte: int | None) -> None:
-        if byte != self._hover_byte:
-            self._hover_byte = byte
-            if byte is not None:
-                self.byte_hovered.emit(byte)
+    def _set_hover_byte(self, byte_idx: int | None) -> None:
+        if byte_idx != self._hover_byte:
+            self._hover_byte = byte_idx
+            if byte_idx is not None:
+                self.byte_hovered.emit(byte_idx)
             else:
                 self.byte_hovered_leave.emit()
             self.repaint()
@@ -263,8 +219,8 @@ class HexViewer(QWidget):
         super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        byte = self.get_byte_index_at_position(event.position(), False)
-        self._set_selected_byte(byte)
+        byte_idx = self.get_byte_index_at_position(event.position(), False)
+        self._set_selected_byte(byte_idx)
         super().mousePressEvent(event)
 
     def leaveEvent(self, event: QEvent) -> None:
@@ -275,14 +231,3 @@ class HexViewer(QWidget):
     def wheelEvent(self, event: QWheelEvent) -> None:
         super().wheelEvent(event)
         QTimer.singleShot(0, self._update_hover_from_cursor)
-
-
-def start_app() -> int:
-    '''Creates the main window and starts the application event loop.'''
-    app = QApplication(sys.argv)
-    window = DumpAnalyzer()
-    window.show()
-    return app.exec()
-
-if __name__ == "__main__":
-    raise SystemExit(start_app())
