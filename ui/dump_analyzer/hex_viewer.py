@@ -231,6 +231,7 @@ class HexViewer(QWidget):
                 pos = self._get_ascii_position(byte_idx)
                 char = chr(b) if 32 <= b < 127 else '.'
                 painter.drawText(pos, char)
+            painter.setPen(self._colors[self.Colors.NORMAL])
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         self._check_hover_byte(event.position())

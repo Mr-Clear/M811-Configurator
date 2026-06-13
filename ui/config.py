@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from ui.dump_analyzer.section import Section
 
 class Config:
     _FILE_PATH: str = "config.json"
@@ -50,4 +51,16 @@ class Config:
     def hex_viewer_colors(self, colors: dict[str, str]) -> None:
         '''Set the colors for the hex viewer.'''
         self.data["hex_viewer_colors"] = colors
+        self._save()
+
+    @property
+    def sections(self) -> Section:
+        '''Get the sections defined in the configuration.'''
+        if "sections" not in self.data:
+            return Section(name="Root", start=0, size=0xFFFF)
+        return Section.from_dict(self.data["sections"])
+    @sections.setter
+    def sections(self, root: Section) -> None:
+        '''Set the sections defined in the configuration.'''
+        self.data["sections"] = root.to_dict()
         self._save()
