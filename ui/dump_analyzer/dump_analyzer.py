@@ -7,10 +7,10 @@ from PySide6.QtWidgets import (QApplication, QFileDialog, QMainWindow,
                                QScrollArea, QVBoxLayout, QWidget)
 
 from ui.config import Config
+from .section import SectionList
 
 from .byte_info_widget import ByteInfoWidget
 from .hex_viewer import HexViewer
-from .section import Section
 from .sections_widget import SectionsWidget
 
 
@@ -20,7 +20,7 @@ class DumpAnalyzer (QMainWindow):
 
         self._config = Config.instance()
         self._data: bytes = bytes()
-        self._root_section: Section = self._config.sections
+        self._root_section: SectionList = self._config.sections
         self._hex_viewer: HexViewer
         self._sections_widget: SectionsWidget
 
