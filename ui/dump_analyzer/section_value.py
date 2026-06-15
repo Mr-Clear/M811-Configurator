@@ -8,7 +8,7 @@ from .section import Section
 
 @dataclass
 class SectionValue(Section):
-    byte_count: int = 0
+    byte_count: int = 1
     min_value: int = 0
     max_value: int = 0xFF
 

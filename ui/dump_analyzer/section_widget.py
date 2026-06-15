@@ -279,7 +279,7 @@ class HexDecSwitchWidget(QToolButton):
 
 T = TypeVar('T', bound=Section, covariant=True)
 class SectionDetailsWidgetBase(QWidget, Generic[T]):
-    data_changed = Signal(Section)
+    data_changed = Signal()
 
     '''Base class for section details widgets.'''
     @abstractmethod
