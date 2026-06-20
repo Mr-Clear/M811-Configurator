@@ -4,6 +4,7 @@ and allows the user to edit it.
 '''
 
 import copy
+from copy import deepcopy
 from typing import Type
 
 from PySide6.QtCore import Signal
@@ -85,13 +86,45 @@ class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
             self._size_spin_box.setMinimum(0)
             self._size_spin_box.setMaximum(section.parent.size if section.parent else 0xFFFF)
             self._size_spin_box.setValue(section.size)
-            self._sections = section.children()
+            self._sections = deepcopy(section.children())
 
+        self._update_member_list()
         self._on_change()
 
     def get_section(self) -> SectionList | None:
         '''Get the currently displayed section.'''
         return self._section
+
+    def has_changes(self) -> bool:
+        '''Check if there are unsaved changes to the section list.'''
+        section = self.get_section()
+        if section is None:
+            print("No section")
+            return False
+        if section.size != self._size_spin_box.value():
+            print("Size changed")
+            return True
+        if section.children() != self._sections:
+            print(f"Children changed {section.children()} != {self._sections}")
+            return True
+        print(f"No changes {section.children()} != {self._sections}")
+        return False
+
+    def get_size(self) -> int:
+        '''Get the size of the section being edited.'''
+        return self._size_spin_box.value()
+
+    def get_errors(self) -> list[str]:
+        '''Get a list of errors in the section list.'''
+        errors: list[str] = []
+        for s in self._sections:
+            if s.start < 0 or s.end > self.get_size():
+                errors.append(f"Section '{s.name}' is out of bounds.")
+        for i in range(len(self._sections)):
+            for j in range(i + 1, len(self._sections)):
+                if self._sections[i].overlaps_with(self._sections[j]):
+                    errors.append(f"Section '{self._sections[i].name}' overlaps with section '{self._sections[j].name}'.")
+        return errors
 
     def _toogle_size_spin_box(self, is_hex: bool) -> None:
         '''Toggle the end text between hex and decimal.'''
@@ -116,7 +149,7 @@ class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
         if current_section.size != self._size_spin_box.value():
             changed_section = copy.copy(current_section)
             changed_section.size = self._size_spin_box.value()
-            self.data_changed.emit(changed_section)
+            self.data_changed.emit()
 
     def _add_section(self) -> None:
         # create drop down menu to select the type of section to add
@@ -135,6 +168,7 @@ class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
         new_section.start = self._find_free_start(new_section.size)
         self._sections.append(new_section)
         self._update_member_list()
+        self.data_changed.emit()
 
     def _remove_section(self) -> None:
         selected_index = self._member_list.currentRow()
@@ -142,6 +176,7 @@ class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
             return
         del self._sections[selected_index]
         self._update_member_list()
+        self.data_changed.emit()
 
     def _move_section_up(self) -> None:
         selected_index = self._member_list.currentRow()
@@ -150,6 +185,7 @@ class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
         self._swap_neighbor_sections(selected_index - 1)
         self._update_member_list()
         self._member_list.setCurrentRow(selected_index - 1)
+        self.data_changed.emit()
 
     def _move_section_down(self) -> None:
         selected_index = self._member_list.currentRow()
@@ -158,6 +194,7 @@ class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
         self._swap_neighbor_sections(selected_index)
         self._update_member_list()
         self._member_list.setCurrentRow(selected_index + 1)
+        self.data_changed.emit()
 
     def _swap_neighbor_sections(self, first_idx: int) -> None:
         '''Swap the sections at the given index and the next one.'''
@@ -167,10 +204,6 @@ class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
         gap = self._sections[second_idx].start - self._sections[first_idx].end
         second.start = first.start
         first.start = second.end + gap
-
-    def get_size(self) -> int:
-        '''Get the size of the section being edited.'''
-        return self._size_spin_box.value()
 
     def _find_free_start(self, size: int) -> int:
         '''Find a free start index for a new section of the given size.'''

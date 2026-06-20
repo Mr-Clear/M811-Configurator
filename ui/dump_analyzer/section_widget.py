@@ -198,6 +198,11 @@ class SectionWidget(QWidget):
     def _on_editor_change(self) -> None:
         '''Handle changes from the section editor widget.'''
         self._update_size_and_end()
+        errors = self._section_editor.get_errors() if self._section_editor else []
+        self._error_label.setText("\n".join(errors))
+        changes = self._section_editor.has_changes() if self._section_editor else False
+        self._save_button.setEnabled(len(errors) == 0 and changes)
+        self._discard_button.setEnabled(changes)
 
     def _update_size_and_end(self) -> None:
         '''Update the size and end labels based on the current start and size.'''
@@ -285,6 +290,11 @@ class SectionDetailsWidgetBase(QWidget, Generic[T]):
     @abstractmethod
     def set_section(self, section: T | None) -> None:
         '''Set the displayed section information.'''
+        pass
+
+    @abstractmethod
+    def has_changes(self) -> bool:
+        '''Check if there are unsaved changes to the section.'''
         pass
 
     @abstractmethod

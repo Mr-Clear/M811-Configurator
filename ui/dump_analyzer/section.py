@@ -52,6 +52,14 @@ class Section(ABC):
         self.fill_dict(d)
         return d
 
+    def overlaps_with(self, other: Section) -> bool:
+        '''Check if this section overlaps with another section.'''
+        if other.start < self.end and other.end > self.start:
+            return True
+        if other.end > self.start and other.start < self.end:
+            return True
+        return False
+
     @abstractmethod
     def load_from_dict(self, data: dict[str, Any]) -> None:
         '''Load the section from a dictionary.'''
