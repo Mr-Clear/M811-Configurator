@@ -27,6 +27,7 @@ LEN_64B = 0x03  # 64 byte payloads
 REPORT_16B = FEATURE_REPORT | LEN_16B
 REPORT_64B = FEATURE_REPORT | LEN_64B
 
+OP_COMMAND = 0xf1
 OP_SEEK = 0xf2
 OP_WRITE = 0xf3
 OP_LOCK = 0xf5
@@ -118,8 +119,7 @@ class Mouse:
     def __init__(self, product_id: int) -> None:
         results = usb.core.find(idVendor=VENDOR_ID, idProduct=product_id)
         if not isinstance(results, usb.core.Device):
-            raise AttributeError(
-                f"No USB device with ID {VENDOR_ID:04x}:{product_id:04x}")
+            raise AttributeError(f"No USB device with ID {VENDOR_ID:04x}:{product_id:04x}")
         self.dev: usb.core.Device = results
 
     @classmethod
@@ -316,3 +316,18 @@ class Mouse:
         data = self.dev.ctrl_transfer(
             GET_REQUEST_TYPE, GET_REPORT, report, INTERFACE, length, TIMEOUT)
         return list(data[8:])
+
+    def _command(self, cmd: int) -> None:
+        self._set(REPORT_16B, [LEN_16B, OP_COMMAND, 0x02, cmd], 0x10)
+
+    def _apply(self) -> None:
+        commands = [0x01, 0x04, 0x01, 0x02, 0x08, 0x10] # Got by Wireshark
+        # commands = [0x01, 0x04] # Trial and error
+        for cmd in commands:
+            self._command(cmd)
+
+    def set_active_profile(self, profile: int) -> None:
+        '''Set the active profile index.'''
+        self._write16(ADR_ACTIVE, 2, profile)
+        self._apply()
+
