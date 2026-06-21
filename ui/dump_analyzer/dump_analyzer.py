@@ -3,8 +3,10 @@
 
 import json
 import logging
+import os
 import sys
 
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (QApplication, QFileDialog, QMainWindow,
                                QMessageBox, QScrollArea, QVBoxLayout, QWidget)
 
@@ -26,6 +28,7 @@ class DumpAnalyzer (QMainWindow):
         self._root_section: SectionList = self._config.sections
         self._hex_viewer: HexViewer
         self._sections_widget: SectionsWidget
+        self.file_write_usb: QAction
 
         self._init_ui()
 
@@ -33,12 +36,12 @@ class DumpAnalyzer (QMainWindow):
             try:
                 with open(self._config.last_opened_dump, "rb") as f:
                     self._data = f.read()
-                self._hex_viewer.set_data(self._data)
+                self._hex_viewer.data = self._data
             except Exception as e:
                 print(f"Failed to load last opened dump: {e}")
         if not hasattr(self, "_data") or not self._data:
             self._data = bytes(i % 256 for i in range(0x1C00))
-        self._hex_viewer.set_data(self._data)
+        self._hex_viewer.data = self._data
 
     def _init_ui(self) -> None:
         '''Initialize the user interface.'''
@@ -55,7 +58,8 @@ class DumpAnalyzer (QMainWindow):
         scroll_area.setWidgetResizable(True)
         layout.addWidget(scroll_area, 1)
 
-        self._hex_viewer = HexViewer(self._data)
+        self._hex_viewer = HexViewer()
+        self._hex_viewer.data = self._data
         self._hex_viewer.byte_hovered.connect(self._on_byte_hovered)
         self._hex_viewer.byte_hovered_leave.connect(self._on_byte_hovered_leave)
         self._hex_viewer.byte_clicked.connect(self._on_byte_clicked)
@@ -76,8 +80,14 @@ class DumpAnalyzer (QMainWindow):
     def _init_menu(self) -> None:
         '''Initialize the menu bar.'''
         file = self.menuBar().addMenu("File")
+        file.aboutToShow.connect(self._on_file_menu_show)
         file_open = file.addAction("Open Dump...")
         file_open.triggered.connect(self._open_dump)
+        file_read_usb = file.addAction("Read from USB")
+        file_read_usb.triggered.connect(self._read_from_usb)
+        self.file_write_usb = file.addAction("Write to USB")
+        self.file_write_usb.triggered.connect(self._write_to_usb)
+        file.addSeparator()
         file_load_sections = file.addAction("Load Sections...")
         file_load_sections.triggered.connect(self._load_sections)
         file_save_sections = file.addAction("Save Sections...")
@@ -108,14 +118,41 @@ class DumpAnalyzer (QMainWindow):
         byte_value, byte2_value = self._get_byte_values(byte_index)
         self._selected_byte_info.set_byte(byte_index, byte_value, byte2_value)
 
+    def _on_file_menu_show(self) -> None:
+        '''Update the "File" menu actions based on the current state.'''
+        hex_changed = self._hex_viewer.data != memoryview(self._data)
+        self.file_write_usb.setEnabled(hex_changed)
+
     def _open_dump(self) -> None:
         '''Open a dump file.'''
         file_name, _ = QFileDialog.getOpenFileName(self, "Open Dump", "", "All Files (*)")
         if file_name:
             with open(file_name, "rb") as f:
                 self._data = f.read()
-            self._hex_viewer.set_data(self._data)
+            self._hex_viewer.data = self._data
             self._config.last_opened_dump = file_name
+
+    def _read_from_usb(self) -> None:
+        '''Read dump data from the USB device.'''
+        try:
+            from .usb import RedragonMouse
+            mouse = RedragonMouse()
+            self._data = mouse.read_all()
+            self._hex_viewer.data = self._data
+        except Exception as e:
+            logger.exception(f"Failed to read from USB: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to read from USB: {e}")
+
+    def _write_to_usb(self) -> None:
+        '''Write modified dump data to the USB device.'''
+        try:
+            from .usb import RedragonMouse
+            mouse = RedragonMouse()
+            mouse.write_diff(self._data, self._hex_viewer.data)
+            QMessageBox.information(self, "Success", "Data successfully written to USB device.")
+        except Exception as e:
+            logger.exception(f"Failed to write to USB: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to write to USB: {e}")
 
     def _load_sections(self) -> None:
         '''Load sections from a JSON file.'''
