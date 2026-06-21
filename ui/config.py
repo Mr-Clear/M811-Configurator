@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from ui.dump_analyzer.section import SectionList
+from ui.dump_analyzer.section_list import SectionList
 
 class Config:
     _FILE_PATH: str = "config.json"

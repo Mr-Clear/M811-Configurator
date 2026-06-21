@@ -12,7 +12,8 @@ from PySide6.QtWidgets import (QAbstractButton, QHBoxLayout, QLabel,
                                QListWidget, QMenu, QPushButton, QSpinBox,
                                QToolButton, QVBoxLayout, QWidget)
 
-from ui.dump_analyzer.section import Section, SectionList
+from ui.dump_analyzer.section import Section
+from ui.dump_analyzer.section_list import SectionList
 from ui.dump_analyzer.section_value import SectionValue
 
 from .section_widget import SectionDetailsWidgetBase

@@ -1,0 +1,80 @@
+'''Section that contains a list of subsections.'''
+
+from dataclasses import dataclass, field
+from typing import Any
+
+from ui.dump_analyzer.section import Section
+
+
+@dataclass
+class SectionList(Section):
+    length: int = 1
+    subsections: list[Section] = field(default_factory=list) # type: ignore
+
+    @classmethod
+    def type_name(cls) -> str:
+        return "Section List"
+
+    @property
+    def size(self) -> int:
+        '''Get the size of the section.'''
+        return self.length
+    @size.setter
+    def size(self, value: int) -> None:
+        '''Set the size of the section.'''
+        self.length = value
+
+    @property
+    def end(self) -> int:
+        '''Get the end of the section.'''
+        return self.start + self.size
+
+    def children(self) -> list[Section]:
+        '''Get the child sections of this section.'''
+        return self.subsections
+
+    def contains_index(self, idx: int) -> bool:
+        '''Check if the section contains the given index.'''
+        return self.start <= idx < self.end
+
+    def add_section(self, subsection: Section) -> None:
+        '''Add a subsection to the section.'''
+        if not self.contains_index(subsection.start) or \
+           not self.contains_index(subsection.end - 1):
+            raise ValueError(
+                f"Subsection {subsection} is out of bounds of section {self}.")
+        if self.get_overlaps(subsection.start, subsection.size):
+            raise ValueError(
+                f"Subsection {subsection} overlaps with existing subsections of section {self}:" +
+                ", ".join(str(s) for s in self.get_overlaps(subsection.start, subsection.size)))
+        self.subsections.append(subsection)
+        self.subsections.sort(key=lambda s: s.start)
+
+    def get_section_for_index(self, idx: int) -> Section | None:
+        '''Get the subsection that contains the given index.'''
+        for subsection in self.subsections:
+            if subsection.contains_index(idx):
+                return subsection
+        return None
+
+    def get_section_map(self) -> list[Section]:
+        '''Get a list that maps indices to sections.'''
+        section_map: list[Section] = [self] * self.size
+        for subsection in self.subsections:
+            for idx in range(subsection.start, subsection.end):
+                section_map[idx - self.start] = subsection
+        return section_map
+
+    def fill_dict(self, d: dict[str, Any]) -> None:
+        super().fill_dict(d)
+        d["size"] = self.size
+        d["subsections"] = [subsection.to_dict() for subsection in self.subsections]
+
+    def __str__(self) -> str:
+        return f"'{self.name} {self.size} (0x{self.start:X} - 0x{self.end:X})'"
+
+    def load_from_dict(self, data: dict[str, Any]) -> None:
+        '''Load the section from a dictionary.'''
+        self.length = data["size"]
+        self.subsections = [Section.from_dict(subsection)
+                            for subsection in data.get("subsections", [])]

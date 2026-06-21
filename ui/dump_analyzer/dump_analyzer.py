@@ -7,10 +7,10 @@ from PySide6.QtWidgets import (QApplication, QFileDialog, QMainWindow,
                                QScrollArea, QVBoxLayout, QWidget)
 
 from ui.config import Config
-from .section import SectionList
 
 from .byte_info_widget import ByteInfoWidget
 from .hex_viewer import HexViewer
+from .section_list import SectionList
 from .sections_widget import SectionsWidget
 
 

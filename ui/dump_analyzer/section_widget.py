@@ -12,7 +12,7 @@ from .section import Section
 
 def _editor_for_type(section_type: type[Section]) -> type[SectionDetailsWidgetBase[Section]]:
     '''Get the editor widget type for the given section type.'''
-    from .section import SectionList
+    from .section_list import SectionList
     from .section_value import SectionValue
 
     if issubclass(section_type, SectionList):

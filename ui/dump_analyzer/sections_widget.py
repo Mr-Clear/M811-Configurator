@@ -1,12 +1,13 @@
 '''Widget to manage sections.'''
 
 from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt
-from PySide6.QtWidgets import (QHBoxLayout, QHeaderView, QToolButton, QTreeView,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QHBoxLayout, QHeaderView, QToolButton,
+                               QTreeView, QVBoxLayout, QWidget)
 
-from .section import Section, SectionList
-
+from .section import Section
+from .section_list import SectionList
 from .section_widget import SectionWidget
+
 
 class SectionsWidget(QWidget):
     def __init__(self, root: SectionList, parent: QWidget | None = None) -> None:
