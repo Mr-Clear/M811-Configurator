@@ -75,14 +75,15 @@ class HexViewer(QWidget):
             return None
         if line_start:
             return line * size_hint.bytes_per_line
-        if pos.x() >= self._start_hex and pos.x() <= self._end_hex:
-            column = (int(pos.x()) - self._start_hex) // self.fontMetrics().horizontalAdvance('00 ')
+        ascii_width = self.fontMetrics().horizontalAdvance(' ')
+        if self._start_hex <= (pos.x() + ascii_width / 2) <= self._end_hex:
+            hex_width = self.fontMetrics().horizontalAdvance('00 ')
+            column = (int(pos.x() + ascii_width / 2) - self._start_hex) // hex_width
             byte_index = line * size_hint.bytes_per_line + column
             if byte_index < len(self._data):
                 return byte_index
-
-        elif pos.x() >= self._start_ascii and pos.x() <= self._end_ascii:
-            column = (int(pos.x()) - self._start_ascii) // self.fontMetrics().horizontalAdvance(' ')
+        elif self._start_ascii <= pos.x() <= self._end_ascii:
+            column = (int(pos.x()) - self._start_ascii) // ascii_width
             byte_index = line * size_hint.bytes_per_line + column
             if byte_index < len(self._data):
                 return byte_index
