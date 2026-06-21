@@ -163,7 +163,7 @@ class SectionWidget(QWidget):
                 self._section_editor.data_changed.connect(self._on_editor_change)
             assert self._section_editor is not None
             self._update_size_and_end()
-            self._section_editor.set_section(section)
+            self._section_editor.section = section
             enabled = True
 
         self._name_text.setEnabled(enabled)
@@ -251,8 +251,9 @@ class SectionWidget(QWidget):
 
     def _on_save(self) -> None:
         '''Save the changes to the section.'''
-        if self._section is None:
+        if self._section is None or self._section_editor is None:
             return
+        self._section_editor.save_section()
         self._section.name = self._name_text.text()
         self._section.start = int(self._start_spin_box.text(), 16)
         self.section_changed.emit()
@@ -284,30 +285,44 @@ class HexDecSwitchWidget(QToolButton):
 
 T = TypeVar('T', bound=Section, covariant=True)
 class SectionDetailsWidgetBase(QWidget, Generic[T]):
+    '''Base class for section details widgets.'''
     data_changed = Signal()
 
-    '''Base class for section details widgets.'''
-    @abstractmethod
-    def set_section(self, section: T | None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._section: T | None = None
+
+    @property
+    def section(self) -> T | None:
+        '''Get the currently displayed section.'''
+        return self._section
+    @section.setter
+    def section(self, section: T | None) -> None:
         '''Set the displayed section information.'''
-        pass
+        self._section = section
+        self._on_section_change()
+
+    @abstractmethod
+    def save_section(self) -> None:
+        '''Save the changes to the section.'''
+        assert False, "Subclasses must implement this method."
 
     @abstractmethod
     def has_changes(self) -> bool:
         '''Check if there are unsaved changes to the section.'''
-        pass
-
-    @abstractmethod
-    def get_section(self) -> T | None:
-        '''Get the currently displayed section.'''
-        pass
+        assert False, "Subclasses must implement this method."
 
     @abstractmethod
     def get_size(self) -> int:
         '''Get the size of the section being edited.'''
-        pass
+        assert False, "Subclasses must implement this method."
 
     @abstractmethod
     def get_errors(self) -> list[str]:
         '''Get a list of errors that prevent the section from being saved.'''
-        pass
+        assert False, "Subclasses must implement this method."
+
+    @abstractmethod
+    def _on_section_change(self) -> None:
+        '''Handle changes to the section information.'''
+        assert False, "Subclasses must implement this method."

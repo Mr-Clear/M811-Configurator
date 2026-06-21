@@ -21,7 +21,6 @@ from .section_widget import SectionDetailsWidgetBase
 class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._section: SectionList | None = None
         self._parent: Section | None = None
         self._member_list: QListWidget
         self._size_spin_box: QSpinBox
@@ -75,10 +74,15 @@ class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
         right_layout.addWidget(self._down_button)
         self._update_member_list()
 
+    def save_section(self) -> None:
+        '''Save the changes to the section list.'''
+        if self.section is None:
+            return
+        self.section.subsections = self._sections[:]
 
-    def set_section(self, section: SectionList | None) -> None:
+    def _on_section_change(self) -> None:
         '''Set the displayed section information.'''
-        self._section = section
+        section = self.section
         if section is None:
             self._size_spin_box.setValue(0)
             self._sections = []
@@ -91,13 +95,9 @@ class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
         self._update_member_list()
         self._on_change()
 
-    def get_section(self) -> SectionList | None:
-        '''Get the currently displayed section.'''
-        return self._section
-
     def has_changes(self) -> bool:
         '''Check if there are unsaved changes to the section list.'''
-        section = self.get_section()
+        section = self.section
         if section is None:
             print("No section")
             return False
@@ -105,9 +105,7 @@ class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
             print("Size changed")
             return True
         if section.children() != self._sections:
-            print(f"Children changed {section.children()} != {self._sections}")
             return True
-        print(f"No changes {section.children()} != {self._sections}")
         return False
 
     def get_size(self) -> int:
@@ -142,7 +140,7 @@ class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
 
     def _on_change(self) -> None:
         '''Handle changes to the section information.'''
-        current_section = self.get_section()
+        current_section = self.section
         if current_section is None:
             return
 
@@ -160,7 +158,7 @@ class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
 
     def _add_section_object(self, section_type: Type[Section]) -> None:
         '''Add a new section of the given type.'''
-        current_section = self.get_section()
+        current_section = self.section
         if current_section is None:
             return
         number = self._find_free_new_section_number()
