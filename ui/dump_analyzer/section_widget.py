@@ -172,7 +172,7 @@ class SectionWidget(QWidget):
                     self._section_editor = None
                 # Add new section editor
                 assert issubclass(editor_type, SectionDetailsWidgetBase)
-                self._section_editor = editor_type(self) # type: ignore
+                self._section_editor = editor_type(self)
                 layout.addWidget(self._section_editor)
                 self._section_editor.data_changed.connect(self._on_editor_change)
             assert self._section_editor is not None

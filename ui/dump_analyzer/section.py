@@ -46,7 +46,7 @@ class Section(ABC):
     def to_dict(self) -> dict[str, Any]:
         '''Convert the section to a dictionary for JSON serialization.'''
         d ={
-            "type": str(type(self)),
+            "type": type(self).__name__,
             "name": self.name,
             "start": self.start,
             "color": self.color.name() if self.color else None,
@@ -107,8 +107,13 @@ class Section(ABC):
         '''Create a section from a dictionary.'''
         type_name = data.get("type")
         if type_name == "SectionList":
-            s = SectionList.from_dict(data)
+            from .section_list import SectionList
+            t = SectionList
+        elif type_name == "SectionValue":
+            from .section_value import SectionValue
+            t = SectionValue
         else:
             raise ValueError(f"Unknown section type: {type_name}")
+        s = t(name=data["name"], start=data["start"])
         s.load_from_dict(data)
         return s

@@ -1,8 +1,8 @@
 '''Widget to manage sections.'''
 
-from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt
-from PySide6.QtWidgets import (QHBoxLayout, QHeaderView, QToolButton,
-                               QTreeView, QVBoxLayout, QWidget)
+from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt, Signal
+from PySide6.QtWidgets import (QHBoxLayout, QHeaderView, QTreeView,
+                               QVBoxLayout, QWidget)
 
 from .section import Section
 from .section_list import SectionList
@@ -10,6 +10,8 @@ from .section_widget import SectionWidget
 
 
 class SectionsWidget(QWidget):
+    sections_changed = Signal()
+
     def __init__(self, root: SectionList, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._root = root
@@ -18,25 +20,10 @@ class SectionsWidget(QWidget):
         left_panel = QWidget(self)
         left_layout = QVBoxLayout(left_panel)
         left_layout.setContentsMargins(0, 0, 0, 0)
-        buttons = QWidget(self)
-        buttons_layout = QHBoxLayout(buttons)
-        buttons_layout.setContentsMargins(0, 0, 0, 0)
-        buttons_layout.addStretch(1)
-
-        self.add_button = QToolButton(self)
-        self.add_button.setText("➕")
-        self.add_button.clicked.connect(self._add_section)
-        buttons_layout.addWidget(self.add_button)
-
-        self.remove_button = QToolButton(self)
-        self.remove_button.setText("➖")
-        self.remove_button.clicked.connect(self._remove_section)
-
-        buttons_layout.addWidget(self.remove_button)
-        left_layout.addWidget(buttons)
         self._tree_view = QTreeView(self)
         self._tree_view.setHeaderHidden(True)
-        self._tree_view.setModel(SectionsTreeModel(self._root, self))
+        self._tree_view_model = SectionsTreeModel(self._root, self)
+        self._tree_view.setModel(self._tree_view_model)
         self._tree_view.selectionModel().selectionChanged.connect(self._on_tree_selection_changed)
         self._tree_view.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self._tree_view.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
@@ -49,13 +36,14 @@ class SectionsWidget(QWidget):
         layout.addWidget(self._details_widget, 1)
         self._details_widget.section_changed.connect(self._on_section_changed)
 
-        self._tree_view.setCurrentIndex(self._tree_view.model().index(0, 0, QModelIndex()))
+        self._tree_view.setCurrentIndex(self._tree_view_model.index(0, 0, QModelIndex()))
 
     def _on_section_changed(self) -> None:
         '''Handle changes to the section information.'''
         if self._details_widget.section is None:
             return
-        self._tree_view.model().layoutChanged.emit()
+        self._tree_view_model.layoutChanged.emit()
+        self.sections_changed.emit()
 
     def _add_section(self) -> None:
         pass
@@ -66,12 +54,12 @@ class SectionsWidget(QWidget):
         if not index.isValid():
             return
         section = index.internalPointer()
-        parent_index = self._tree_view.model().parent(index) # type: ignore
+        parent_index = self._tree_view_model.parent(index)
         if not parent_index.isValid():
             return
         child = parent_index.internalPointer()
         child.children().remove(section)
-        self._tree_view.model().layoutChanged.emit() # type: ignore
+        self._tree_view_model.layoutChanged.emit()
 
     def _on_tree_selection_changed(self) -> None:
         '''Update the details widget when the selection changes.'''
@@ -82,10 +70,28 @@ class SectionsWidget(QWidget):
         section = index.internalPointer()
         self._details_widget.set_section(section)
 
+    @property
+    def root_section(self) -> SectionList:
+        '''Get the root section of the section tree.'''
+        return self._root
+    @root_section.setter
+    def root_section(self, value: SectionList) -> None:
+        '''Set the root section of the section tree.'''
+        self._root = value
+        self._tree_view_model.set_root(value)
+        self._tree_view.expandAll()
+        self._tree_view.setCurrentIndex(self._tree_view_model.index(0, 0, QModelIndex()))
+
+
 class SectionsTreeModel(QAbstractItemModel):
     def __init__(self, root: Section, parent: QObject | None = None) -> None:
         super().__init__(parent)
+        self.set_root(root)
+
+    def set_root(self, root: Section) -> None:
+        '''Set the root section of the tree model.'''
         self._root = SectionList(name="INVISIBLE_ROOT", start=0, length=0xFFFF, subsections=[root])
+        self.layoutChanged.emit()
 
     def rowCount(self, parent: QModelIndex) -> int: # type: ignore
         if not parent.isValid():

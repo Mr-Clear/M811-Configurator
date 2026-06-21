@@ -1,10 +1,12 @@
 #! /usr/bin/env python3
 ''' Window to show and analyze dumps from the mouse. '''
 
+import json
+import logging
 import sys
 
 from PySide6.QtWidgets import (QApplication, QFileDialog, QMainWindow,
-                               QScrollArea, QVBoxLayout, QWidget)
+                               QMessageBox, QScrollArea, QVBoxLayout, QWidget)
 
 from ui.config import Config
 
@@ -13,6 +15,7 @@ from .hex_viewer import HexViewer
 from .section_list import SectionList
 from .sections_widget import SectionsWidget
 
+logger = logging.getLogger(__name__)
 
 class DumpAnalyzer (QMainWindow):
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -65,6 +68,7 @@ class DumpAnalyzer (QMainWindow):
         layout.addSpacing(4)
 
         self._sections_widget = SectionsWidget(self._root_section, self)
+        self._sections_widget.sections_changed.connect(self._on_section_changed)
         layout.addWidget(self._sections_widget, 0)
 
         self._init_menu()
@@ -74,6 +78,10 @@ class DumpAnalyzer (QMainWindow):
         file = self.menuBar().addMenu("File")
         file_open = file.addAction("Open Dump...")
         file_open.triggered.connect(self._open_dump)
+        file_load_sections = file.addAction("Load Sections...")
+        file_load_sections.triggered.connect(self._load_sections)
+        file_save_sections = file.addAction("Save Sections...")
+        file_save_sections.triggered.connect(self._save_sections)
 
     def _get_byte_values(self, byte_index: int) -> tuple[int | None, int | None]:
         '''Get the byte value and the next byte value for a given byte index.'''
@@ -108,6 +116,34 @@ class DumpAnalyzer (QMainWindow):
                 self._data = f.read()
             self._hex_viewer.set_data(self._data)
             self._config.last_opened_dump = file_name
+
+    def _load_sections(self) -> None:
+        '''Load sections from a JSON file.'''
+        file_name, _ = QFileDialog.getOpenFileName(self, "Load Sections", "", "JSON Files (*.json)")
+        if file_name:
+            try:
+                with open(file_name, "r") as f:
+                    section_list = SectionList.from_dict(json.load(f))
+                assert isinstance(section_list, SectionList)
+                self._sections_widget.root_section = section_list
+            except Exception as e:
+                logger.error(f"Failed to load sections: {e}")
+                QMessageBox.critical(self, "Error", f"Failed to load sections: {e}")
+
+    def _save_sections(self) -> None:
+        '''Save sections to a JSON file.'''
+        file_name, _ = QFileDialog.getSaveFileName(self, "Save Sections", "", "JSON Files (*.json)")
+        if file_name:
+            try:
+                with open(file_name, "w") as f:
+                    json.dump(self._sections_widget.root_section.to_dict(), f, indent=4)
+            except Exception as e:
+                logger.error(f"Failed to save sections: {e}")
+                QMessageBox.critical(self, "Error", f"Failed to save sections: {e}")
+
+    def _on_section_changed(self) -> None:
+        '''Handle changes to the section information.'''
+        self._config.sections = self._sections_widget.root_section
 
 def start_app() -> int:
     '''Creates the main window and starts the application event loop.'''
