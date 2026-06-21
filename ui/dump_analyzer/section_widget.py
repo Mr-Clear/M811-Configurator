@@ -19,7 +19,8 @@ def _editor_for_type(section_type: type[Section]) -> type[SectionDetailsWidgetBa
         from .section_list_widget import SectionListWidget
         return SectionListWidget
     elif issubclass(section_type, SectionValue):
-        raise NotImplementedError("SectionValue editor is not implemented yet.")
+        from .section_value_widget import SectionValueWidget
+        return SectionValueWidget
     else:
         raise ValueError(f"Unknown section type: {section_type}")
 
