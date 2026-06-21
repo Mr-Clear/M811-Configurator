@@ -11,6 +11,12 @@ from PySide6.QtWidgets import QWidget
 
 from ui.config import Config
 
+def _blend_color(color1: QColor, color2: QColor, ratio: float = 0.5) -> QColor:
+    r = int(color1.red() * (1 - ratio) + color2.red() * ratio)
+    g = int(color1.green() * (1 - ratio) + color2.green() * ratio)
+    b = int(color1.blue() * (1 - ratio) + color2.blue() * ratio)
+    return QColor(r, g, b)
+
 class HexViewer(QWidget):
     byte_hovered = Signal(int)
     byte_hovered_leave = Signal()
@@ -219,13 +225,18 @@ class HexViewer(QWidget):
 
             for i, b in enumerate(line_data):
                 byte_idx = line + i
-                color = self._colors[self.Colors.NORMAL]
-                if byte_idx == self._hover_byte:
-                    color = self._colors[self.Colors.HOVER]
-                elif byte_idx == self._selected_byte:
-                    color = self._colors[self.Colors.SELECTED]
-                elif b == 0:
+                if b == 0:
                     color = self._colors[self.Colors.NULL_VALUE]
+                else:
+                    color = self._colors[self.Colors.NORMAL]
+                hovered = byte_idx == self._hover_byte
+                selected = byte_idx == self._selected_byte
+                if hovered and selected:
+                    color = _blend_color(self._colors[self.Colors.HOVER], self._colors[self.Colors.SELECTED])
+                elif hovered:
+                    color = self._colors[self.Colors.HOVER]
+                elif selected:
+                    color = self._colors[self.Colors.SELECTED]
                 painter.setPen(color)
                 pos = self._get_hex_position(byte_idx)
                 painter.drawText(pos, f'{b:02X}')
