@@ -1,5 +1,6 @@
 '''Widget for displaying and editing a Section.'''
 
+from __future__ import annotations
 from abc import abstractmethod
 from typing import Generic, TypeVar
 
