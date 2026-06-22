@@ -5,7 +5,8 @@ from abc import abstractmethod
 from typing import Generic, TypeVar
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import (QHBoxLayout, QLabel, QLineEdit, QPushButton,
+from PySide6.QtGui import QColor, QFontMetrics
+from PySide6.QtWidgets import (QColorDialog, QHBoxLayout, QLabel, QLineEdit, QPushButton,
                                QSpinBox, QToolButton, QVBoxLayout, QWidget)
 
 from .section import Section
@@ -34,7 +35,7 @@ class SectionWidget(QWidget):
         self._name_text: QLineEdit
         self._start_spin_box: QSpinBox
         self._size_label: QLabel
-        self._color_text: QLineEdit
+        self._color_label: QLineEdit
         self._end_label: QLabel
         self._save_button: QPushButton
         self._discard_button: QPushButton
@@ -42,6 +43,7 @@ class SectionWidget(QWidget):
         self._section_editor: SectionDetailsWidgetBase[Section] | None = None
         self._size_is_hex = True
         self._end_is_hex = True
+        self._current_color: QColor | None = None
         self._init_ui()
 
     def _init_ui(self) -> None:
@@ -57,11 +59,19 @@ class SectionWidget(QWidget):
         self._name_text = QLineEdit(self)
         self._name_text.textChanged.connect(self._on_change)
         layout.addWidget(self._name_text)
-        self._color_text = QLineEdit(self)
-        self._color_text.textChanged.connect(self._on_change)
         layout.addSpacing(8)
         layout.addWidget(QLabel("Color:", self))
-        layout.addWidget(self._color_text)
+        self._color_label = QLabel(self)
+        self._color_label.setFont(monospace_font)
+        self._color_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        self._color_label.setFrameStyle(QLabel.Shape.Panel | QLabel.Shadow.Raised)
+        self._color_label.setStyleSheet('background-color: transparent')
+        self._color_label.setMinimumWidth(QFontMetrics(self._color_label.font()).horizontalAdvance("0xFFFFFF00"))
+        layout.addWidget(self._color_label)
+        self._color_button = QToolButton(self)
+        self._color_button.setText("...")
+        self._color_button.clicked.connect(self._on_color_button_clicked)
+        layout.addWidget(self._color_button)
         main_layout.addLayout(layout)
 
         # Col 2: Start, size and end
@@ -140,14 +150,16 @@ class SectionWidget(QWidget):
             self._name_text.setText("")
             self._start_spin_box.setValue(0)
             self._size_label.setText('')
-            self._color_text.setText('')
+            self._color_label.setText('')
             self._end_label.setText('')
+            self._current_color = None
             enabled = False
         else:
             self._name_text.setText(f"{section.name}")
             self._start_spin_box.setValue(section.start)
             self._start_spin_box.setMinimum(section.parent.start if section.parent else 0)
             self._start_spin_box.setMaximum(section.parent.end - 1 if section.parent else 0xFFFF)
+            self._current_color = section.color
 
             editor_type = _editor_for_type(type(section))
             if editor_type != type(self._section_editor):
@@ -167,11 +179,12 @@ class SectionWidget(QWidget):
             self._update_size_and_end()
             self._section_editor.section = section
             enabled = True
+        self._update_color_label()
 
         self._name_text.setEnabled(enabled)
         self._start_spin_box.setEnabled(enabled)
         self._size_label.setEnabled(enabled)
-        self._color_text.setEnabled(enabled)
+        self._color_label.setEnabled(enabled)
 
     @property
     def section(self) -> Section | None:
@@ -196,6 +209,15 @@ class SectionWidget(QWidget):
         '''Toggle the end text between hex and decimal.'''
         self._end_is_hex = is_hex
         self._update_size_and_end()
+
+    def _update_color_label(self):
+        '''Updates the color label.'''
+        color_name = self._current_color.name() if self._current_color else 'None'
+        if self._current_color and self._current_color.alpha() < 255:
+            color_name += f"{self._current_color.alpha():02X}"
+        self._color_label.setText(color_name)
+        self._color_label.setStyleSheet(f"background-color: {self._current_color.name() if self._current_color else 'transparent'}")
+        self._color_button.setEnabled(True)
 
     def _on_editor_change(self) -> None:
         '''Handle changes from the section editor widget.'''
@@ -231,10 +253,9 @@ class SectionWidget(QWidget):
             name = self._name_text.text()
             start = int(self._start_spin_box.text(), 16)
             size = self._section.size
-            color_text = self._color_text.text()
             self._end_label.setText(f"0x{start + size:X}")
             s = self._section
-            if s.name != name or s.start != start or s.size != size:
+            if s.name != name or s.start != start or s.size != size or s.color != self._current_color:
                 parent_start = self._section.parent.start if self._section.parent else 0
                 parent_end = self._section.parent.end if self._section.parent else 0xFFFF
                 if start < parent_start or start + size > parent_end:
@@ -258,6 +279,7 @@ class SectionWidget(QWidget):
         self._section_editor.save_section()
         self._section.name = self._name_text.text()
         self._section.start = int(self._start_spin_box.text(), 16)
+        self._section.color = self._current_color
         self.section_changed.emit()
         self._on_change()
 
@@ -266,6 +288,20 @@ class SectionWidget(QWidget):
         if self._section is None:
             return
         self.set_section(self._section)
+
+    def _on_color_button_clicked(self) -> None:
+        '''Handle the color button click event.'''
+        if self._section is None:
+            return
+        c = self._section.color if self._section.color else QColor(255, 255, 255)
+        f = QColorDialog.ShowAlphaChannel | QColorDialog.DontUseNativeDialog
+        color = QColorDialog.getColor(c, self, "Segment Color", f)
+        if color.isValid():
+            if color.alpha() == 0:
+                color = None
+            self._current_color = color
+            self._update_color_label()
+            self._on_change()
 
 class HexDecSwitchWidget(QToolButton):
     toggle_signal = Signal(bool)
