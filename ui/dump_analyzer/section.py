@@ -115,5 +115,6 @@ class Section(ABC):
         else:
             raise ValueError(f"Unknown section type: {type_name}")
         s = t(name=data["name"], start=data["start"])
+        s.color = QColor(data["color"]) if data.get("color") else None
         s.load_from_dict(data)
         return s
