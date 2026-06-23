@@ -3,7 +3,6 @@
 
 import json
 import logging
-import os
 import sys
 
 from PySide6.QtGui import QAction
@@ -31,6 +30,7 @@ class DumpAnalyzer (QMainWindow):
         self.file_write_usb: QAction
 
         self._init_ui()
+        self._hex_viewer.set_root_section(self._root_section)
 
         if self._config.last_opened_dump:
             try:
@@ -38,7 +38,7 @@ class DumpAnalyzer (QMainWindow):
                     self._data = f.read()
                 self._hex_viewer.data = self._data
             except Exception as e:
-                print(f"Failed to load last opened dump: {e}")
+                logger.error(f"Failed to load last opened dump: {e}")
         if not hasattr(self, "_data") or not self._data:
             self._data = bytes(i % 256 for i in range(0x1C00))
         self._hex_viewer.data = self._data
@@ -181,6 +181,7 @@ class DumpAnalyzer (QMainWindow):
     def _on_section_changed(self) -> None:
         '''Handle changes to the section information.'''
         self._config.sections = self._sections_widget.root_section
+        self._hex_viewer.repaint()
 
 def start_app() -> int:
     '''Creates the main window and starts the application event loop.'''

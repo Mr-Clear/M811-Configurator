@@ -35,7 +35,7 @@ class SectionWidget(QWidget):
         self._name_text: QLineEdit
         self._start_spin_box: QSpinBox
         self._size_label: QLabel
-        self._color_label: QLineEdit
+        self._color_label: QLabel
         self._end_label: QLabel
         self._save_button: QPushButton
         self._discard_button: QPushButton
@@ -294,7 +294,8 @@ class SectionWidget(QWidget):
         if self._section is None:
             return
         c = self._section.color if self._section.color else QColor(255, 255, 255)
-        f = QColorDialog.ShowAlphaChannel | QColorDialog.DontUseNativeDialog
+        f = QColorDialog.ColorDialogOption.ShowAlphaChannel | \
+            QColorDialog.ColorDialogOption.DontUseNativeDialog
         color = QColorDialog.getColor(c, self, "Segment Color", f)
         if color.isValid():
             if color.alpha() == 0:

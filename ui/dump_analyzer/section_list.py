@@ -78,3 +78,19 @@ class SectionList(Section):
         self.length = data["size"]
         self.subsections = [Section.from_dict(subsection)
                             for subsection in data.get("subsections", [])]
+        for subsection in self.subsections:
+            subsection.parent = self
+
+
+    def find_descendant(self, position: int) -> Section | None:
+        '''Find the descendant section that contains the given position.'''
+        if not self.contains_index(position):
+            return None
+        for subsection in self.subsections:
+            if subsection.contains_index(position):
+                if isinstance(subsection, SectionList):
+                    descendant = subsection.find_descendant(position)
+                    if descendant is not None:
+                        return descendant
+                return subsection
+        return self

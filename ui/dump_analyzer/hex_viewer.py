@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from enum import Enum
+from functools import cached_property
 
 from PySide6.QtCore import QEvent, QPoint, QPointF, QSize, QTimer, Signal
 from PySide6.QtGui import (QColor, QCursor, QFont, QFontMetrics, QKeyEvent,
@@ -11,6 +12,9 @@ from PySide6.QtWidgets import QScrollArea, QWidget
 
 from ui.config import Config
 
+from .section import Section
+from .section_list import SectionList
+
 NUMBER_KEYS = set(range(Qt.Key.Key_0, Qt.Key.Key_9 + 1))
 LETTER_KEYS = set(range(Qt.Key.Key_A, Qt.Key.Key_F + 1))
 HEX_EDIT_KEYS = NUMBER_KEYS.union(LETTER_KEYS)
@@ -19,7 +23,8 @@ def _blend_color(color1: QColor, color2: QColor, ratio: float = 0.5) -> QColor:
     r = int(color1.red() * (1 - ratio) + color2.red() * ratio)
     g = int(color1.green() * (1 - ratio) + color2.green() * ratio)
     b = int(color1.blue() * (1 - ratio) + color2.blue() * ratio)
-    return QColor(r, g, b)
+    a = int(color1.alpha() * (1 - ratio) + color2.alpha() * ratio)
+    return QColor(r, g, b, a)
 
 class HexViewer(QWidget):
     byte_hovered = Signal(int)
@@ -34,7 +39,7 @@ class HexViewer(QWidget):
         CHANGED = 4
 
     @dataclass
-    class SizeHint:
+    class _SizeHint:
         width: int
         height: int
         bytes_per_line: int
@@ -48,7 +53,7 @@ class HexViewer(QWidget):
         self._data = bytearray()
         self._config = Config.instance()
         self._padding = 4
-        self._current_size_hint: HexViewer.SizeHint = HexViewer.SizeHint(0, 0, 0)
+        self._current_size_hint: HexViewer._SizeHint = HexViewer._SizeHint(0, 0, 0)
         self._start_address: int = 0
         self._end_address: int = 0
         self._start_hex: int = 0
@@ -59,6 +64,7 @@ class HexViewer(QWidget):
         self._selected_byte: int | None = None
         self._colors: dict[HexViewer.Colors, QColor] = {}
         self._edit_cursor_pos = 0
+        self._root_section: SectionList | None = None
 
         self.resize(800, 600)
         font = self.font()
@@ -67,6 +73,12 @@ class HexViewer(QWidget):
         self.setFont(font)
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
+
+        self._char_width = self.fontMetrics().horizontalAdvance('0')
+        self._char_height = self.fontMetrics().height()
+        self._char_ascent = self.fontMetrics().ascent()
+        self._hex_width = self._char_width * 2
 
     @property
     def data(self) -> memoryview:
@@ -130,6 +142,10 @@ class HexViewer(QWidget):
             parent = parent.parentWidget()
         return None
 
+    def set_root_section(self, section: SectionList) -> None:
+        self._root_section = section
+        self.repaint()
+
     def _init_colors(self) -> None:
         colors = self._config.hex_viewer_colors
         if colors:
@@ -147,7 +163,7 @@ class HexViewer(QWidget):
             self._colors[HexViewer.Colors.CHANGED] = palette.color(QPalette.ColorRole.Link)
         self._config.hex_viewer_colors = {k.name.lower(): v.name() for k, v in self._colors.items()}
 
-    def _calculate_size(self) -> SizeHint:
+    def _calculate_size(self) -> _SizeHint:
         font_metrics = QFontMetrics(self.font())
         test_sizes: list[tuple[int, int]] = []
         for e in range(1, 10):
@@ -155,7 +171,6 @@ class HexViewer(QWidget):
             test_string = '0000: '
             for _ in range(elements):
                 test_string += '00 '
-            test_string += ' '
             test_string += ' ' * elements
             size = font_metrics.size(0, test_string)
             test_sizes.append((elements, size.width()))
@@ -171,7 +186,7 @@ class HexViewer(QWidget):
         line_height = font_metrics.height()
         lines = (len(self._data) + count - 1) // count
         height = lines * line_height + 2 * self._padding
-        self._current_size_hint = self.SizeHint(last_width + 2 * self._padding, height, count)
+        self._current_size_hint = self._SizeHint(last_width + 2 * self._padding, height, count)
         return self._current_size_hint
 
     def _get_hex_position(self, pos: int) -> QPoint:
@@ -179,15 +194,15 @@ class HexViewer(QWidget):
         line = pos // size_hint.bytes_per_line
         column = pos % size_hint.bytes_per_line
         x = self._start_hex + column * self.fontMetrics().horizontalAdvance('00 ')
-        y = line * self.fontMetrics().height() + self.fontMetrics().ascent() + self._padding
+        y = line * self.fontMetrics().height() + self._char_ascent + self._padding
         return QPoint(x, y)
 
     def _get_ascii_position(self, pos: int) -> QPoint:
         size_hint = self._current_size_hint
         line = pos // size_hint.bytes_per_line
         column = pos % size_hint.bytes_per_line
-        x = self._start_ascii + column * self.fontMetrics().horizontalAdvance(' ')
-        y = line * self.fontMetrics().height() + self.fontMetrics().ascent() + self._padding
+        x = self._start_ascii + column * self._char_width
+        y = line * self.fontMetrics().height() + self._char_ascent + self._padding
         return QPoint(x, y)
 
     def _check_hover_byte(self, point: QPoint | QPointF) -> None:
@@ -214,6 +229,14 @@ class HexViewer(QWidget):
                 self.byte_hovered_leave.emit()
             self.repaint()
 
+    def _sections_for_byte_index(self, byte_idx: int) -> list[Section]:
+        if self._root_section is None:
+            return []
+        section = self._root_section.find_descendant(byte_idx)
+        if section is None:
+            return []
+        return section.ancestors + [section]
+
     def sizeHint(self) -> QSize:
         return self._current_size_hint.size
 
@@ -227,7 +250,7 @@ class HexViewer(QWidget):
         self._start_hex = self._end_address + space_width
         hex_byte_width = font_metrics.horizontalAdvance('00 ')
         self._end_hex = self._start_hex + hex_byte_width * self._current_size_hint.bytes_per_line
-        self._start_ascii = self._end_hex + space_width
+        self._start_ascii = self._end_hex
         ascii_byte_width = font_metrics.horizontalAdvance('X')
         self._end_ascii = self._start_ascii + \
                           ascii_byte_width * self._current_size_hint.bytes_per_line
@@ -242,55 +265,163 @@ class HexViewer(QWidget):
         self._init_colors()
         super().showEvent(event)
 
+    @dataclass
+    class _PaintInfo:
+        outer: HexViewer
+        line_data: memoryview
+        painter: QPainter
+        line: int
+        col: int
+
+        @cached_property
+        def byte_index(self) -> int:
+            return self.line * self.outer._current_size_hint.bytes_per_line + self.col
+
+        @cached_property
+        def hex_pos(self) -> QPoint:
+            return self.outer._get_hex_position(self.byte_index)
+
+        @cached_property
+        def ascii_pos(self) -> QPoint:
+            return self.outer._get_ascii_position(self.byte_index)
+
+        @cached_property
+        def sections(self) -> list[Section]:
+            return self.outer._sections_for_byte_index(self.byte_index)
+        @property
+        def top_section(self) -> Section | None:
+            return self.sections[-1] if self.sections else None
+
+        @property
+        def last_column(self) -> bool:
+            return self.col == len(self.line_data) - 1
+
+        def same_left(self, level: int = -1) -> bool:
+            if self.col == 0 or self.top_section is None:
+                return False
+            return self.sections[level].contains_index(self.byte_index - 1)
+
+        def same_right(self, level: int = -1) -> bool:
+            if self.last_column or self.top_section is None:
+                return False
+            return self.sections[level].contains_index(self.byte_index + 1)
+
+        def same_up(self, level: int = -1) -> bool:
+            if self.top_section is None:
+                return False
+            size_hint = self.outer._current_size_hint
+            return self.sections[level].contains_index(self.byte_index - size_hint.bytes_per_line)
+
+        def same_down(self, level: int = -1) -> bool:
+            if self.top_section is None:
+                return False
+            size_hint = self.outer._current_size_hint
+            return self.sections[level].contains_index(self.byte_index + size_hint.bytes_per_line)
+
+
     def paintEvent(self, event: QPaintEvent) -> None:
         '''Paint the hex viewer.'''
         painter = QPainter(self)
         painter.setFont(self.font())
+        data = memoryview(self._data)
 
         range_start = self.get_byte_index_at_position(event.rect().topLeft(), True) or 0
         range_start = max(range_start - self._current_size_hint.bytes_per_line, 0)
-        range_end = self.get_byte_index_at_position(event.rect().bottomRight(), True) or len(self._data)
-        range_end = min(range_end + self._current_size_hint.bytes_per_line, len(self._data))
+        range_end = self.get_byte_index_at_position(event.rect().bottomRight(), True) or len(data)
+        range_end = min(range_end + self._current_size_hint.bytes_per_line, len(data))
 
         size_hint = self._calculate_size()
         for line in range(range_start, range_end, size_hint.bytes_per_line):
             y = (line // size_hint.bytes_per_line) * painter.fontMetrics().height() + \
-                painter.fontMetrics().ascent() + self._padding
-            line_data = self._data[line:line+size_hint.bytes_per_line]
+                self._char_ascent + self._padding
+            line_data = data[line:line+size_hint.bytes_per_line]
             start_text = f'{line:04X}: '
             painter.drawText(self._padding, y, start_text)
 
-            for i, b in enumerate(line_data):
-                byte_idx = line + i
-                if b == 0:
-                    color = self._colors[self.Colors.NULL_VALUE]
-                else:
-                    color = self._colors[self.Colors.NORMAL]
-                hovered = byte_idx == self._hover_byte
-                selected = byte_idx == self._selected_byte
-                if hovered and selected:
-                    color = _blend_color(self._colors[self.Colors.HOVER], self._colors[self.Colors.SELECTED])
-                elif hovered:
-                    color = self._colors[self.Colors.HOVER]
-                elif selected:
-                    color = self._colors[self.Colors.SELECTED]
+            for i in range(len(line_data)):
+                info = self._PaintInfo(self, line_data, painter, line // size_hint.bytes_per_line, i)
+                self.paint_background(info)
 
-                if self._data_source[byte_idx] != b:
-                    color = _blend_color(color, self._colors[self.Colors.CHANGED], 0.7)
+            for i in range(len(line_data)):
+                info = self._PaintInfo(self, line_data, painter, line // size_hint.bytes_per_line, i)
+                self.paint_border(info)
+                self.paint_text(info)
 
-                painter.setPen(color)
-                pos = self._get_hex_position(byte_idx)
-                painter.drawText(pos, f'{b:02X}')
-
-                if selected and self.hasFocus():
-                    cursor_x = pos.x() + (self.fontMetrics().horizontalAdvance('0') if self._edit_cursor_pos == 1 else 0)
-                    cursor_y = pos.y() - self.fontMetrics().ascent()
-                    painter.drawLine(cursor_x, cursor_y, cursor_x, cursor_y + self.fontMetrics().height())
-
-                pos = self._get_ascii_position(byte_idx)
-                char = chr(b) if 32 <= b < 127 else '.'
-                painter.drawText(pos, char)
             painter.setPen(self._colors[self.Colors.NORMAL])
+
+    def paint_background(self, info: _PaintInfo) -> None:
+        for level, section in enumerate(info.sections):
+            color = section.color
+            if color:
+                back_color = _blend_color(color, self.palette().color(QPalette.ColorRole.Window), 0.8)
+                info.painter.setBrush(back_color)
+                d = self._char_width - 1 if info.same_right(level) else 0
+                info.painter.fillRect(info.hex_pos.x(), info.hex_pos.y() - self._char_ascent,
+                                      self._hex_width + d, self._char_height, back_color)
+                info.painter.fillRect(info.ascii_pos.x(), info.ascii_pos.y() - self._char_ascent,
+                                    self._char_width, self._char_height, back_color)
+
+    def paint_border(self, info: _PaintInfo) -> None:
+        for level, section in enumerate(info.sections):
+            color = section.color
+            if color:
+                info.painter.setPen(color)
+                width = self._hex_width
+                if not info.last_column and info.same_right(level):
+                    width += self._char_width
+                if not info.same_left(level):
+                    info.painter.drawLine(info.hex_pos.x(), info.hex_pos.y() - self._char_ascent,
+                                          info.hex_pos.x(), info.hex_pos.y() - self._char_ascent + self._char_height - 1)
+                    info.painter.drawLine(info.ascii_pos.x(), info.ascii_pos.y() - self._char_ascent,
+                                          info.ascii_pos.x(), info.ascii_pos.y() - self._char_ascent + self._char_height - 1)
+                if not info.same_up(level):
+                    info.painter.drawLine(info.hex_pos.x(), info.hex_pos.y() - self._char_ascent,
+                                          info.hex_pos.x() + width, info.hex_pos.y() - self._char_ascent)
+                    info.painter.drawLine(info.ascii_pos.x(), info.ascii_pos.y() - self._char_ascent,
+                                          info.ascii_pos.x() + self._char_width, info.ascii_pos.y() - self._char_ascent)
+                if not info.same_right(level):
+                    info.painter.drawLine(info.hex_pos.x() + width, info.hex_pos.y() - self._char_ascent,
+                                          info.hex_pos.x() + width, info.hex_pos.y() - self._char_ascent + self._char_height - 1)
+                    info.painter.drawLine(info.ascii_pos.x() + self._char_width, info.ascii_pos.y() - self._char_ascent,
+                                          info.ascii_pos.x() + self._char_width, info.ascii_pos.y() - self._char_ascent + self._char_height - 1)
+                if not info.same_down(level):
+                    down_left = self._sections_for_byte_index(info.byte_index + self._current_size_hint.bytes_per_line - 1)
+                    same_down_left = info.same_left(level) and section in down_left
+                    d = self._char_width - 1 if info.same_left(level) and same_down_left else 0
+                    info.painter.drawLine(info.hex_pos.x() - d, info.hex_pos.y() - self._char_ascent + self._char_height - 1,
+                                          info.hex_pos.x() + width + d, info.hex_pos.y() - self._char_ascent + self._char_height - 1)
+                    info.painter.drawLine(info.ascii_pos.x(), info.ascii_pos.y() - self._char_ascent + self._char_height - 1,
+                                          info.ascii_pos.x() + self._char_width, info.ascii_pos.y() - self._char_ascent + self._char_height - 1)
+
+    def paint_text(self, info: _PaintInfo) -> None:
+        b = info.line_data[info.col]
+        if b == 0:
+            text_color = self._colors[self.Colors.NULL_VALUE]
+        else:
+            text_color = self._colors[self.Colors.NORMAL]
+        hovered = info.byte_index == self._hover_byte
+        selected = info.byte_index == self._selected_byte
+        if hovered and selected:
+            text_color = _blend_color(self._colors[self.Colors.HOVER], self._colors[self.Colors.SELECTED])
+        elif hovered:
+            text_color = self._colors[self.Colors.HOVER]
+        elif selected:
+            text_color = self._colors[self.Colors.SELECTED]
+
+        if self._data_source[info.byte_index] != b:
+            text_color = _blend_color(text_color, self._colors[self.Colors.CHANGED], 0.7)
+
+        info.painter.setPen(text_color)
+        info.painter.drawText(info.hex_pos, f'{b:02X}')
+
+        if selected and self.hasFocus():
+            cursor_x = info.hex_pos.x() + (self._char_width if self._edit_cursor_pos == 1 else 0)
+            cursor_y = info.hex_pos.y() - self._char_ascent
+            info.painter.drawLine(cursor_x, cursor_y, cursor_x, cursor_y + self._char_height)
+
+        char = chr(b) if 32 <= b < 127 else '.'
+        info.painter.drawText(info.ascii_pos, char)
+
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         self._check_hover_byte(event.position())

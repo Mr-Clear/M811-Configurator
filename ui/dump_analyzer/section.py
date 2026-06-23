@@ -102,6 +102,13 @@ class Section(ABC):
         '''Get the absolute end of this section.'''
         return self.absolute_start + self.size
 
+    @property
+    def ancestors(self) -> list[SectionList]:
+        '''Get a list of ancestor sections, starting with the root and ending with the parent.'''
+        if self.parent is None:
+            return []
+        return self.parent.ancestors + [self.parent]
+
     @staticmethod
     def from_dict(data: dict[str, Any]) -> Section:
         '''Create a section from a dictionary.'''
