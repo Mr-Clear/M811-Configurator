@@ -2,9 +2,14 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from dataclasses import asdict
+from typing import TYPE_CHECKING, Any
 
-from ui.dump_analyzer.section_list import SectionList
+from .dump_analyzer.section_list import SectionList
+
+if TYPE_CHECKING:
+    from .dump_analyzer.dump_analyzer import VisibleDetailBytes
+    from .dump_analyzer.byte_info_widget import ByteInfoWidget
 
 class Config:
     _FILE_PATH: str = "config.json"
@@ -44,9 +49,9 @@ class Config:
         self._save()
 
     @property
-    def hex_viewer_colors(self) -> dict[str, str] | None:
+    def hex_viewer_colors(self) -> dict[str, str]:
         '''Get the colors for the hex viewer.'''
-        return self.data.get("hex_viewer_colors")
+        return self.data.get("hex_viewer_colors", {})
     @hex_viewer_colors.setter
     def hex_viewer_colors(self, colors: dict[str, str]) -> None:
         '''Set the colors for the hex viewer.'''
@@ -66,6 +71,38 @@ class Config:
     def sections(self, root: SectionList) -> None:
         '''Set the sections defined in the configuration.'''
         self.data["sections"] = root.to_dict()
+        self._save()
+
+    @property
+    def visible_detail_bytes(self) -> VisibleDetailBytes:
+        '''Get the visible detail bytes defined in the configuration.'''
+        from .dump_analyzer.dump_analyzer import VisibleDetailBytes
+        if "visible_detail_bytes" not in self.data:
+            return VisibleDetailBytes()
+        return VisibleDetailBytes(**self.data["visible_detail_bytes"])
+    @visible_detail_bytes.setter
+    def visible_detail_bytes(self, details: VisibleDetailBytes) -> None:
+        '''Set the visible detail bytes defined in the configuration.'''
+        self.data["visible_detail_bytes"] = asdict(details)
+        self._save()
+
+    @property
+    def visible_details(self) -> set[ByteInfoWidget.Elements]:
+        '''Get the visible details defined in the configuration.'''
+        from .dump_analyzer.byte_info_widget import ByteInfoWidget
+        defaults = {ByteInfoWidget.Elements.TITLE, ByteInfoWidget.Elements.HEX1, ByteInfoWidget.Elements.DEC1, ByteInfoWidget.Elements.BIN1}
+        if "details" not in self.data:
+            return defaults
+        d: dict[str, bool] = self.data["details"]
+        return {element for element in ByteInfoWidget.Elements if d.get(element.name.lower(), element in defaults)}
+    @visible_details.setter
+    def visible_details(self, details: set[ByteInfoWidget.Elements]) -> None:
+        '''Set the visible details defined in the configuration.'''
+        from .dump_analyzer.byte_info_widget import ByteInfoWidget
+        d: dict[str, bool] = {}
+        for element in ByteInfoWidget.Elements:
+            d[element.name.lower()] = element in details
+        self.data["details"] = d
         self._save()
 
     @property
