@@ -148,20 +148,28 @@ class HexViewer(QWidget):
 
     def _init_colors(self) -> None:
         colors = self._config.hex_viewer_colors
-        if colors:
-            self._colors[self.Colors.NORMAL] = QColor(colors.get("normal", "#000000"))
-            self._colors[self.Colors.HOVER] = QColor(colors.get("hover", "#0000FF"))
-            self._colors[self.Colors.SELECTED] = QColor(colors.get("selected", "#FFFF00"))
-            self._colors[self.Colors.NULL_VALUE] = QColor(colors.get("null_value", "#888888"))
-            self._colors[self.Colors.CHANGED] = QColor(colors.get("changed", "#FF0000"))
-        else:
-            palette = self.palette()
-            self._colors[HexViewer.Colors.NORMAL] = palette.color(QPalette.ColorRole.WindowText)
-            self._colors[HexViewer.Colors.HOVER] = palette.color(QPalette.ColorRole.Highlight)
-            self._colors[HexViewer.Colors.SELECTED] = palette.color(QPalette.ColorRole.PlaceholderText)
-            self._colors[HexViewer.Colors.NULL_VALUE] = palette.color(QPalette.ColorRole.Dark)
-            self._colors[HexViewer.Colors.CHANGED] = palette.color(QPalette.ColorRole.Link)
+        palette = self.palette()
+        defaults: dict[HexViewer.Colors, QColor] = {
+            self.Colors.NORMAL: palette.color(QPalette.ColorRole.WindowText),
+            self.Colors.HOVER: palette.color(QPalette.ColorRole.Highlight),
+            self.Colors.SELECTED: palette.color(QPalette.ColorRole.PlaceholderText),
+            self.Colors.NULL_VALUE: palette.color(QPalette.ColorRole.Dark),
+            self.Colors.CHANGED: palette.color(QPalette.ColorRole.Link),
+        }
+        for color in HexViewer.Colors:
+            color_name = color.name.lower()
+            if color_name in colors and colors[color_name]:
+                self._colors[color] = QColor(colors[color_name])
+            else:
+                self._colors[color] = defaults[color]
         self._config.hex_viewer_colors = {k.name.lower(): v.name() for k, v in self._colors.items()}
+
+    def set_color(self, color: HexViewer.Colors, value: QColor) -> None:
+        self._colors[color] = value
+        color_config = self._config.hex_viewer_colors
+        color_config[color.name.lower()] = value.name()
+        self._config.hex_viewer_colors = color_config
+        self.repaint()
 
     def _calculate_size(self) -> _SizeHint:
         font_metrics = QFontMetrics(self.font())
@@ -347,7 +355,7 @@ class HexViewer(QWidget):
                 self.paint_border(info)
                 self.paint_text(info)
 
-            painter.setPen(self._colors[self.Colors.NORMAL])
+            painter.setPen(self.palette().color(QPalette.ColorRole.WindowText))
 
     def paint_background(self, info: _PaintInfo) -> None:
         for level, section in enumerate(info.sections):

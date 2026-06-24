@@ -27,7 +27,7 @@ class DumpAnalyzer (QMainWindow):
         self._root_section: SectionList = self._config.sections
         self._hex_viewer: HexViewer
         self._sections_widget: SectionsWidget
-        self.file_write_usb: QAction
+        self._menues: SimpleNamespace
 
         self._init_ui()
         self._hex_viewer.set_root_section(self._root_section)
@@ -79,20 +79,40 @@ class DumpAnalyzer (QMainWindow):
 
     def _init_menu(self) -> None:
         '''Initialize the menu bar.'''
-        file = self.menuBar().addMenu("File")
-        file.aboutToShow.connect(self._on_file_menu_show)
-        file_open = file.addAction("Open Dump...")
-        file_open.triggered.connect(self._open_dump)
-        file_read_usb = file.addAction("Read from USB")
-        file_read_usb.triggered.connect(self._read_from_usb)
-        self.file_write_usb = file.addAction("Write to USB")
-        self.file_write_usb.triggered.connect(self._write_to_usb)
-        file.addSeparator()
-        file_load_sections = file.addAction("Load Sections...")
-        file_load_sections.triggered.connect(self._load_sections)
-        file_save_sections = file.addAction("Save Sections...")
-        file_save_sections.triggered.connect(self._save_sections)
+        m = SimpleNamespace()
+        m.file = self.menuBar().addMenu("File")
+        m.file.aboutToShow.connect(self._on_file_menu_show)
+        m.file_open = m.file.addAction("Open Dump...")
+        m.file_open.triggered.connect(self._open_dump)
+        m.file_read_usb = m.file.addAction("Read from USB")
+        m.file_read_usb.triggered.connect(self._read_from_usb)
+        m.file_write_usb = m.file.addAction("Write to USB")
+        m.file_write_usb.triggered.connect(self._write_to_usb)
+        m.file.addSeparator()
+        m.file_load_sections = m.file.addAction("Load Sections...")
+        m.file_load_sections.triggered.connect(self._load_sections)
+        m.file_save_sections = m.file.addAction("Save Sections...")
+        m.file_save_sections.triggered.connect(self._save_sections)
 
+        m.view = self.menuBar().addMenu("View")
+
+        m.view_colors = m.view.addMenu("Colors")
+        def add_color_action(name: str, color: HexViewer.Colors) -> QAction:
+            action = m.view_colors.addAction(name)
+            color_name = color.name.lower()
+            action.setChecked(self._config.hex_viewer_colors.get(color_name, "") != "")
+            def on_click() -> None:
+                old_color = self._config.hex_viewer_colors.get(color_name, "")
+                new_color = QColorDialog.getColor(old_color, self, f"Select color for {name}")
+                if new_color and new_color.isValid():
+                    self._hex_viewer.set_color(color, new_color)
+            action.triggered.connect(on_click)
+            return action
+        for color in HexViewer.Colors:
+            add_color_action(color.name.capitalize(), color)
+
+
+        self._menues = m
     def _get_byte_values(self, byte_index: int) -> tuple[int | None, int | None]:
         '''Get the byte value and the next byte value for a given byte index.'''
         if 0 <= byte_index < len(self._data):
@@ -121,7 +141,7 @@ class DumpAnalyzer (QMainWindow):
     def _on_file_menu_show(self) -> None:
         '''Update the "File" menu actions based on the current state.'''
         hex_changed = self._hex_viewer.data != memoryview(self._data)
-        self.file_write_usb.setEnabled(hex_changed)
+        self._menues.file_write_usb.setEnabled(hex_changed)
 
     def _open_dump(self) -> None:
         '''Open a dump file.'''
