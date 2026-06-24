@@ -67,3 +67,13 @@ class Config:
         '''Set the sections defined in the configuration.'''
         self.data["sections"] = root.to_dict()
         self._save()
+
+    @property
+    def encoding(self) -> str:
+        '''Get the encoding defined in the configuration.'''
+        return self.data.get("encoding", "cp437")
+    @encoding.setter
+    def encoding(self, encoding: str) -> None:
+        '''Set the encoding defined in the configuration.'''
+        self.data["encoding"] = encoding
+        self._save()

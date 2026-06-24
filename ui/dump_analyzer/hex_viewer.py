@@ -65,6 +65,7 @@ class HexViewer(QWidget):
         self._colors: dict[HexViewer.Colors, QColor] = {}
         self._edit_cursor_pos = 0
         self._root_section: SectionList | None = None
+        self._encoding = self._config.encoding
 
         self.resize(800, 600)
         font = self.font()
@@ -146,6 +147,10 @@ class HexViewer(QWidget):
         self._root_section = section
         self.repaint()
 
+    def set_encoding(self, encoding: str) -> None:
+        self._encoding = encoding
+        self.repaint()
+
     def _init_colors(self) -> None:
         colors = self._config.hex_viewer_colors
         palette = self.palette()
@@ -176,7 +181,7 @@ class HexViewer(QWidget):
         test_sizes: list[tuple[int, int]] = []
         for e in range(1, 10):
             elements = 2 ** e
-            test_string = '0000: '
+            test_string = '0000 '
             for _ in range(elements):
                 test_string += '00 '
             test_string += ' ' * elements
@@ -251,7 +256,7 @@ class HexViewer(QWidget):
     def resizeEvent(self, event: QResizeEvent) -> None:
         self.setMinimumHeight(self._calculate_size().height)
         font_metrics = QFontMetrics(self.font())
-        line_number_width = font_metrics.horizontalAdvance('0000:')
+        line_number_width = font_metrics.horizontalAdvance('0000')
         self._start_address = self._padding
         self._end_address = self._start_address + line_number_width
         space_width = font_metrics.horizontalAdvance(' ')
@@ -340,10 +345,11 @@ class HexViewer(QWidget):
 
         size_hint = self._calculate_size()
         for line in range(range_start, range_end, size_hint.bytes_per_line):
+            painter.setPen(self.palette().color(QPalette.ColorRole.WindowText))
             y = (line // size_hint.bytes_per_line) * painter.fontMetrics().height() + \
                 self._char_ascent + self._padding
             line_data = data[line:line+size_hint.bytes_per_line]
-            start_text = f'{line:04X}: '
+            start_text = f'{line:04X} '
             painter.drawText(self._padding, y, start_text)
 
             for i in range(len(line_data)):
@@ -427,7 +433,14 @@ class HexViewer(QWidget):
             cursor_y = info.hex_pos.y() - self._char_ascent
             info.painter.drawLine(cursor_x, cursor_y, cursor_x, cursor_y + self._char_height)
 
-        char = chr(b) if 32 <= b < 127 else '.'
+        try:
+            char = bytes([b]).decode(self._encoding) # chr(b) if 32 <= b < 127 else '.'
+        except UnicodeDecodeError:
+            char = '.'
+        if not char.isprintable():
+            char = '.'
+
+
         info.painter.drawText(info.ascii_pos, char)
 
 

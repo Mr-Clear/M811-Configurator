@@ -96,6 +96,59 @@ class DumpAnalyzer (QMainWindow):
 
         m.view = self.menuBar().addMenu("View")
 
+        m.view_encoding = m.view.addMenu("Encoding")
+        def add_encoding_action(encoding: str, name: str) -> QAction:
+            action = m.view_encoding.addAction(name)
+            action.setCheckable(True)
+            action.setChecked(self._config.encoding == encoding)
+            def on_click(checked: bool) -> None:
+                if checked:
+                    self._config.encoding = encoding
+                    for act in m.view_encoding.actions():
+                        if act != action:
+                            act.setChecked(False)
+                    self._config.view_options = self._view_options
+                    self._hex_viewer.set_encoding(encoding)
+            action.toggled.connect(on_click)
+            return action
+        add_encoding_action("ascii", "ASCII")
+        add_encoding_action("iso8859_2", "ISO-8859-2 (Central and Eastern Europe)")
+        add_encoding_action("iso8859_3", "ISO-8859-3 (Esperanto, Maltese)")
+        add_encoding_action("iso8859_4", "ISO-8859-4 (Baltic languages)")
+        add_encoding_action("iso8859_5", "ISO-8859-5 (Cyrillic)")
+        add_encoding_action("iso8859_6", "ISO-8859-6 (Arabic)")
+        add_encoding_action("iso8859_7", "ISO-8859-7 (Greek)")
+        add_encoding_action("iso8859_8", "ISO-8859-8 (Hebrew)")
+        add_encoding_action("iso8859_9", "ISO-8859-9 (Turkish)")
+        add_encoding_action("iso8859_10", "ISO-8859-10 (Nordic languages)")
+        add_encoding_action("iso8859_11", "ISO-8859-11 (Thai)")
+        add_encoding_action("iso8859_13", "ISO-8859-13 (Baltic languages)")
+        add_encoding_action("iso8859_14", "ISO-8859-14 (Celtic languages)")
+        add_encoding_action("iso8859_15", "ISO-8859-15 (Western European languages)")
+        add_encoding_action("iso8859_16", "ISO-8859-16 (South-Eastern European languages)")
+        add_encoding_action("cp437", "Code Page 437 (Original IBM PC)")
+        add_encoding_action("cp850", "Code Page 850 (Western European languages)")
+        add_encoding_action("cp852", "Code Page 852 (Central and Eastern Europe)")
+        add_encoding_action("cp855", "Code Page 855 (Cyrillic)")
+        add_encoding_action("cp857", "Code Page 857 (Turkish)")
+        add_encoding_action("cp860", "Code Page 860 (Portuguese)")
+        add_encoding_action("cp861", "Code Page 861 (Icelandic)")
+        add_encoding_action("cp862", "Code Page 862 (Hebrew)")
+        add_encoding_action("cp863", "Code Page 863 (French Canadian)")
+        add_encoding_action("cp864", "Code Page 864 (Arabic)")
+        add_encoding_action("cp865", "Code Page 865 (Nordic languages)")
+        add_encoding_action("cp866", "Code Page 866 (Cyrillic)")
+        add_encoding_action("cp869", "Code Page 869 (Greek)")
+        add_encoding_action("cp1250", "Windows-1250 (Central and Eastern Europe)")
+        add_encoding_action("cp1251", "Windows-1251 (Cyrillic)")
+        add_encoding_action("cp1252", "Windows-1252 (Western European languages)")
+        add_encoding_action("cp1253", "Windows-1253 (Greek)")
+        add_encoding_action("cp1254", "Windows-1254 (Turkish)")
+        add_encoding_action("cp1255", "Windows-1255 (Hebrew)")
+        add_encoding_action("cp1256", "Windows-1256 (Arabic)")
+        add_encoding_action("cp1257", "Windows-1257 (Baltic languages)")
+        add_encoding_action("cp1258", "Windows-1258 (Vietnamese)")
+
         m.view_colors = m.view.addMenu("Colors")
         def add_color_action(name: str, color: HexViewer.Colors) -> QAction:
             action = m.view_colors.addAction(name)
