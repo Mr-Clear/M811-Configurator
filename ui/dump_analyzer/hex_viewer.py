@@ -381,7 +381,7 @@ class HexViewer(QWidget):
         range_end = self.get_byte_index_at_position(event.rect().bottomRight(), True) or len(data)
         range_end = min(range_end + self._current_size_hint.bytes_per_line, len(data))
 
-        size_hint = self._calculate_size()
+        size_hint = self._current_size_hint
         for line in range(range_start, range_end, size_hint.bytes_per_line):
             painter.setPen(self.palette().color(QPalette.ColorRole.WindowText))
             y = (line // size_hint.bytes_per_line) * painter.fontMetrics().height() + \
@@ -400,6 +400,7 @@ class HexViewer(QWidget):
                 self.paint_text(info)
 
             painter.setPen(self.palette().color(QPalette.ColorRole.WindowText))
+        painter.end()
 
     def paint_background(self, info: _PaintInfo) -> None:
         for level, section in enumerate(info.sections):
@@ -472,12 +473,11 @@ class HexViewer(QWidget):
             info.painter.drawLine(cursor_x, cursor_y, cursor_x, cursor_y + self._char_height)
 
         try:
-            char = bytes([b]).decode(self._encoding) # chr(b) if 32 <= b < 127 else '.'
+            char = bytes([b]).decode(self._encoding)
         except UnicodeDecodeError:
-            char = '.'
+            char = '�'
         if not char.isprintable():
-            char = '.'
-
+            char = '☐'
 
         info.painter.drawText(info.ascii_pos, char)
 

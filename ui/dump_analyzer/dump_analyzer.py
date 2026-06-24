@@ -4,11 +4,11 @@
 import json
 import logging
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import Callable
 
-from PySide6.QtGui import QAction, Qt
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog,
                                QFileDialog, QInputDialog, QMainWindow,
                                QMessageBox, QScrollArea, QVBoxLayout, QWidget,
@@ -27,7 +27,6 @@ logger = logging.getLogger(__name__)
 class VisibleDetailBytes:
     hovered: bool = True
     selected: bool = True
-    pinned: set[int] = field(default_factory=lambda: set())
 
 class DumpAnalyzer (QMainWindow):
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -151,11 +150,12 @@ class DumpAnalyzer (QMainWindow):
             action = m.view_encoding.addAction(name)
             action.setCheckable(True)
             action.setChecked(self._config.encoding == encoding)
-            def on_click(checked: bool) -> None:
+            action.setData(encoding)
+            def on_click(checked: bool, encoding: str = encoding) -> None:
                 if checked:
                     self._config.encoding = encoding
                     for act in m.view_encoding.actions():
-                        if act != action:
+                        if act.data() != encoding:
                             act.setChecked(False)
                     self._config.visible_detail_bytes = self._visible_detail_bytes
                     self._hex_viewer.set_encoding(encoding)
