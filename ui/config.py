@@ -10,6 +10,7 @@ from .dump_analyzer.section_list import SectionList
 if TYPE_CHECKING:
     from .dump_analyzer.dump_analyzer import VisibleDetailBytes
     from .dump_analyzer.byte_info_widget import ByteInfoWidget
+    from .dump_analyzer.hex_viewer import HexViewer
 
 class Config:
     _FILE_PATH: str = "config.json"
@@ -23,7 +24,7 @@ class Config:
             raise Exception("Config is a singleton class. Use Config.instance() to get the instance.")
         try:
             self.data = json.load(open(self._FILE_PATH, "r"))
-        except FileNotFoundError:
+        except (FileNotFoundError, json.JSONDecodeError):
             self.data = {}
 
     def _save(self) -> None:
@@ -113,4 +114,29 @@ class Config:
     def encoding(self, encoding: str) -> None:
         '''Set the encoding defined in the configuration.'''
         self.data["encoding"] = encoding
+        self._save()
+
+    @property
+    def hex_viewer_line_width(self) -> tuple[HexViewer.LineWidth, int | None]:
+        '''Get the line width defined in the configuration.'''
+        from .dump_analyzer.hex_viewer import HexViewer
+        if "hex_viewer_line_width" not in self.data:
+            return (HexViewer.LineWidth.POWER_OF_TWO, None)
+        value = self.data["hex_viewer_line_width"]
+        if isinstance(value, int):
+            return (HexViewer.LineWidth.FIXED, value)
+        try:
+            return (HexViewer.LineWidth[value], None)
+        except KeyError:
+            raise ValueError(f"Invalid hex_viewer_line_width value: {value}")
+    @hex_viewer_line_width.setter
+    def hex_viewer_line_width(self, value: HexViewer.LineWidth | int) -> None:
+        '''Set the line width defined in the configuration.'''
+        from .dump_analyzer.hex_viewer import HexViewer
+        if isinstance(value, HexViewer.LineWidth):
+            if value == HexViewer.LineWidth.FIXED:
+                raise ValueError("LineWidth.FIXED must be set with an integer value.")
+            self.data["hex_viewer_line_width"] = value.name
+        else:
+            self.data["hex_viewer_line_width"] = value
         self._save()

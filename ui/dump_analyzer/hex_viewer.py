@@ -38,6 +38,11 @@ class HexViewer(QWidget):
         NULL_VALUE = 3
         CHANGED = 4
 
+    class LineWidth(Enum):
+        FIXED = 0
+        ANY = 1
+        POWER_OF_TWO = 2
+
     @dataclass
     class _SizeHint:
         width: int
@@ -66,6 +71,7 @@ class HexViewer(QWidget):
         self._edit_cursor_pos = 0
         self._root_section: SectionList | None = None
         self._encoding = self._config.encoding
+        self._line_width = self._config.hex_viewer_line_width
 
         self.resize(800, 600)
         font = self.font()
@@ -176,30 +182,62 @@ class HexViewer(QWidget):
         self._config.hex_viewer_colors = color_config
         self.repaint()
 
+    @property
+    def line_width(self) -> tuple[HexViewer.LineWidth, int | None]:
+        return self._line_width
+    @line_width.setter
+    def line_width(self, value: HexViewer.LineWidth | int) -> None:
+        if isinstance(value, int):
+            self._line_width = (HexViewer.LineWidth.FIXED, value)
+        else:
+            if value == HexViewer.LineWidth.FIXED:
+                raise ValueError("LineWidth.FIXED must be set with an integer value.")
+            self._line_width = (value, None)
+        self.resizeEvent(QResizeEvent(self.size(), self.size()))
+
     def _calculate_size(self) -> _SizeHint:
         font_metrics = QFontMetrics(self.font())
-        test_sizes: list[tuple[int, int]] = []
-        for e in range(1, 10):
-            elements = 2 ** e
-            test_string = '0000 '
-            for _ in range(elements):
-                test_string += '00 '
-            test_string += ' ' * elements
-            size = font_metrics.size(0, test_string)
-            test_sizes.append((elements, size.width()))
 
-        count = 1
-        last_width = 0
-        for count, width in test_sizes:
-            if width > self.width():
-                break
-            last_width = width
-        count //= 2
+        def test_string_length(length: int) -> int:
+            test_string = '0000 '
+            for _ in range(length):
+                test_string += '00 '
+            test_string += ' ' * length
+            return font_metrics.horizontalAdvance(test_string)
+
+        def find_length(options: list[int], min: int | None, max: int | None) -> int:
+            """Recursively find the largest length that fits within the given min and max constraints."""
+            if min is None:
+                min = 0
+            if max is None:
+                max = len(options) - 1
+            mid = (min + max) // 2
+            if min > max:
+                return options[max] if max >= 0 else options[0]
+            test_length = options[mid]
+            test_width = test_string_length(test_length)
+            if test_width > self.width():
+                return find_length(options, min, mid - 1)
+            else:
+                return find_length(options, mid + 1, max)
+
+        if self._line_width[0] == HexViewer.LineWidth.FIXED:
+            count = self._line_width[1] or 16
+        else:
+            if self._line_width[0] == HexViewer.LineWidth.ANY:
+                test_lengths = list(range(1, 1000))
+            else:
+                test_lengths = [2 ** i for i in range(1, 10)]
+            count = find_length(test_lengths, None, None)
 
         line_height = font_metrics.height()
         lines = (len(self._data) + count - 1) // count
         height = lines * line_height + 2 * self._padding
-        self._current_size_hint = self._SizeHint(last_width + 2 * self._padding, height, count)
+        self._current_size_hint = self._SizeHint(test_string_length(count) + 2 * self._padding, height, count)
+        if self._line_width[0] == HexViewer.LineWidth.FIXED:
+            self.setMinimumWidth(self._current_size_hint.width)
+        else:
+            self.setMinimumWidth(0)
         return self._current_size_hint
 
     def _get_hex_position(self, pos: int) -> QPoint:

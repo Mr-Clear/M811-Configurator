@@ -8,10 +8,10 @@ from dataclasses import dataclass, field
 from types import SimpleNamespace
 from typing import Callable
 
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, Qt
 from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog,
-                               QFileDialog, QMainWindow, QMessageBox,
-                               QScrollArea, QVBoxLayout, QWidget,
+                               QFileDialog, QInputDialog, QMainWindow,
+                               QMessageBox, QScrollArea, QVBoxLayout, QWidget,
                                QWidgetAction)
 
 from ui.config import Config
@@ -28,7 +28,6 @@ class VisibleDetailBytes:
     hovered: bool = True
     selected: bool = True
     pinned: set[int] = field(default_factory=lambda: set())
-
 
 class DumpAnalyzer (QMainWindow):
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -177,6 +176,32 @@ class DumpAnalyzer (QMainWindow):
         for color in HexViewer.Colors:
             add_color_action(color.name.capitalize(), color)
 
+        def set_line_width(line_width: HexViewer.LineWidth) -> None:
+            if line_width == HexViewer.LineWidth.FIXED:
+                value, ok = QInputDialog.getInt(self, "Set Fixed Line Width", "Enter fixed line width:")
+                if not ok:
+                    return
+                self._config.hex_viewer_line_width = value
+                self._hex_viewer.line_width = value
+            else:
+                self._config.hex_viewer_line_width = line_width
+                self._hex_viewer.line_width = line_width
+            for action in m_view_linewidth.actions():
+                action.setChecked(action.text() == line_width.name.replace("_", " ").title())
+        m_view_linewidth = m.view.addMenu("Line Width")
+        m_view_linewidth_fixed = m_view_linewidth.addAction("Fixed")
+        m_view_linewidth_fixed.setCheckable(True)
+        m_view_linewidth_fixed.setChecked(self._config.hex_viewer_line_width[0] == HexViewer.LineWidth.FIXED)
+        m_view_linewidth_fixed.triggered.connect(lambda: set_line_width(HexViewer.LineWidth.FIXED))
+        m_view_linewidth_any = m_view_linewidth.addAction("Free")
+        m_view_linewidth_any.setCheckable(True)
+        m_view_linewidth_any.setChecked(self._config.hex_viewer_line_width[0] == HexViewer.LineWidth.ANY)
+        m_view_linewidth_any.triggered.connect(lambda: set_line_width(HexViewer.LineWidth.ANY))
+        m_view_linewidth_power_of_two = m_view_linewidth.addAction("Power of Two")
+        m_view_linewidth_power_of_two.setCheckable(True)
+        m_view_linewidth_power_of_two.setChecked(self._config.hex_viewer_line_width[0] == HexViewer.LineWidth.POWER_OF_TWO)
+        m_view_linewidth_power_of_two.triggered.connect(lambda: set_line_width(HexViewer.LineWidth.POWER_OF_TWO))
+        m_view_linewidth.addSeparator()
 
         self._menues = m
 
