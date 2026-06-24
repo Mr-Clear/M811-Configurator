@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from functools import cached_property
+from typing import Sequence
 
 from PySide6.QtCore import QEvent, QPoint, QPointF, QSize, QTimer, Signal
 from PySide6.QtGui import (QColor, QCursor, QFont, QFontMetrics, QKeyEvent,
@@ -72,20 +73,11 @@ class HexViewer(QWidget):
         self._root_section: SectionList | None = None
         self._encoding = self._config.encoding
         self._line_width = self._config.hex_viewer_line_width
+        self.setFont(self._config.hex_viewer_font)
 
         self.resize(800, 600)
-        font = self.font()
-        font.setPointSize(10)
-        font.setFamily("Courier")
-        self.setFont(font)
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-
-
-        self._char_width = self.fontMetrics().horizontalAdvance('0')
-        self._char_height = self.fontMetrics().height()
-        self._char_ascent = self.fontMetrics().ascent()
-        self._hex_width = self._char_width * 2
 
     @property
     def data(self) -> memoryview:
@@ -113,15 +105,14 @@ class HexViewer(QWidget):
             return None
         if line_start:
             return line * size_hint.bytes_per_line
-        ascii_width = self.fontMetrics().horizontalAdvance(' ')
-        if self._start_hex <= (pos.x() + ascii_width / 2) <= self._end_hex:
-            hex_width = self.fontMetrics().horizontalAdvance('00 ')
-            column = (int(pos.x() + ascii_width / 2) - self._start_hex) // hex_width
+        if self._start_hex <= (pos.x() + self._space_width / 2) <= self._end_hex:
+            hex_width = self._hex_width * 2 + self._space_width
+            column = (int(pos.x() + self._char_width / 2) - self._start_hex) // hex_width
             byte_index = line * size_hint.bytes_per_line + column
             if byte_index < len(self._data):
                 return byte_index
         elif self._start_ascii <= pos.x() <= self._end_ascii:
-            column = (int(pos.x()) - self._start_ascii) // ascii_width
+            column = (int(pos.x()) - self._start_ascii) // self._char_width
             byte_index = line * size_hint.bytes_per_line + column
             if byte_index < len(self._data):
                 return byte_index
@@ -198,12 +189,9 @@ class HexViewer(QWidget):
     def _calculate_size(self) -> _SizeHint:
         font_metrics = QFontMetrics(self.font())
 
-        def test_string_length(length: int) -> int:
-            test_string = '0000 '
-            for _ in range(length):
-                test_string += '00 '
-            test_string += ' ' * length
-            return font_metrics.horizontalAdvance(test_string)
+        def width(length: int) -> int:
+            end_ascii = self.calculate_text_positions(length)[5]
+            return end_ascii + self._padding
 
         def find_length(options: list[int], min: int | None, max: int | None) -> int:
             """Recursively find the largest length that fits within the given min and max constraints."""
@@ -215,8 +203,7 @@ class HexViewer(QWidget):
             if min > max:
                 return options[max] if max >= 0 else options[0]
             test_length = options[mid]
-            test_width = test_string_length(test_length)
-            if test_width > self.width():
+            if width(test_length) > self.width():
                 return find_length(options, min, mid - 1)
             else:
                 return find_length(options, mid + 1, max)
@@ -233,7 +220,7 @@ class HexViewer(QWidget):
         line_height = font_metrics.height()
         lines = (len(self._data) + count - 1) // count
         height = lines * line_height + 2 * self._padding
-        self._current_size_hint = self._SizeHint(test_string_length(count) + 2 * self._padding, height, count)
+        self._current_size_hint = self._SizeHint(width(count) + 2 * self._padding, height, count)
         if self._line_width[0] == HexViewer.LineWidth.FIXED:
             self.setMinimumWidth(self._current_size_hint.width)
         else:
@@ -244,7 +231,7 @@ class HexViewer(QWidget):
         size_hint = self._current_size_hint
         line = pos // size_hint.bytes_per_line
         column = pos % size_hint.bytes_per_line
-        x = self._start_hex + column * self.fontMetrics().horizontalAdvance('00 ')
+        x = self._start_hex + column * (self._hex_width * 2 + self._space_width)
         y = line * self.fontMetrics().height() + self._char_ascent + self._padding
         return QPoint(x, y)
 
@@ -291,20 +278,21 @@ class HexViewer(QWidget):
     def sizeHint(self) -> QSize:
         return self._current_size_hint.size
 
+    def calculate_text_positions(self, bytes_per_line: int) -> tuple[int, int, int, int, int, int]:
+        line_number_width = self._hex_width * 4
+        start_address = self._padding
+        end_address = start_address + line_number_width
+        start_hex = end_address + self._space_width
+        hex_byte_width = self._hex_width * 2 + self._space_width
+        end_hex = start_hex + hex_byte_width * bytes_per_line
+        start_ascii = end_hex
+        ascii_byte_width = self._char_width
+        end_ascii = start_ascii + ascii_byte_width * bytes_per_line
+        return start_address, end_address, start_hex, end_hex, start_ascii, end_ascii
+
     def resizeEvent(self, event: QResizeEvent) -> None:
         self.setMinimumHeight(self._calculate_size().height)
-        font_metrics = QFontMetrics(self.font())
-        line_number_width = font_metrics.horizontalAdvance('0000')
-        self._start_address = self._padding
-        self._end_address = self._start_address + line_number_width
-        space_width = font_metrics.horizontalAdvance(' ')
-        self._start_hex = self._end_address + space_width
-        hex_byte_width = font_metrics.horizontalAdvance('00 ')
-        self._end_hex = self._start_hex + hex_byte_width * self._current_size_hint.bytes_per_line
-        self._start_ascii = self._end_hex
-        ascii_byte_width = font_metrics.horizontalAdvance('X')
-        self._end_ascii = self._start_ascii + \
-                          ascii_byte_width * self._current_size_hint.bytes_per_line
+        self._start_address, self._end_address, self._start_hex, self._end_hex, self._start_ascii, self._end_ascii = self.calculate_text_positions(self._current_size_hint.bytes_per_line)
         super().resizeEvent(event)
 
     def changeEvent(self, event: QEvent) -> None:
@@ -315,6 +303,15 @@ class HexViewer(QWidget):
     def showEvent(self, event: QShowEvent) -> None:
         self._init_colors()
         super().showEvent(event)
+
+    def setFont(self, font: QFont | str | Sequence[str]) -> None:
+        super().setFont(font)
+        self._space_width = self.fontMetrics().horizontalAdvance(' ')
+        self._char_width = max(self.fontMetrics().horizontalAdvance(chr(c)) for c in range(32, 127))
+        self._char_height = self.fontMetrics().height()
+        self._char_ascent = self.fontMetrics().ascent()
+        self._hex_width = max(self.fontMetrics().horizontalAdvance(c) for c in '0123456789ABCDEF')
+        self.resizeEvent(QResizeEvent(self.size(), self.size()))
 
     @dataclass
     class _PaintInfo:
@@ -410,7 +407,7 @@ class HexViewer(QWidget):
                 info.painter.setBrush(back_color)
                 d = self._char_width - 1 if info.same_right(level) else 0
                 info.painter.fillRect(info.hex_pos.x(), info.hex_pos.y() - self._char_ascent,
-                                      self._hex_width + d, self._char_height, back_color)
+                                      self._hex_width * 2 + d, self._char_height, back_color)
                 info.painter.fillRect(info.ascii_pos.x(), info.ascii_pos.y() - self._char_ascent,
                                     self._char_width, self._char_height, back_color)
 
@@ -419,9 +416,9 @@ class HexViewer(QWidget):
             color = section.color
             if color:
                 info.painter.setPen(color)
-                width = self._hex_width
+                width = self._hex_width * 2
                 if not info.last_column and info.same_right(level):
-                    width += self._char_width
+                    width += self._space_width
                 if not info.same_left(level):
                     info.painter.drawLine(info.hex_pos.x(), info.hex_pos.y() - self._char_ascent,
                                           info.hex_pos.x(), info.hex_pos.y() - self._char_ascent + self._char_height - 1)
@@ -440,7 +437,7 @@ class HexViewer(QWidget):
                 if not info.same_down(level):
                     down_left = self._sections_for_byte_index(info.byte_index + self._current_size_hint.bytes_per_line - 1)
                     same_down_left = info.same_left(level) and section in down_left
-                    d = self._char_width - 1 if info.same_left(level) and same_down_left else 0
+                    d = self._space_width - 1 if info.same_left(level) and same_down_left else 0
                     info.painter.drawLine(info.hex_pos.x() - d, info.hex_pos.y() - self._char_ascent + self._char_height - 1,
                                           info.hex_pos.x() + width + d, info.hex_pos.y() - self._char_ascent + self._char_height - 1)
                     info.painter.drawLine(info.ascii_pos.x(), info.ascii_pos.y() - self._char_ascent + self._char_height - 1,
@@ -479,7 +476,9 @@ class HexViewer(QWidget):
         if not char.isprintable():
             char = '☐'
 
-        info.painter.drawText(info.ascii_pos, char)
+        char_width = info.painter.fontMetrics().horizontalAdvance(char)
+        char_x = info.ascii_pos.x() + (self._char_width - char_width) // 2
+        info.painter.drawText(QPoint(char_x, info.ascii_pos.y()), char)
 
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:

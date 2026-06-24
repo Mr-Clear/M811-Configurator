@@ -5,11 +5,13 @@ import json
 from dataclasses import asdict
 from typing import TYPE_CHECKING, Any
 
+from PySide6.QtGui import QFont
+
 from .dump_analyzer.section_list import SectionList
 
 if TYPE_CHECKING:
-    from .dump_analyzer.dump_analyzer import VisibleDetailBytes
     from .dump_analyzer.byte_info_widget import ByteInfoWidget
+    from .dump_analyzer.dump_analyzer import VisibleDetailBytes
     from .dump_analyzer.hex_viewer import HexViewer
 
 class Config:
@@ -139,4 +141,18 @@ class Config:
             self.data["hex_viewer_line_width"] = value.name
         else:
             self.data["hex_viewer_line_width"] = value
+        self._save()
+
+    @property
+    def hex_viewer_font(self) -> QFont:
+        '''Get the font defined in the configuration.'''
+        if "hex_viewer_font" not in self.data:
+            return QFont()
+        font = QFont()
+        font.fromString(self.data["hex_viewer_font"])
+        return font
+    @hex_viewer_font.setter
+    def hex_viewer_font(self, font: QFont) -> None:
+        '''Set the font defined in the configuration.'''
+        self.data["hex_viewer_font"] = font.toString()
         self._save()

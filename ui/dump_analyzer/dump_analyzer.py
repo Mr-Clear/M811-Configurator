@@ -10,9 +10,9 @@ from typing import Callable
 
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog,
-                               QFileDialog, QInputDialog, QMainWindow,
-                               QMessageBox, QScrollArea, QVBoxLayout, QWidget,
-                               QWidgetAction)
+                               QFileDialog, QFontDialog, QInputDialog,
+                               QMainWindow, QMessageBox, QScrollArea,
+                               QVBoxLayout, QWidget, QWidgetAction)
 
 from ui.config import Config
 
@@ -176,6 +176,7 @@ class DumpAnalyzer (QMainWindow):
         for color in HexViewer.Colors:
             add_color_action(color.name.capitalize(), color)
 
+        m.view_linewidth = m.view.addMenu("Line Width")
         def set_line_width(line_width: HexViewer.LineWidth) -> None:
             if line_width == HexViewer.LineWidth.FIXED:
                 value, ok = QInputDialog.getInt(self, "Set Fixed Line Width", "Enter fixed line width:")
@@ -186,22 +187,23 @@ class DumpAnalyzer (QMainWindow):
             else:
                 self._config.hex_viewer_line_width = line_width
                 self._hex_viewer.line_width = line_width
-            for action in m_view_linewidth.actions():
+            for action in m.view_linewidth.actions():
                 action.setChecked(action.text() == line_width.name.replace("_", " ").title())
-        m_view_linewidth = m.view.addMenu("Line Width")
-        m_view_linewidth_fixed = m_view_linewidth.addAction("Fixed")
-        m_view_linewidth_fixed.setCheckable(True)
-        m_view_linewidth_fixed.setChecked(self._config.hex_viewer_line_width[0] == HexViewer.LineWidth.FIXED)
-        m_view_linewidth_fixed.triggered.connect(lambda: set_line_width(HexViewer.LineWidth.FIXED))
-        m_view_linewidth_any = m_view_linewidth.addAction("Free")
-        m_view_linewidth_any.setCheckable(True)
-        m_view_linewidth_any.setChecked(self._config.hex_viewer_line_width[0] == HexViewer.LineWidth.ANY)
-        m_view_linewidth_any.triggered.connect(lambda: set_line_width(HexViewer.LineWidth.ANY))
-        m_view_linewidth_power_of_two = m_view_linewidth.addAction("Power of Two")
-        m_view_linewidth_power_of_two.setCheckable(True)
-        m_view_linewidth_power_of_two.setChecked(self._config.hex_viewer_line_width[0] == HexViewer.LineWidth.POWER_OF_TWO)
-        m_view_linewidth_power_of_two.triggered.connect(lambda: set_line_width(HexViewer.LineWidth.POWER_OF_TWO))
-        m_view_linewidth.addSeparator()
+        m.view_linewidth_fixed = m.view_linewidth.addAction("Fixed")
+        m.view_linewidth_fixed.setCheckable(True)
+        m.view_linewidth_fixed.setChecked(self._config.hex_viewer_line_width[0] == HexViewer.LineWidth.FIXED)
+        m.view_linewidth_fixed.triggered.connect(lambda: set_line_width(HexViewer.LineWidth.FIXED))
+        m.view_linewidth_any = m.view_linewidth.addAction("Free")
+        m.view_linewidth_any.setCheckable(True)
+        m.view_linewidth_any.setChecked(self._config.hex_viewer_line_width[0] == HexViewer.LineWidth.ANY)
+        m.view_linewidth_any.triggered.connect(lambda: set_line_width(HexViewer.LineWidth.ANY))
+        m.view_linewidth_power_of_two = m.view_linewidth.addAction("Power of Two")
+        m.view_linewidth_power_of_two.setCheckable(True)
+        m.view_linewidth_power_of_two.setChecked(self._config.hex_viewer_line_width[0] == HexViewer.LineWidth.POWER_OF_TWO)
+        m.view_linewidth_power_of_two.triggered.connect(lambda: set_line_width(HexViewer.LineWidth.POWER_OF_TWO))
+
+        m.view_font = m.view.addAction("Font...")
+        m.view_font.triggered.connect(self._on_font_menu_triggered)
 
         self._menues = m
 
@@ -218,6 +220,15 @@ class DumpAnalyzer (QMainWindow):
         self._details_byte_selected.setVisible(checked)
         self._config.visible_detail_bytes = self._visible_detail_bytes
         self._details_byte_selected.setVisible(self._visible_detail_bytes.selected)
+
+    def _on_font_menu_triggered(self) -> None:
+        '''Handle the font menu action.'''
+        dialog = QFontDialog(self._hex_viewer.font(), self)
+        dialog.setCurrentFont(self._hex_viewer.font())
+        if dialog.exec() == QFontDialog.DialogCode.Accepted:
+            font = dialog.selectedFont()
+            self._hex_viewer.set_font(font)
+            self._config.hex_viewer_font = font
 
     def _on_byte_hovered(self, byte_index: int) -> None:
         '''Handle byte hovered event.'''
