@@ -7,7 +7,7 @@ from .section import Section
 
 
 @dataclass
-class SectionValue(Section):
+class ValueSection(Section):
     byte_count: int = 1
     min_value: int = 0
     max_value: int = 0xFF

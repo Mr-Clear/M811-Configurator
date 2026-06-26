@@ -2,13 +2,13 @@
 
 from PySide6.QtWidgets import QComboBox, QFormLayout, QLabel, QWidget
 
-from ui.dump_analyzer.section_value import SectionValue
+from ui.dump_analyzer.sections.value_section import ValueSection
 
 from .section_widget import SectionDetailsWidgetBase
-from .spin_box import SpinBox
+from ..spin_box import SpinBox
 
 
-class SectionValueWidget(SectionDetailsWidgetBase[SectionValue]):
+class ValueSectionWidget(SectionDetailsWidgetBase[ValueSection]):
     '''Widget to display and edit a value section.'''
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)

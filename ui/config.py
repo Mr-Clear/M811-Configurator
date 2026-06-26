@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from PySide6.QtGui import QFont
 
-from .dump_analyzer.section_list import SectionList
+from .dump_analyzer.sections.list_section import ListSection
 
 if TYPE_CHECKING:
     from .dump_analyzer.byte_info_widget import ByteInfoWidget
@@ -62,16 +62,16 @@ class Config:
         self._save()
 
     @property
-    def sections(self) -> SectionList:
+    def sections(self) -> ListSection:
         '''Get the sections defined in the configuration.'''
         if "sections" not in self.data:
-            return SectionList(name="M811", relative_start=0, length=0xFFFF)
-        section_list = SectionList.from_dict(self.data["sections"])
-        if not isinstance(section_list, SectionList):
-            raise ValueError("Root section must be a SectionList.")
+            return ListSection(name="M811", relative_start=0, length=0xFFFF)
+        section_list = ListSection.from_dict(self.data["sections"])
+        if not isinstance(section_list, ListSection):
+            raise ValueError("Root section must be a ListSection.")
         return section_list
     @sections.setter
-    def sections(self, root: SectionList) -> None:
+    def sections(self, root: ListSection) -> None:
         '''Set the sections defined in the configuration.'''
         self.data["sections"] = root.to_dict()
         self._save()

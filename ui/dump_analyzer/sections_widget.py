@@ -4,15 +4,15 @@ from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt, Signal
 from PySide6.QtWidgets import (QHeaderView, QSplitter, QTreeView, QVBoxLayout,
                                QWidget)
 
-from .section import Section
-from .section_list import SectionList
-from .section_widget import SectionWidget
+from .sections.section import Section
+from .sections.list_section import ListSection
+from .section_widgets.section_widget import SectionWidget
 
 
 class SectionsWidget(QWidget):
     sections_changed = Signal()
 
-    def __init__(self, root: SectionList, parent: QWidget | None = None) -> None:
+    def __init__(self, root: ListSection, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._root = root
         layout = QVBoxLayout(self)
@@ -75,11 +75,11 @@ class SectionsWidget(QWidget):
         self._details_widget.set_section(section)
 
     @property
-    def root_section(self) -> SectionList:
+    def root_section(self) -> ListSection:
         '''Get the root section of the section tree.'''
         return self._root
     @root_section.setter
-    def root_section(self, value: SectionList) -> None:
+    def root_section(self, value: ListSection) -> None:
         '''Set the root section of the section tree.'''
         self._root = value
         self._tree_view_model.set_root(value)
@@ -94,7 +94,7 @@ class SectionsTreeModel(QAbstractItemModel):
 
     def set_root(self, root: Section) -> None:
         '''Set the root section of the tree model.'''
-        self._root = SectionList(name="INVISIBLE_ROOT", relative_start=0, length=0xFFFF, subsections=[root])
+        self._root = ListSection(name="INVISIBLE_ROOT", relative_start=0, length=0xFFFF, subsections=[root])
         self.layoutChanged.emit()
 
     def rowCount(self, parent: QModelIndex) -> int: # type: ignore

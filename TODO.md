@@ -7,13 +7,13 @@ Configure Redragon Mice on Linux
 ### Todo
 
 - [ ] Named sections  
-- [ ] Array section  
 - [ ] Save Alpha in colors  
+- [ ] Array section  
 
 ### In Progress
 
-- [ ] Handle absolute and relative indexes correctly  
 
 ### Done ✓
 
+- [x] Handle absolute and relative indexes correctly  
 

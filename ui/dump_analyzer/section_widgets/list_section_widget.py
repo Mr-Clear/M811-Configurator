@@ -1,5 +1,5 @@
 '''
-SectionListWidget is a widget that displays the details of a SectionList
+ListSectionWidget is a widget that displays the details of a ListSection
 and allows the user to edit it.
 '''
 
@@ -15,9 +15,9 @@ from PySide6.QtWidgets import (QAbstractButton, QHBoxLayout, QLabel,
                                QStyledItemDelegate, QStyleOptionViewItem,
                                QToolButton, QVBoxLayout, QWidget)
 
-from ui.dump_analyzer.section import Section
-from ui.dump_analyzer.section_list import SectionList
-from ui.dump_analyzer.section_value import SectionValue
+from ui.dump_analyzer.sections.section import Section
+from ui.dump_analyzer.sections.list_section import ListSection
+from ui.dump_analyzer.sections.value_section import ValueSection
 
 from .section_widget import SectionDetailsWidgetBase
 
@@ -75,7 +75,7 @@ class ListItemDelegate(QStyledItemDelegate):
         painter.restore()
 
 
-class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
+class ListSectionWidget(SectionDetailsWidgetBase[ListSection]):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._parent: Section | None = None
@@ -208,8 +208,8 @@ class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
     def _add_section(self) -> None:
         # create drop down menu to select the type of section to add
         menu = QMenu(self)
-        menu.addAction("Section List", lambda: self._add_section_object(SectionList))
-        menu.addAction("Value", lambda: self._add_section_object(SectionValue))
+        menu.addAction("Section List", lambda: self._add_section_object(ListSection))
+        menu.addAction("Value", lambda: self._add_section_object(ValueSection))
         menu.exec(self._add_button.mapToGlobal(self._add_button.rect().bottomLeft()))
 
     def _add_section_object(self, section_type: Type[Section]) -> None:

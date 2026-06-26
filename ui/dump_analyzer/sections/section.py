@@ -8,13 +8,13 @@ from typing import TYPE_CHECKING, Any
 from PySide6.QtGui import QColor
 
 if TYPE_CHECKING:
-    from .section_list import SectionList
+    from .list_section import ListSection
 
 @dataclass
 class Section(ABC):
     name: str
     relative_start: int
-    parent: SectionList | None = None
+    parent: ListSection | None = None
     color: QColor | None = None
 
     @classmethod
@@ -98,17 +98,17 @@ class Section(ABC):
         return overlaps
 
     @property
-    def root(self) -> SectionList:
+    def root(self) -> ListSection:
         '''Get the root section of this section.'''
         if self.parent is None:
-            if isinstance(self, SectionList):
+            if isinstance(self, ListSection):
                 return self
             else:
-                raise ValueError("Section without parent must be a SectionList.")
+                raise ValueError("Section without parent must be a ListSection.")
         return self.parent.root
 
     @property
-    def ancestors(self) -> list[SectionList]:
+    def ancestors(self) -> list[ListSection]:
         '''Get a list of ancestor sections, starting with the root and ending with the parent.'''
         if self.parent is None:
             return []
@@ -118,12 +118,12 @@ class Section(ABC):
     def from_dict(data: dict[str, Any]) -> Section:
         '''Create a section from a dictionary.'''
         type_name = data.get("type")
-        if type_name == "SectionList":
-            from .section_list import SectionList
-            t = SectionList
-        elif type_name == "SectionValue":
-            from .section_value import SectionValue
-            t = SectionValue
+        if type_name == "ListSection":
+            from .list_section import ListSection
+            t = ListSection
+        elif type_name == "ValueSection":
+            from .value_section import ValueSection
+            t = ValueSection
         else:
             raise ValueError(f"Unknown section type: {type_name}")
         s = t(name=data["name"], relative_start=data["start"])

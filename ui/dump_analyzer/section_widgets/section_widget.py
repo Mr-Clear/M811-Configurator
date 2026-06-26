@@ -11,20 +11,20 @@ from PySide6.QtWidgets import (QColorDialog, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QSpinBox, QToolButton, QVBoxLayout,
                                QWidget)
 
-from .section import Section
+from ..sections.section import Section
 
 
 def _editor_for_type(section_type: type[Section]) -> type[SectionDetailsWidgetBase[Section]]:
     '''Get the editor widget type for the given section type.'''
-    from .section_list import SectionList
-    from .section_value import SectionValue
+    from ..sections.list_section import ListSection
+    from ..sections.value_section import ValueSection
 
-    if issubclass(section_type, SectionList):
-        from .section_list_widget import SectionListWidget
-        return SectionListWidget
-    elif issubclass(section_type, SectionValue):
-        from .section_value_widget import SectionValueWidget
-        return SectionValueWidget
+    if issubclass(section_type, ListSection):
+        from .list_section_widget import ListSectionWidget
+        return ListSectionWidget
+    elif issubclass(section_type, ValueSection):
+        from .value_section_widget import ValueSectionWidget
+        return ValueSectionWidget
     else:
         raise ValueError(f"Unknown section type: {section_type}")
 

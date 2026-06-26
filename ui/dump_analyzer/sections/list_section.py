@@ -3,17 +3,17 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from ui.dump_analyzer.section import Section
+from ui.dump_analyzer.sections.section import Section
 
 
 @dataclass
-class SectionList(Section):
+class ListSection(Section):
     length: int = 1
     subsections: list[Section] = field(default_factory=list) # type: ignore
 
     @classmethod
     def type_name(cls) -> str:
-        return "Section List"
+        return "List"
 
     @property
     def size(self) -> int:
@@ -77,7 +77,7 @@ class SectionList(Section):
             return None
         for subsection in self.subsections:
             if subsection.contains_absolute_index(position):
-                if isinstance(subsection, SectionList):
+                if isinstance(subsection, ListSection):
                     descendant = subsection.find_descendant(position)
                     if descendant is not None:
                         return descendant

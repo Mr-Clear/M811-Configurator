@@ -18,7 +18,7 @@ from ui.config import Config
 
 from .byte_info_widget import ByteInfoWidget
 from .hex_viewer import HexViewer
-from .section_list import SectionList
+from .sections.list_section import ListSection
 from .sections_widget import SectionsWidget
 
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ class DumpAnalyzer (QMainWindow):
 
         self._config = Config.instance()
         self._data: bytes = bytes()
-        self._root_section: SectionList = self._config.sections
+        self._root_section: ListSection = self._config.sections
         self._hex_viewer: HexViewer
         self._sections_widget: SectionsWidget
         self._visible_detail_bytes: VisibleDetailBytes = self._config.visible_detail_bytes
@@ -292,8 +292,8 @@ class DumpAnalyzer (QMainWindow):
         if file_name:
             try:
                 with open(file_name, "r") as f:
-                    section_list = SectionList.from_dict(json.load(f))
-                assert isinstance(section_list, SectionList)
+                    section_list = ListSection.from_dict(json.load(f))
+                assert isinstance(section_list, ListSection)
                 self._sections_widget.root_section = section_list
             except Exception as e:
                 logger.error(f"Failed to load sections: {e}")

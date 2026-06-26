@@ -13,8 +13,8 @@ from PySide6.QtWidgets import QScrollArea, QWidget
 
 from ui.config import Config
 
-from .section import Section
-from .section_list import SectionList
+from .sections.section import Section
+from .sections.list_section import ListSection
 
 NUMBER_KEYS = set(range(Qt.Key.Key_0, Qt.Key.Key_9 + 1))
 LETTER_KEYS = set(range(Qt.Key.Key_A, Qt.Key.Key_F + 1))
@@ -70,7 +70,7 @@ class HexViewer(QWidget):
         self._selected_byte: int | None = None
         self._colors: dict[HexViewer.Colors, QColor] = {}
         self._edit_cursor_pos = 0
-        self._root_section: SectionList | None = None
+        self._root_section: ListSection | None = None
         self._encoding = self._config.encoding
         self._line_width = self._config.hex_viewer_line_width
         self.setFont(self._config.hex_viewer_font)
@@ -140,7 +140,7 @@ class HexViewer(QWidget):
             parent = parent.parentWidget()
         return None
 
-    def set_root_section(self, section: SectionList) -> None:
+    def set_root_section(self, section: ListSection) -> None:
         self._root_section = section
         self.repaint()
 
