@@ -24,36 +24,25 @@ class SectionList(Section):
         '''Set the size of the section.'''
         self.length = value
 
-    @property
-    def end(self) -> int:
-        '''Get the end of the section.'''
-        return self.start + self.size
-
     def children(self) -> list[Section]:
         '''Get the child sections of this section.'''
         return self.subsections
 
-    def contains_index(self, idx: int) -> bool:
-        '''Check if the section contains the given index.'''
-        return self.start <= idx < self.end
-
     def add_section(self, subsection: Section) -> None:
         '''Add a subsection to the section.'''
-        if not self.contains_index(subsection.start) or \
-           not self.contains_index(subsection.end - 1):
-            raise ValueError(
-                f"Subsection {subsection} is out of bounds of section {self}.")
-        if self.get_overlaps(subsection.start, subsection.size):
+        if subsection.relative_start < 0 or subsection.relative_end > self.size:
+            raise ValueError(f"Subsection {subsection} is out of bounds of section {self}.")
+        if self.get_overlaps(subsection.relative_start, subsection.size):
             raise ValueError(
                 f"Subsection {subsection} overlaps with existing subsections of section {self}:" +
-                ", ".join(str(s) for s in self.get_overlaps(subsection.start, subsection.size)))
+                ", ".join(str(s) for s in self.get_overlaps(subsection.relative_start, subsection.size)))
         self.subsections.append(subsection)
-        self.subsections.sort(key=lambda s: s.start)
+        self.subsections.sort(key=lambda s: s.relative_start)
 
     def get_section_for_index(self, idx: int) -> Section | None:
         '''Get the subsection that contains the given index.'''
         for subsection in self.subsections:
-            if subsection.contains_index(idx):
+            if subsection.contains_absolute_index(idx):
                 return subsection
         return None
 
@@ -61,8 +50,8 @@ class SectionList(Section):
         '''Get a list that maps indices to sections.'''
         section_map: list[Section] = [self] * self.size
         for subsection in self.subsections:
-            for idx in range(subsection.start, subsection.end):
-                section_map[idx - self.start] = subsection
+            for idx in range(subsection.relative_start, subsection.relative_end):
+                section_map[idx - self.relative_start] = subsection
         return section_map
 
     def fill_dict(self, d: dict[str, Any]) -> None:
@@ -71,7 +60,7 @@ class SectionList(Section):
         d["subsections"] = [subsection.to_dict() for subsection in self.subsections]
 
     def __str__(self) -> str:
-        return f"'{self.name} {self.size} (0x{self.start:X} - 0x{self.end:X})'"
+        return f"'{self.name} {self.size} (0x{self.relative_start:X} - 0x{self.relative_end:X})'"
 
     def load_from_dict(self, data: dict[str, Any]) -> None:
         '''Load the section from a dictionary.'''
@@ -84,10 +73,10 @@ class SectionList(Section):
 
     def find_descendant(self, position: int) -> Section | None:
         '''Find the descendant section that contains the given position.'''
-        if not self.contains_index(position):
+        if not self.contains_absolute_index(position):
             return None
         for subsection in self.subsections:
-            if subsection.contains_index(position):
+            if subsection.contains_absolute_index(position):
                 if isinstance(subsection, SectionList):
                     descendant = subsection.find_descendant(position)
                     if descendant is not None:

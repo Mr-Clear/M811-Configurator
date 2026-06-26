@@ -94,7 +94,7 @@ class SectionsTreeModel(QAbstractItemModel):
 
     def set_root(self, root: Section) -> None:
         '''Set the root section of the tree model.'''
-        self._root = SectionList(name="INVISIBLE_ROOT", start=0, length=0xFFFF, subsections=[root])
+        self._root = SectionList(name="INVISIBLE_ROOT", relative_start=0, length=0xFFFF, subsections=[root])
         self.layoutChanged.emit()
 
     def rowCount(self, parent: QModelIndex) -> int: # type: ignore

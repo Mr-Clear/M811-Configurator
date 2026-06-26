@@ -92,7 +92,7 @@ class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
             self._size_spin_box.setMinimum(0)
             self._size_spin_box.setMaximum(section.parent.size if section.parent else 0xFFFF)
             self._size_spin_box.setValue(section.size)
-            self._sections = deepcopy(section.children())
+            self._sections = section.children()
 
         self._update_member_list()
         self._on_change()
@@ -101,7 +101,6 @@ class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
         '''Check if there are unsaved changes to the section list.'''
         section = self.section
         if section is None:
-            print("No section")
             return False
         if section.size != self._size_spin_box.value():
             return True
@@ -117,7 +116,7 @@ class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
         '''Get a list of errors in the section list.'''
         errors: list[str] = []
         for s in self._sections:
-            if s.start < 0 or s.end > self.get_size():
+            if s.relative_start < 0 or s.relative_end > self.get_size():
                 errors.append(f"Section '{s.name}' is out of bounds.")
         for i in range(len(self._sections)):
             for j in range(i + 1, len(self._sections)):
@@ -163,8 +162,8 @@ class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
         if current_section is None:
             return
         number = self._find_free_new_section_number()
-        new_section = section_type(name=f"New Section {number}", start=0)
-        new_section.start = self._find_free_start(new_section.size)
+        new_section = section_type(name=f"New Section {number}", relative_start=0)
+        new_section.relative_start = self._find_free_start(new_section.size)
         new_section.parent = current_section
         self._sections.append(new_section)
         self._update_member_list()
@@ -201,13 +200,13 @@ class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
         second_idx = first_idx + 1
         first = self._sections[first_idx]
         second = self._sections[second_idx]
-        gap = self._sections[second_idx].start - self._sections[first_idx].end
-        second.start = first.start
-        first.start = second.end + gap
+        gap = self._sections[second_idx].relative_start - self._sections[first_idx].relative_end
+        second.relative_start = first.relative_start
+        first.relative_start = second.relative_end + gap
 
     def _find_free_start(self, size: int) -> int:
         '''Find a free start index for a new section of the given size.'''
-        occupied_ranges = [(s.start, s.end) for s in self._sections]
+        occupied_ranges = [(s.relative_start, s.relative_end) for s in self._sections]
         if not occupied_ranges:
             return 0
         occupied_ranges.sort()

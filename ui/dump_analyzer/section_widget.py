@@ -158,9 +158,9 @@ class SectionWidget(QWidget):
             enabled = False
         else:
             self._name_text.setText(f"{section.name}")
-            self._start_spin_box.setValue(section.start)
-            self._start_spin_box.setMinimum(section.parent.start if section.parent else 0)
-            self._start_spin_box.setMaximum(section.parent.end - 1 if section.parent else 0xFFFF)
+            self._start_spin_box.setMinimum(0)
+            self._start_spin_box.setMaximum(section.parent.size - 1 if section.parent else 0xFFFF)
+            self._start_spin_box.setValue(section.relative_start)
             self._current_color = section.color
 
             editor_type = _editor_for_type(type(section))
@@ -235,7 +235,7 @@ class SectionWidget(QWidget):
         if self._section is None or self._section_editor is None:
             return
         size = self._section_editor.get_size()
-        end = self._section.start + size
+        end = self._section.relative_start + size
         if self._size_is_hex:
             self._size_label.setText(f"0x{size:X}")
         else:
@@ -253,17 +253,18 @@ class SectionWidget(QWidget):
             change = False
         else:
             name = self._name_text.text()
-            start = int(self._start_spin_box.text(), 16)
+            relative_start = int(self._start_spin_box.text(), 16)
+            parent_absolute_start = self._section.parent.absolute_start if self._section.parent else 0
+            absolute_start = parent_absolute_start + relative_start
             size = self._section.size
-            self._end_label.setText(f"0x{start + size:X}")
+            self._end_label.setText(f"0x{relative_start + size:X}")
             s = self._section
-            if s.name != name or s.start != start or s.size != size or s.color != self._current_color:
-                parent_start = self._section.parent.start if self._section.parent else 0
-                parent_end = self._section.parent.end if self._section.parent else 0xFFFF
-                if start < parent_start or start + size > parent_end:
+            if s.name != name or s.absolute_start != absolute_start or s.size != size or s.color != self._current_color:
+                parent_absolute_end = self._section.parent.absolute_end if self._section.parent else 0xFFFF
+                if absolute_start < parent_absolute_start or absolute_start + size > parent_absolute_end:
                     error = "Section is out of bounds of parent section."
                 else:
-                    overlaps = self._section.parent.get_overlaps(start, size) if self._section.parent else []
+                    overlaps = self._section.parent.get_overlaps(absolute_start, size) if self._section.parent else []
                     if overlaps and (len(overlaps) == 1 and overlaps[0] != self._section):
                         error = "Section overlaps with existing sibling sections."
                 change = True
@@ -280,7 +281,7 @@ class SectionWidget(QWidget):
             return
         self._section_editor.save_section()
         self._section.name = self._name_text.text()
-        self._section.start = int(self._start_spin_box.text(), 16)
+        self._section.relative_start = int(self._start_spin_box.text(), 16)
         self._section.color = self._current_color
         self.section_changed.emit()
         self._on_change()

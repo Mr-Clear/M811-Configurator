@@ -65,7 +65,7 @@ class Config:
     def sections(self) -> SectionList:
         '''Get the sections defined in the configuration.'''
         if "sections" not in self.data:
-            return SectionList(name="M811", start=0, length=0xFFFF)
+            return SectionList(name="M811", relative_start=0, length=0xFFFF)
         section_list = SectionList.from_dict(self.data["sections"])
         if not isinstance(section_list, SectionList):
             raise ValueError("Root section must be a SectionList.")

@@ -347,24 +347,24 @@ class HexViewer(QWidget):
         def same_left(self, level: int = -1) -> bool:
             if self.col == 0 or self.top_section is None:
                 return False
-            return self.sections[level].contains_index(self.byte_index - 1)
+            return self.sections[level].contains_absolute_index(self.byte_index - 1)
 
         def same_right(self, level: int = -1) -> bool:
             if self.last_column or self.top_section is None:
                 return False
-            return self.sections[level].contains_index(self.byte_index + 1)
+            return self.sections[level].contains_absolute_index(self.byte_index + 1)
 
         def same_up(self, level: int = -1) -> bool:
             if self.top_section is None:
                 return False
             size_hint = self.outer._current_size_hint
-            return self.sections[level].contains_index(self.byte_index - size_hint.bytes_per_line)
+            return self.sections[level].contains_absolute_index(self.byte_index - size_hint.bytes_per_line)
 
         def same_down(self, level: int = -1) -> bool:
             if self.top_section is None:
                 return False
             size_hint = self.outer._current_size_hint
-            return self.sections[level].contains_index(self.byte_index + size_hint.bytes_per_line)
+            return self.sections[level].contains_absolute_index(self.byte_index + size_hint.bytes_per_line)
 
 
     def paintEvent(self, event: QPaintEvent) -> None:

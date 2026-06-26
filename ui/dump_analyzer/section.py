@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 @dataclass
 class Section(ABC):
     name: str
-    start: int
+    relative_start: int
     parent: SectionList | None = None
     color: QColor | None = None
 
@@ -29,15 +29,32 @@ class Section(ABC):
         '''Get the size of the section.'''
         pass
 
+    @property
+    def relative_end(self) -> int:
+        '''Get the end of the section relative to its parent.'''
+        return self.relative_start + self.size - 1
 
     @property
-    def end(self) -> int:
-        '''Get the end of the section.'''
-        return self.start + self.size
+    def absolute_start(self) -> int:
+        '''Get the absolute start of this section.'''
+        if self.parent is None:
+            return self.relative_start
+        return self.parent.absolute_start + self.relative_start
+    @absolute_start.setter
+    def absolute_start(self, value: int) -> None:
+        '''Set the absolute start of this section.'''
+        if self.parent is None:
+            self.relative_start = value
+        else:
+            self.relative_start = value - self.parent.absolute_start
+    @property
+    def absolute_end(self) -> int:
+        '''Get the absolute end of this section.'''
+        return self.absolute_start + self.size - 1
 
-    def contains_index(self, idx: int) -> bool:
+    def contains_absolute_index(self, idx: int) -> bool:
         '''Check if the section contains the given index.'''
-        return self.start <= idx < self.end
+        return self.absolute_start <= idx <= self.absolute_end
 
     def children(self) -> list[Section]:
         '''Get the child sections of this section.'''
@@ -48,7 +65,7 @@ class Section(ABC):
         d ={
             "type": type(self).__name__,
             "name": self.name,
-            "start": self.start,
+            "start": self.relative_start,
             "color": self.color.name() if self.color else None,
         }
         self.fill_dict(d)
@@ -56,9 +73,9 @@ class Section(ABC):
 
     def overlaps_with(self, other: Section) -> bool:
         '''Check if this section overlaps with another section.'''
-        if other.start < self.end and other.end > self.start:
+        if other.absolute_start < self.absolute_end and other.absolute_end > self.absolute_start:
             return True
-        if other.end > self.start and other.start < self.end:
+        if other.absolute_end > self.absolute_start and other.absolute_start < self.absolute_end:
             return True
         return False
 
@@ -76,7 +93,7 @@ class Section(ABC):
         '''Get a list of children that overlap with the given start index and size.'''
         overlaps: list[Section] = []
         for child in self.children():
-            if child.start < start + size and child.end > start:
+            if child.absolute_start < start + size and child.absolute_end > start:
                 overlaps.append(child)
         return overlaps
 
@@ -89,18 +106,6 @@ class Section(ABC):
             else:
                 raise ValueError("Section without parent must be a SectionList.")
         return self.parent.root
-
-    @property
-    def absolute_start(self) -> int:
-        '''Get the absolute start of this section.'''
-        if self.parent is None:
-            return self.start
-        return self.parent.absolute_start + self.start
-
-    @property
-    def absolute_end(self) -> int:
-        '''Get the absolute end of this section.'''
-        return self.absolute_start + self.size
 
     @property
     def ancestors(self) -> list[SectionList]:
@@ -121,7 +126,7 @@ class Section(ABC):
             t = SectionValue
         else:
             raise ValueError(f"Unknown section type: {type_name}")
-        s = t(name=data["name"], start=data["start"])
+        s = t(name=data["name"], relative_start=data["start"])
         s.color = QColor(data["color"]) if data.get("color") else None
         s.load_from_dict(data)
         return s
