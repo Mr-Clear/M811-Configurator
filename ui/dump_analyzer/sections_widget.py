@@ -101,7 +101,7 @@ class SectionsTreeModel(QAbstractItemModel):
         if not parent.isValid():
             return 1
         section = parent.internalPointer()
-        return len(section.children())
+        return len(section.children(True))
 
     def columnCount(self, parent: QModelIndex) -> int: # type: ignore
         return 3
@@ -111,8 +111,8 @@ class SectionsTreeModel(QAbstractItemModel):
             section = self._root
         else:
             section = parent.internalPointer()
-        if 0 <= row < len(section.children()):
-            return self.createIndex(row, column, section.children()[row])
+        if 0 <= row < len(section.children(True)):
+            return self.createIndex(row, column, section.children(True)[row])
         return QModelIndex()
 
     def parent(self, index: QModelIndex) -> QModelIndex: # type: ignore
@@ -129,7 +129,7 @@ class SectionsTreeModel(QAbstractItemModel):
         grandparent_section = self._find_parent(self._root, parent_section)
         if grandparent_section is None:
             return QModelIndex()
-        row = grandparent_section.children().index(parent_section)
+        row = grandparent_section.children(True).index(parent_section)
         return self.createIndex(row, 0, parent_section)
 
     def data(self, index: QModelIndex, role: int) -> str | None: # type: ignore
@@ -159,7 +159,7 @@ class SectionsTreeModel(QAbstractItemModel):
         return None
 
     def _find_parent(self, current: Section, target: Section) -> Section | None:
-        for child in current.children():
+        for child in current.children(True):
             if child == target:
                 return current
             parent = self._find_parent(child, target)

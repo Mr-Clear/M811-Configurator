@@ -56,7 +56,7 @@ class Section(ABC):
         '''Check if the section contains the given index.'''
         return self.absolute_start <= idx <= self.absolute_end
 
-    def children(self) -> list[Section]:
+    def children(self, prototype_only: bool = False) -> list[Section]:
         '''Get the child sections of this section.'''
         return []
 

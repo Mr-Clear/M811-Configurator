@@ -12,6 +12,7 @@ class ArraySection(AbstractParentSection):
     child_section: Section | None = None
     repetitions: int = 1 # Number of repetitions of the child section
     gap: int = 0  # Gap between each repetition of the child section
+    padding: int = 0  # Free space after the last repetition of the child section
 
 
     @classmethod
@@ -20,11 +21,25 @@ class ArraySection(AbstractParentSection):
 
     @property
     def size(self) -> int:
-        return self.repetitions * (self.child_section.size if self.child_section else 0)
+        if self.child_section is None:
+            return 0
+        return self.child_section.relative_start + \
+               self.repetitions * (self.child_section.size + self.gap) - self.gap + \
+               self.padding
 
-    def children(self) -> list[Section]:
-        return [self.child_section] if self.child_section else []
-
+    def children(self, prototype_only: bool = False) -> list[Section]:
+        if self.child_section is None:
+            return []
+        if prototype_only:
+            return [self.child_section]
+        else:
+            children: list[Section] = [self.child_section]
+            for i in range(1, self.repetitions):
+                copy = Section.from_dict(self.child_section.to_dict())
+                copy.parent = self
+                copy.relative_start = self.child_section.relative_start + i * (self.child_section.size + self.gap)
+                children.append(copy)
+            return children
     def add_section(self, subsection: Section) -> None:
         if self.child_section is not None:
             raise ValueError(f"ArraySection {self} already has a subsection.")
@@ -34,7 +49,8 @@ class ArraySection(AbstractParentSection):
         super().fill_dict(d)
         d["repetitions"] = self.repetitions
         d["gap"] = self.gap
-        d["child_section"] = self.child_section.to_dict() if self.child_section else None
+        d["child"] = self.child_section.to_dict() if self.child_section else None
+        d["padding"] = self.padding
 
 
     def __str__(self) -> str:
@@ -44,6 +60,7 @@ class ArraySection(AbstractParentSection):
         '''Load the section from a dictionary.'''
         self.repetitions = data["repetitions"]
         self.gap = data["gap"]
-        self.child_section = Section.from_dict(data["child_section"]) if data.get("child_section") else None
+        self.padding = data.get("padding", 0)
+        self.child_section = Section.from_dict(data["child"]) if data.get("child") else None
         if self.child_section:
             self.child_section.parent = self

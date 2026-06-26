@@ -11,22 +11,16 @@ from PySide6.QtWidgets import (QColorDialog, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QSpinBox, QToolButton, QVBoxLayout,
                                QWidget)
 
+from ui.dump_analyzer.section_widgets.section_types import get_section_types
+
 from ..sections.section import Section
 
 
 def _editor_for_type(section_type: type[Section]) -> type[SectionDetailsWidgetBase[Section]]:
     '''Get the editor widget type for the given section type.'''
-    from ..sections.list_section import ListSection
-    from ..sections.value_section import ValueSection
-
-    if issubclass(section_type, ListSection):
-        from .list_section_widget import ListSectionWidget
-        return ListSectionWidget
-    elif issubclass(section_type, ValueSection):
-        from .value_section_widget import ValueSectionWidget
-        return ValueSectionWidget
-    else:
-        raise ValueError(f"Unknown section type: {section_type}")
+    if section_type in get_section_types():
+        return get_section_types()[section_type]
+    raise ValueError(f"Unknown section type: {section_type}")
 
 class SectionWidget(QWidget):
     section_changed = Signal()
@@ -178,8 +172,8 @@ class SectionWidget(QWidget):
                 layout.addWidget(self._section_editor)
                 self._section_editor.data_changed.connect(self._on_editor_change)
             assert self._section_editor is not None
-            self._update_size_and_end()
             self._section_editor.section = section
+            self._update_size_and_end()
             enabled = True
         self._update_color_label()
 
@@ -262,7 +256,7 @@ class SectionWidget(QWidget):
             if s.name != name or s.absolute_start != absolute_start or s.size != size or s.color != self._current_color:
                 parent_absolute_end = self._section.parent.absolute_end if self._section.parent else 0xFFFF
                 if absolute_start < parent_absolute_start or absolute_start + size > parent_absolute_end:
-                    error = "Section is out of bounds of parent section."
+                    pass#error = "Section is out of bounds of parent section."
                 else:
                     overlaps = self._section.parent.get_overlaps(absolute_start, size) if self._section.parent else []
                     if overlaps and (len(overlaps) == 1 and overlaps[0] != self._section):

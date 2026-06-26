@@ -8,17 +8,18 @@ from logging import getLogger
 from typing import Type
 
 from PySide6.QtCore import QModelIndex, QPersistentModelIndex, Qt, Signal
-from PySide6.QtGui import QColor, QPainter, QPalette, QFont
+from PySide6.QtGui import QColor, QFont, QPainter, QPalette
 from PySide6.QtWidgets import (QAbstractButton, QHBoxLayout, QLabel,
                                QListWidget, QListWidgetItem, QMenu,
                                QPushButton, QSpinBox, QStyle,
                                QStyledItemDelegate, QStyleOptionViewItem,
                                QToolButton, QVBoxLayout, QWidget)
 
-from ui.dump_analyzer.sections.section import Section
 from ui.dump_analyzer.sections.list_section import ListSection
+from ui.dump_analyzer.sections.section import Section
 from ui.dump_analyzer.sections.value_section import ValueSection
 
+from .section_types import get_section_types
 from .section_widget import SectionDetailsWidgetBase
 
 logger = getLogger(__name__)
@@ -78,7 +79,6 @@ class ListItemDelegate(QStyledItemDelegate):
 class ListSectionWidget(SectionDetailsWidgetBase[ListSection]):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._parent: Section | None = None
         self._member_list: QListWidget
         self._size_spin_box: QSpinBox
         self._add_button: QAbstractButton
@@ -208,8 +208,8 @@ class ListSectionWidget(SectionDetailsWidgetBase[ListSection]):
     def _add_section(self) -> None:
         # create drop down menu to select the type of section to add
         menu = QMenu(self)
-        menu.addAction("Section List", lambda: self._add_section_object(ListSection))
-        menu.addAction("Value", lambda: self._add_section_object(ValueSection))
+        for section_type in get_section_types():
+            menu.addAction(section_type.type_name(), lambda st=section_type: self._add_section_object(st))
         menu.exec(self._add_button.mapToGlobal(self._add_button.rect().bottomLeft()))
 
     def _add_section_object(self, section_type: Type[Section]) -> None:

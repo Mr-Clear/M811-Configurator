@@ -25,7 +25,7 @@ class ListSection(AbstractParentSection):
         '''Set the size of the section.'''
         self.length = value
 
-    def children(self) -> list[Section]:
+    def children(self, prototype_only: bool = False) -> list[Section]:
         '''Get the child sections of this section.'''
         return self.subsections
 
