@@ -1,8 +1,8 @@
 '''Widget to manage sections.'''
 
 from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt, Signal
-from PySide6.QtWidgets import (QHBoxLayout, QHeaderView, QTreeView,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QHeaderView, QSplitter, QTreeView, QVBoxLayout,
+                               QWidget)
 
 from .section import Section
 from .section_list import SectionList
@@ -15,26 +15,30 @@ class SectionsWidget(QWidget):
     def __init__(self, root: SectionList, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._root = root
-        layout = QHBoxLayout(self)
+        layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        splitter = QSplitter(Qt.Orientation.Horizontal, self)
         left_panel = QWidget(self)
         left_layout = QVBoxLayout(left_panel)
         left_layout.setContentsMargins(0, 0, 0, 0)
         self._tree_view = QTreeView(self)
-        self._tree_view.setHeaderHidden(True)
         self._tree_view_model = SectionsTreeModel(self._root, self)
         self._tree_view.setModel(self._tree_view_model)
-        self._tree_view.selectionModel().selectionChanged.connect(self._on_tree_selection_changed)
+        self._tree_view.setIndentation(8)
+        self._tree_view.header().setVisible(True)
+        self._tree_view.header().setStretchLastSection(False)
         self._tree_view.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self._tree_view.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         self._tree_view.header().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
         self._tree_view.selectionModel().selectionChanged.connect(self._on_tree_selection_changed)
         self._tree_view.expandAll()
         left_layout.addWidget(self._tree_view)
-        layout.addWidget(left_panel)
+        splitter.addWidget(left_panel)
         self._details_widget = SectionWidget(self)
-        layout.addWidget(self._details_widget, 1)
+        splitter.addWidget(self._details_widget)
         self._details_widget.section_changed.connect(self._on_section_changed)
+        layout.addWidget(splitter)
+        self.setLayout(layout)
 
         self._tree_view.setCurrentIndex(self._tree_view_model.index(0, 0, QModelIndex()))
 
@@ -139,6 +143,19 @@ class SectionsTreeModel(QAbstractItemModel):
                 return f"0x{section.absolute_start:04X}"
             if index.column() == 2:
                 return f"0x{section.absolute_end:04X}"
+        return None
+
+    def headerData(self, section: int, orientation: Qt.Orientation, role: int) -> str | None: # type: ignore
+        if role != Qt.ItemDataRole.DisplayRole:
+            return None
+        if orientation != Qt.Orientation.Horizontal:
+            return None
+        if section == 0:
+            return "Name"
+        if section == 1:
+            return "Start"
+        if section == 2:
+            return "End"
         return None
 
     def _find_parent(self, current: Section, target: Section) -> Section | None:

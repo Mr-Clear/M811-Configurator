@@ -1,13 +1,15 @@
 '''Widget for displaying and editing a Section.'''
 
 from __future__ import annotations
+
 from abc import abstractmethod
 from typing import Generic, TypeVar
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QFontMetrics
-from PySide6.QtWidgets import (QColorDialog, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-                               QSpinBox, QToolButton, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QColorDialog, QHBoxLayout, QLabel, QLineEdit,
+                               QPushButton, QSpinBox, QToolButton, QVBoxLayout,
+                               QWidget)
 
 from .section import Section
 
@@ -118,6 +120,8 @@ class SectionWidget(QWidget):
         self._section_editor_container.setLayout(section_editor_container_layout)
         main_layout.addWidget(self._section_editor_container, 1)
 
+        main_layout.addStretch(1)
+
         # Col 4: Buttons and error message
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -132,8 +136,6 @@ class SectionWidget(QWidget):
         self._discard_button.clicked.connect(self._on_discard)
         layout.addWidget(self._discard_button)
         main_layout.addLayout(layout)
-
-        main_layout.addStretch(1)
 
         self._toogle_size_spin_box(True)
 
