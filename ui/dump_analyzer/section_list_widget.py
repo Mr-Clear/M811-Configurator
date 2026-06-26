@@ -4,12 +4,15 @@ and allows the user to edit it.
 '''
 
 import copy
-from copy import deepcopy
+from logging import getLogger
 from typing import Type
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QModelIndex, QPersistentModelIndex, Qt, Signal
+from PySide6.QtGui import QColor, QPainter, QPalette, QFont
 from PySide6.QtWidgets import (QAbstractButton, QHBoxLayout, QLabel,
-                               QListWidget, QMenu, QPushButton, QSpinBox,
+                               QListWidget, QListWidgetItem, QMenu,
+                               QPushButton, QSpinBox, QStyle,
+                               QStyledItemDelegate, QStyleOptionViewItem,
                                QToolButton, QVBoxLayout, QWidget)
 
 from ui.dump_analyzer.section import Section
@@ -17,6 +20,59 @@ from ui.dump_analyzer.section_list import SectionList
 from ui.dump_analyzer.section_value import SectionValue
 
 from .section_widget import SectionDetailsWidgetBase
+
+logger = getLogger(__name__)
+
+class ListItemDelegate(QStyledItemDelegate):
+    '''Render metadata in parentheses with reduced contrast.'''
+
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex | QPersistentModelIndex) -> None:
+        match index.data(Qt.ItemDataRole.UserRole):
+            case (str() as name, str() as section_type, int() as relative_start, int() as relative_end, *_):
+                pass
+            case _:
+                logger.warning(f"Unexpected data in ListItemDelegate: {index.data(Qt.ItemDataRole.UserRole)}")
+                super().paint(painter, option, index)
+                return
+
+        style = option.widget.style()
+
+        draw_option = QStyleOptionViewItem(option)
+        self.initStyleOption(draw_option, index)
+        draw_option.text = ""
+        style.drawControl(QStyle.ControlElement.CE_ItemViewItem, draw_option, painter, option.widget)
+
+        text_rect = style.subElementRect(QStyle.SubElement.SE_ItemViewItemText, draw_option, option.widget)
+        font_metrics = draw_option.fontMetrics
+        baseline = text_rect.y() + (text_rect.height() + font_metrics.ascent() - font_metrics.descent()) // 2
+
+        if draw_option.state & QStyle.StateFlag.State_Selected:
+            main_color = draw_option.palette.color(QPalette.ColorRole.HighlightedText)
+            faded_color = QColor(main_color)
+            faded_color.setAlpha(150)
+        else:
+            main_color = draw_option.palette.color(QPalette.ColorRole.Text)
+            faded_color = draw_option.palette.color(QPalette.ColorRole.Mid)
+
+        font = draw_option.font
+        monospace_font = QFont(font)
+        monospace_font.setFamily("Courier")
+
+        painter.setFont(font)
+        name_width = font_metrics.horizontalAdvance(name + ' ')
+
+        painter.save()
+        painter.setClipRect(text_rect)
+        painter.setPen(main_color)
+        painter.drawText(text_rect.x(), baseline, name)
+        painter.setPen(faded_color)
+        painter.drawText(text_rect.x() + name_width, baseline, f"({section_type})")
+
+        painter.setFont(monospace_font)
+        position_text = f"({relative_start:04X}-{relative_end:04X})"
+        position_width = painter.fontMetrics().horizontalAdvance(position_text)
+        painter.drawText(text_rect.right() - position_width, baseline, position_text)
+        painter.restore()
 
 
 class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
@@ -40,7 +96,7 @@ class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         self._member_list = QListWidget(self)
-        self._member_list.setFont(monospace_font)
+        self._member_list.setItemDelegate(ListItemDelegate(self._member_list))
         self._member_list.currentRowChanged.connect(self._update_ui)
         layout.addWidget(self._member_list)
         right_layout = QVBoxLayout()
@@ -232,13 +288,15 @@ class SectionListWidget(SectionDetailsWidgetBase[SectionList]):
     def _update_member_list(self) -> None:
         '''Update the member list display.'''
         current_item = self._member_list.currentItem()
-        slection = current_item.text() if current_item else None
+        selection = current_item.text() if current_item else None
         self._member_list.clear()
-        self._sections.sort(key=lambda s: s.start)
+        self._sections.sort(key=lambda s: s.relative_start)
         for s in self._sections:
-            self._member_list.addItem(f"{s.name} (0x{s.start:04X} - 0x{s.end:04X}) ({type(s).type_name()})")
+            item = QListWidgetItem()
+            item.setData(Qt.ItemDataRole.UserRole, (s.name, s.type_name(), s.relative_start, s.relative_end))
+            self._member_list.addItem(item)
         for i in range(self._member_list.count()):
-            if self._member_list.item(i).text() == slection:
+            if self._member_list.item(i).text() == selection:
                 self._member_list.setCurrentRow(i)
                 break
         self._update_ui()
