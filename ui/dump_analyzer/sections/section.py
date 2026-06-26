@@ -66,7 +66,7 @@ class Section(ABC):
             "type": self.type_name(),
             "name": self.name,
             "start": self.relative_start,
-            "color": self.color.name() if self.color else None,
+            "color": self.color.name(QColor.NameFormat.HexArgb) if self.color else None,
         }
         self.fill_dict(d)
         return d
