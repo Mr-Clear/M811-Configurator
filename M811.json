@@ -1,0 +1,61 @@
+{
+    "type": "List",
+    "name": "M811",
+    "start": 0,
+    "color": null,
+    "size": 7151,
+    "subsections": [
+        {
+            "type": "Value",
+            "name": "Active Profile",
+            "start": 44,
+            "color": "#bd8eff",
+            "length": 1,
+            "min_value": 0,
+            "max_value": 255
+        },
+        {
+            "type": "List",
+            "name": "Poll Rates",
+            "start": 50,
+            "color": "#37ff00",
+            "size": 10,
+            "subsections": []
+        },
+        {
+            "type": "Array",
+            "name": "DPIs 1",
+            "start": 66,
+            "color": "#ff0004",
+            "repetitions": 5,
+            "gap": 2,
+            "child": {
+                "type": "List",
+                "name": "DPI",
+                "start": 2,
+                "color": "#ffea00",
+                "size": 3,
+                "subsections": [
+                    {
+                        "type": "Value",
+                        "name": "DPI Enabled",
+                        "start": 0,
+                        "color": "#ea00ff",
+                        "length": 1,
+                        "min_value": 0,
+                        "max_value": 255
+                    },
+                    {
+                        "type": "Value",
+                        "name": "DPI Value",
+                        "start": 1,
+                        "color": "#ff00c8",
+                        "length": 2,
+                        "min_value": 0,
+                        "max_value": 255
+                    }
+                ]
+            }
+        }
+    ]
+}
