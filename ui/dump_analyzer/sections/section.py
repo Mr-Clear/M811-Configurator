@@ -124,6 +124,9 @@ class Section(ABC):
         elif type_name == "Value":
             from .value_section import ValueSection
             t = ValueSection
+        elif type_name == "Array":
+            from .array_section import ArraySection
+            t = ArraySection
         else:
             raise ValueError(f"Unknown section type: {type_name}")
         s = t(name=data["name"], relative_start=data["start"])
