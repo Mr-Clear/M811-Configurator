@@ -3,11 +3,12 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from ui.dump_analyzer.sections.section import Section
+from .section import Section
+from .parent_section import AbstractParentSection
 
 
 @dataclass
-class ListSection(Section):
+class ListSection(AbstractParentSection):
     length: int = 1
     subsections: list[Section] = field(default_factory=list) # type: ignore
 
@@ -39,21 +40,6 @@ class ListSection(Section):
         self.subsections.append(subsection)
         self.subsections.sort(key=lambda s: s.relative_start)
 
-    def get_section_for_index(self, idx: int) -> Section | None:
-        '''Get the subsection that contains the given index.'''
-        for subsection in self.subsections:
-            if subsection.contains_absolute_index(idx):
-                return subsection
-        return None
-
-    def get_section_map(self) -> list[Section]:
-        '''Get a list that maps indices to sections.'''
-        section_map: list[Section] = [self] * self.size
-        for subsection in self.subsections:
-            for idx in range(subsection.relative_start, subsection.relative_end):
-                section_map[idx - self.relative_start] = subsection
-        return section_map
-
     def fill_dict(self, d: dict[str, Any]) -> None:
         super().fill_dict(d)
         d["size"] = self.size
@@ -69,17 +55,3 @@ class ListSection(Section):
                             for subsection in data.get("subsections", [])]
         for subsection in self.subsections:
             subsection.parent = self
-
-
-    def find_descendant(self, position: int) -> Section | None:
-        '''Find the descendant section that contains the given position.'''
-        if not self.contains_absolute_index(position):
-            return None
-        for subsection in self.subsections:
-            if subsection.contains_absolute_index(position):
-                if isinstance(subsection, ListSection):
-                    descendant = subsection.find_descendant(position)
-                    if descendant is not None:
-                        return descendant
-                return subsection
-        return self

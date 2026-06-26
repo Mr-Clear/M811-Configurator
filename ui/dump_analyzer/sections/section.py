@@ -8,13 +8,13 @@ from typing import TYPE_CHECKING, Any
 from PySide6.QtGui import QColor
 
 if TYPE_CHECKING:
-    from .list_section import ListSection
+    from .parent_section import AbstractParentSection
 
 @dataclass
 class Section(ABC):
     name: str
     relative_start: int
-    parent: ListSection | None = None
+    parent: AbstractParentSection | None = None
     color: QColor | None = None
 
     @classmethod
@@ -63,7 +63,7 @@ class Section(ABC):
     def to_dict(self) -> dict[str, Any]:
         '''Convert the section to a dictionary for JSON serialization.'''
         d ={
-            "type": type(self).__name__,
+            "type": self.type_name(),
             "name": self.name,
             "start": self.relative_start,
             "color": self.color.name() if self.color else None,
@@ -98,17 +98,17 @@ class Section(ABC):
         return overlaps
 
     @property
-    def root(self) -> ListSection:
+    def root(self) -> AbstractParentSection:
         '''Get the root section of this section.'''
         if self.parent is None:
-            if isinstance(self, ListSection):
+            if isinstance(self, AbstractParentSection):
                 return self
             else:
-                raise ValueError("Section without parent must be a ListSection.")
+                raise ValueError("Section without parent must be an AbstractParentSection.")
         return self.parent.root
 
     @property
-    def ancestors(self) -> list[ListSection]:
+    def ancestors(self) -> list[AbstractParentSection]:
         '''Get a list of ancestor sections, starting with the root and ending with the parent.'''
         if self.parent is None:
             return []
@@ -118,10 +118,10 @@ class Section(ABC):
     def from_dict(data: dict[str, Any]) -> Section:
         '''Create a section from a dictionary.'''
         type_name = data.get("type")
-        if type_name == "ListSection":
+        if type_name == "List":
             from .list_section import ListSection
             t = ListSection
-        elif type_name == "ValueSection":
+        elif type_name == "Value":
             from .value_section import ValueSection
             t = ValueSection
         else:

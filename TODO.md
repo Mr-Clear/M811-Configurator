@@ -8,10 +8,10 @@ Configure Redragon Mice on Linux
 
 - [ ] Named sections  
 - [ ] Save Alpha in colors  
-- [ ] Array section  
 
 ### In Progress
 
+- [ ] Array section  
 
 ### Done ✓
 
