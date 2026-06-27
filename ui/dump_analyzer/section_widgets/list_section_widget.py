@@ -20,6 +20,7 @@ from ui.dump_analyzer.sections.section import Section
 
 from .section_types import get_section_types
 from .section_widget import SectionDetailsWidgetBase
+from .clipboard import get_section_from_clipboard
 
 logger = getLogger(__name__)
 
@@ -114,7 +115,7 @@ class ListSectionWidget(SectionDetailsWidgetBase[ListSection]):
         right_layout.addLayout(size_layout)
         self._add_button = QPushButton(self)
         self._add_button.setText("➕ Add Section")
-        self._add_button.clicked.connect(self._add_section)
+        self._add_button.clicked.connect(self._on_add_section_clicked)
         right_layout.addWidget(self._add_button)
         self._remove_button = QPushButton(self)
         self._remove_button.setText("➖ Remove Section")
@@ -204,22 +205,35 @@ class ListSectionWidget(SectionDetailsWidgetBase[ListSection]):
             changed_section.size = self._size_spin_box.value()
             self.data_changed.emit()
 
-    def _add_section(self) -> None:
+    def _on_add_section_clicked(self) -> None:
         # create drop down menu to select the type of section to add
         menu = QMenu(self)
         for section_type in get_section_types():
-            menu.addAction(section_type.type_name(), lambda st=section_type: self._add_section_object(st))
+            menu.addAction(section_type.type_name(), lambda st=section_type: self._add_section_from_type(st))
+        menu.addSeparator()
+        paste_action = menu.addAction("Paste Section")
+        clipboard_section = get_section_from_clipboard()
+        print(f"Clipboard section: {clipboard_section}")
+        paste_action.setEnabled(clipboard_section is not None)
+        if clipboard_section is not None:
+            paste_action.triggered.connect(lambda: self._add_section(clipboard_section))
         menu.exec(self._add_button.mapToGlobal(self._add_button.rect().bottomLeft()))
 
-    def _add_section_object(self, section_type: Type[Section]) -> None:
+    def _add_section_from_type(self, section_type: Type[Section]) -> None:
         '''Add a new section of the given type.'''
         if self.section is None:
             return
         number = self._find_free_new_section_number()
         new_section = section_type(name=f"New Section {number}", relative_start=0)
-        new_section.relative_start = self._find_free_start(new_section.size)
-        new_section.parent = self.section
-        self._sections.append(new_section)
+        self._add_section(new_section)
+
+    def _add_section(self, section: Section) -> None:
+        '''Add a new section.'''
+        if self.section is None:
+            return
+        section.parent = self.section
+        section.relative_start = self._find_free_start(section.size)
+        self._sections.append(section)
         self._update_member_list()
         self.data_changed.emit()
 

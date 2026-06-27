@@ -221,7 +221,7 @@ class SectionWidget(QWidget):
         errors = self._section_editor.get_errors() if self._section_editor else []
         self._error_label.setText("\n".join(errors))
         changes = self._section_editor.has_changes() if self._section_editor else False
-        self._save_button.setEnabled(len(errors) == 0 and changes)
+        self._save_button.setEnabled(changes)
         self._discard_button.setEnabled(changes)
 
     def _update_size_and_end(self) -> None:

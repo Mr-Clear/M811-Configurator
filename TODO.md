@@ -6,12 +6,12 @@ Configure Redragon Mice on Linux
 
 ### Todo
 
+- [ ] Autosave  
 - [ ] Compare data  
 - [ ] Upload  
 
 ### In Progress
 
-- [ ] Copy paste sections  
 
 ### Done ✓
 
@@ -19,4 +19,5 @@ Configure Redragon Mice on Linux
 - [x] Array section  
 - [x] Save Alpha in colors  
 - [x] Review error handling  
+- [x] Copy paste sections  
 

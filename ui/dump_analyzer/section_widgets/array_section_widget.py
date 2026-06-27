@@ -1,17 +1,19 @@
 """Widget to edit array section details."""
 
-from PySide6.QtWidgets import QComboBox, QFormLayout, QSpinBox, QWidget
+from PySide6.QtWidgets import QComboBox, QFormLayout, QSpinBox, QToolButton, QWidget
 
 from ..sections.array_section import ArraySection
 from ..sections.section import Section
 from .section_types import get_section_types
 from .section_widget import SectionDetailsWidgetBase
+from .clipboard import get_section_from_clipboard
 
 
 class ArraySectionWidget(SectionDetailsWidgetBase[ArraySection]):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._section_types = list(get_section_types().keys())
+        self._unsaved_section: Section | None = None
         layout = QFormLayout(self)
         self.setLayout(layout)
         self._child_type_combo_box = QComboBox(self)
@@ -20,10 +22,17 @@ class ArraySectionWidget(SectionDetailsWidgetBase[ArraySection]):
         self._child_type_combo_box.currentIndexChanged.connect(self.data_changed)
         layout.addRow("Child Type:", self._child_type_combo_box)
 
+        self.paste_button = QToolButton(self)
+        self.paste_button.setText("📋 Paste Child from Clipboard")
+        self.paste_button.clicked.connect(self._on_paste_clicked)
+        self.paste_button.setEnabled(get_section_from_clipboard() is not None)
+        layout.addRow(self.paste_button)
+
         self.repetitions_spin_box = QSpinBox(self)
         self.repetitions_spin_box.setMinimum(1)
         self.repetitions_spin_box.setMaximum(1000)
         self.repetitions_spin_box.valueChanged.connect(self.data_changed)
+        self.repetitions_spin_box.valueChanged.connect(self._clear_unsaved_section)
         layout.addRow("Count:", self.repetitions_spin_box)
 
         self.gap_spin_box = QSpinBox(self)
@@ -43,7 +52,9 @@ class ArraySectionWidget(SectionDetailsWidgetBase[ArraySection]):
         '''Save the changes to the section.'''
         if not self.section:
             return
-        if self.section.child_section is None or type(self.section.child_section) != self._selected_type():
+        if self._unsaved_section:
+            self.section.child_section = self._unsaved_section
+        elif self.section.child_section is None or type(self.section.child_section) != self._selected_type():
             old_child = self.section.child_section
             self.section.child_section = self._selected_type()(f'New {self._selected_type().type_name()}', 0, self.section)
             if old_child:
@@ -59,7 +70,8 @@ class ArraySectionWidget(SectionDetailsWidgetBase[ArraySection]):
             return False
         if not self.section.child_section:
             return True
-        return type(self.section.child_section) != self._selected_type() or \
+        return self._unsaved_section is not None or \
+               type(self.section.child_section) != self._selected_type() or \
                self.section.repetitions != self.repetitions_spin_box.value() or \
                self.section.gap != self.gap_spin_box.value() or \
                self.section.padding != self.padding_spin_box.value()
@@ -88,3 +100,19 @@ class ArraySectionWidget(SectionDetailsWidgetBase[ArraySection]):
 
     def _selected_type(self) -> type[Section]:
         return self._section_types[self._child_type_combo_box.currentIndex()]
+
+    def _clear_unsaved_section(self, _: int) -> None:
+        self._unsaved_section = None
+
+    def _on_paste_clicked(self) -> None:
+        '''Handle the paste button being clicked.'''
+        if self.section is None:
+            return
+        section = get_section_from_clipboard()
+        if section is None:
+            return
+        self._child_type_combo_box.setCurrentIndex(self._section_types.index(type(section)))
+        section.relative_start = 0
+        section.parent = self.section
+        self._unsaved_section = section
+        self.data_changed.emit()
