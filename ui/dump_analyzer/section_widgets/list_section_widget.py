@@ -17,7 +17,6 @@ from PySide6.QtWidgets import (QAbstractButton, QHBoxLayout, QLabel,
 
 from ui.dump_analyzer.sections.list_section import ListSection
 from ui.dump_analyzer.sections.section import Section
-from ui.dump_analyzer.sections.value_section import ValueSection
 
 from .section_types import get_section_types
 from .section_widget import SectionDetailsWidgetBase

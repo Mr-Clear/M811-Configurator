@@ -6,10 +6,12 @@ Configure Redragon Mice on Linux
 
 ### Todo
 
-- [ ] Named sections  
+- [ ] Compare data  
+- [ ] Upload  
 
 ### In Progress
 
+- [ ] Copy paste sections  
 
 ### Done ✓
 

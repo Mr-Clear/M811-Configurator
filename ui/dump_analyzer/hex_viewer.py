@@ -270,10 +270,7 @@ class HexViewer(QWidget):
     def _sections_for_byte_index(self, byte_idx: int) -> list[Section]:
         if self._root_section is None:
             return []
-        section = self._root_section.find_descendant(byte_idx)
-        if section is None:
-            return []
-        return section.ancestors + [section]
+        return self._root_section.get_sections_for_index(byte_idx)
 
     def sizeHint(self) -> QSize:
         return self._current_size_hint.size
@@ -335,7 +332,9 @@ class HexViewer(QWidget):
 
         @cached_property
         def sections(self) -> list[Section]:
-            return self.outer._sections_for_byte_index(self.byte_index)
+            sections = self.outer._sections_for_byte_index(self.byte_index)
+            sections.sort(key=lambda s: (s.level, s.absolute_start))
+            return sections
         @property
         def top_section(self) -> Section | None:
             return self.sections[-1] if self.sections else None

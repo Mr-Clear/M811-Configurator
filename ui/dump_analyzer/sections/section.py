@@ -114,6 +114,13 @@ class Section(ABC):
             return []
         return self.parent.ancestors + [self.parent]
 
+    @property
+    def level(self) -> int:
+        '''Get the level of this section in the hierarchy.'''
+        if self.parent is None:
+            return 0
+        return self.parent.level + 1
+
     @staticmethod
     def from_dict(data: dict[str, Any]) -> Section:
         '''Create a section from a dictionary.'''
