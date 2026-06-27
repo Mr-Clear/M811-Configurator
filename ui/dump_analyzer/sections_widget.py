@@ -1,15 +1,14 @@
 '''Widget to manage sections.'''
 
-import json
+from PySide6.QtCore import (QAbstractItemModel, QModelIndex, QObject, QPoint,
+                            Qt, Signal)
+from PySide6.QtWidgets import (QHeaderView, QMenu, QSplitter, QTreeView,
+                               QVBoxLayout, QWidget)
 
-from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject, QPoint, Qt, Signal
-from PySide6.QtWidgets import (QApplication, QHeaderView, QMenu, QSplitter,
-                               QTreeView, QVBoxLayout, QWidget)
-
-from .sections.section import Section
-from .sections.list_section import ListSection
-from .section_widgets.section_widget import SectionWidget
 from .section_widgets.clipboard import copy_section_to_clipboard
+from .section_widgets.section_widget import SectionWidget
+from .sections.list_section import ListSection
+from .sections.section import Section
 
 
 class SectionsWidget(QWidget):
@@ -109,7 +108,10 @@ class SectionsWidget(QWidget):
         parent_index = self._tree_view_model.parent(index)
         if not parent_index.isValid():
             return False
-        return parent_index.internalPointer() != self._tree_view_model.root
+        parent = parent_index.internalPointer()
+        if parent == self._tree_view_model.root:
+            return False
+        return isinstance(parent, ListSection)
 
     def _next_index_after_removal(self, parent_index: QModelIndex, removed_row: int) -> QModelIndex:
         '''Find the next tree index to select after removing a section.'''
