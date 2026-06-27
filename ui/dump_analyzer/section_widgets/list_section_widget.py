@@ -147,7 +147,7 @@ class ListSectionWidget(SectionDetailsWidgetBase[ListSection]):
             self._size_spin_box.setMinimum(0)
             self._size_spin_box.setMaximum(section.parent.size if section.parent else 0xFFFF)
             self._size_spin_box.setValue(section.size)
-            self._sections = section.children()
+            self._sections = section.children()[:]
 
         self._update_member_list()
         self._on_change()
@@ -213,13 +213,12 @@ class ListSectionWidget(SectionDetailsWidgetBase[ListSection]):
 
     def _add_section_object(self, section_type: Type[Section]) -> None:
         '''Add a new section of the given type.'''
-        current_section = self.section
-        if current_section is None:
+        if self.section is None:
             return
         number = self._find_free_new_section_number()
         new_section = section_type(name=f"New Section {number}", relative_start=0)
         new_section.relative_start = self._find_free_start(new_section.size)
-        new_section.parent = current_section
+        new_section.parent = self.section
         self._sections.append(new_section)
         self._update_member_list()
         self.data_changed.emit()
