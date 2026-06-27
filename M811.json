@@ -9,38 +9,48 @@
             "type": "Value",
             "name": "Active Profile",
             "start": 44,
-            "color": "#bd8eff",
+            "color": "#ffbd8eff",
             "length": 1,
             "min_value": 0,
             "max_value": 255
         },
         {
-            "type": "List",
+            "type": "Array",
             "name": "Poll Rates",
             "start": 50,
-            "color": "#37ff00",
-            "size": 10,
-            "subsections": []
+            "color": "#1437ff00",
+            "repetitions": 5,
+            "gap": 1,
+            "child": {
+                "type": "Value",
+                "name": "Poll Rate",
+                "start": 0,
+                "color": "#ff00ff33",
+                "length": 1,
+                "min_value": 0,
+                "max_value": 255
+            },
+            "padding": 1
         },
         {
             "type": "Array",
             "name": "DPIs 1",
             "start": 66,
-            "color": "#ff0004",
+            "color": "#14ff0004",
             "repetitions": 5,
-            "gap": 2,
+            "gap": 3,
             "child": {
                 "type": "List",
                 "name": "DPI",
                 "start": 2,
-                "color": "#ffea00",
+                "color": "#64ff0000",
                 "size": 3,
                 "subsections": [
                     {
                         "type": "Value",
                         "name": "DPI Enabled",
                         "start": 0,
-                        "color": "#ea00ff",
+                        "color": "#ffff0000",
                         "length": 1,
                         "min_value": 0,
                         "max_value": 255
@@ -49,13 +59,86 @@
                         "type": "Value",
                         "name": "DPI Value",
                         "start": 1,
-                        "color": "#ff00c8",
+                        "color": "#ffff0000",
                         "length": 2,
                         "min_value": 0,
                         "max_value": 255
                     }
                 ]
-            }
+            },
+            "padding": 3
+        },
+        {
+            "type": "List",
+            "name": "Effects 5",
+            "start": 105,
+            "color": "#6482007b",
+            "size": 7,
+            "subsections": [
+                {
+                    "type": "Value",
+                    "name": "R",
+                    "start": 0,
+                    "color": "#ffff0000",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "G",
+                    "start": 1,
+                    "color": "#ff00ff00",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "B",
+                    "start": 2,
+                    "color": "#ff0000ff",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Mode Low",
+                    "start": 3,
+                    "color": "#ff82007b",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Speed",
+                    "start": 4,
+                    "color": "#ff82007b",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Mode High",
+                    "start": 5,
+                    "color": "#ff82007b",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Brightness",
+                    "start": 6,
+                    "color": "#ff82007b",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                }
+            ]
         }
     ]
 }

@@ -256,7 +256,7 @@ class SectionWidget(QWidget):
             if s.name != name or s.absolute_start != absolute_start or s.size != size or s.color != self._current_color:
                 parent_absolute_end = self._section.parent.absolute_end if self._section.parent else 0xFFFF
                 if absolute_start < parent_absolute_start or absolute_start + size > parent_absolute_end:
-                    pass#error = "Section is out of bounds of parent section."
+                    error = "Section is out of bounds of parent section."
                 else:
                     overlaps = self._section.parent.get_overlaps(absolute_start, size) if self._section.parent else []
                     if overlaps and (len(overlaps) == 1 and overlaps[0] != self._section):
@@ -264,7 +264,7 @@ class SectionWidget(QWidget):
                 change = True
             else:
                 change = False
-        self._save_button.setEnabled(change and not error)
+        self._save_button.setEnabled(change)
         self._discard_button.setEnabled(change)
         self._error_label.setText(error)
         self._error_label.setEnabled(len(error) > 0)
