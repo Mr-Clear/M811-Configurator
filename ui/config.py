@@ -156,3 +156,13 @@ class Config:
         '''Set the font defined in the configuration.'''
         self.data["hex_viewer_font"] = font.toString()
         self._save()
+
+    @property
+    def auto_save(self) -> bool:
+        '''Get the auto-save setting defined in the configuration.'''
+        return self.data.get("auto_save", True)
+    @auto_save.setter
+    def auto_save(self, value: bool) -> None:
+        '''Set the auto-save setting defined in the configuration.'''
+        self.data["auto_save"] = value
+        self._save()

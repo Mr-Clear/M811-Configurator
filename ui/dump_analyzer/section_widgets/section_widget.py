@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (QColorDialog, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QSpinBox, QToolButton, QVBoxLayout,
                                QWidget)
 
+from ui.config import Config
 from ui.dump_analyzer.section_widgets.section_types import get_section_types
 
 from ..sections.section import Section
@@ -40,6 +41,7 @@ class SectionWidget(QWidget):
         self._size_is_hex = True
         self._end_is_hex = True
         self._current_color: QColor | None = None
+        self._filling_data: bool = True
         self._init_ui()
 
     def _init_ui(self) -> None:
@@ -136,7 +138,9 @@ class SectionWidget(QWidget):
     def set_section(self, section: Section | None) -> None:
         '''Set the displayed section information.'''
         self._section = section
+        self._filling_data = True
         self.fill_data(section)
+        self._filling_data = False
         self._on_change()
 
     def fill_data(self, section: Section | None) -> None:
@@ -241,6 +245,8 @@ class SectionWidget(QWidget):
 
     def _on_change(self) -> None:
         '''Handle changes to the section information.'''
+        if self._filling_data:
+            return
         change = False
         error = ''
         if self._section is None:
@@ -252,6 +258,8 @@ class SectionWidget(QWidget):
             absolute_start = parent_absolute_start + relative_start
             size = self._section.size
             self._end_label.setText(f"0x{relative_start + size:X}")
+            if Config.instance().auto_save:
+                self._on_save(auto_save=True)
             s = self._section
             if s.name != name or s.absolute_start != absolute_start or s.size != size or s.color != self._current_color:
                 parent_absolute_end = self._section.parent.absolute_end if self._section.parent else 0xFFFF
@@ -269,7 +277,7 @@ class SectionWidget(QWidget):
         self._error_label.setText(error)
         self._error_label.setEnabled(len(error) > 0)
 
-    def _on_save(self) -> None:
+    def _on_save(self, auto_save: bool = False) -> None:
         '''Save the changes to the section.'''
         if self._section is None or self._section_editor is None:
             return
@@ -278,7 +286,8 @@ class SectionWidget(QWidget):
         self._section.relative_start = int(self._start_spin_box.text(), 16)
         self._section.color = self._current_color
         self.section_changed.emit()
-        self._on_change()
+        if not auto_save:
+            self._on_change()
 
     def _on_discard(self) -> None:
         '''Discard the changes to the section.'''
