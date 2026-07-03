@@ -6,11 +6,11 @@ Configure Redragon Mice on Linux
 
 ### Todo
 
-- [ ] Compare data  
 - [ ] Upload  
 
 ### In Progress
 
+- [ ] Compare data  
 
 ### Done ✓
 

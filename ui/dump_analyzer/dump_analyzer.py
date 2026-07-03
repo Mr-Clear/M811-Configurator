@@ -10,11 +10,13 @@ from typing import Callable
 
 from PySide6.QtGui import QAction, Qt
 from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog,
-                               QFileDialog, QFontDialog, QInputDialog,
-                               QMainWindow, QMessageBox, QScrollArea,
-                               QSplitter, QVBoxLayout, QWidget, QWidgetAction)
+                               QFileDialog, QFontDialog, QHBoxLayout,
+                               QInputDialog, QMainWindow, QMessageBox,
+                               QScrollArea, QSplitter, QVBoxLayout, QWidget,
+                               QWidgetAction)
 
 from ui.config import Config
+from ui.dump_analyzer.history_widget import HistoryWidget
 
 from .byte_info_widget import ByteInfoWidget
 from .hex_viewer import HexViewer
@@ -67,14 +69,20 @@ class DumpAnalyzer (QMainWindow):
         central_layout.addWidget(splitter)
         splitter_top = QWidget(splitter)
         splitter.addWidget(splitter_top)
-        splitter_top_layout = QVBoxLayout(splitter_top)
+        splitter_top_layout = QHBoxLayout(splitter_top)
         splitter_top_layout.setContentsMargins(0, 0, 0, 0)
-        splitter_top_layout.setSpacing(0)
+
+        self._history_widget = HistoryWidget(self)
+        splitter_top_layout.addWidget(self._history_widget, stretch=1)
+
+        hex_layout = QVBoxLayout()
+        hex_layout.setContentsMargins(0, 0, 0, 0)
+        hex_layout.setSpacing(0)
 
         scroll_area = QScrollArea(self)
         scroll_area.setWidgetResizable(True)
-        splitter_top_layout.addWidget(scroll_area, stretch=1)
-        splitter_top_layout.addSpacing(5)
+        hex_layout.addWidget(scroll_area, stretch=1)
+        hex_layout.addSpacing(5)
 
         self._hex_viewer = HexViewer()
         self._hex_viewer.data = self._data
@@ -88,12 +96,14 @@ class DumpAnalyzer (QMainWindow):
         self._info_widgets: dict[str, ByteInfoWidget] = {}
         for info in infos:
             info_widget = ByteInfoWidget(info, max_title_width, self)
-            splitter_top_layout.addWidget(info_widget, 0)
+            hex_layout.addWidget(info_widget, 0)
             self._info_widgets[info] = info_widget
         self._details_byte_hovered = self._info_widgets["Hovered:"]
         self._details_byte_hovered.setVisible(self._visible_detail_bytes.hovered)
         self._details_byte_selected = self._info_widgets["Selected:"]
         self._details_byte_selected.setVisible(self._visible_detail_bytes.selected)
+
+        splitter_top_layout.addLayout(hex_layout, stretch=3)
 
         self._sections_widget = SectionsWidget(self._root_section, self)
         self._sections_widget.sections_changed.connect(self._on_section_changed)
