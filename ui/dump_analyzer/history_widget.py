@@ -12,6 +12,8 @@ from PySide6.QtWidgets import (QApplication, QHBoxLayout, QLabel, QLineEdit,
                                QListWidget, QListWidgetItem, QPushButton,
                                QStyle, QToolButton, QVBoxLayout, QWidget)
 
+from .emoji_line_edit import EmojiLineEdit
+
 logger = logging.getLogger(__name__)
 
 
@@ -111,7 +113,7 @@ class HistoryWidget(QWidget):
         save_button_widget = QWidget(self)
         save_button_layout = QHBoxLayout(save_button_widget)
         save_button_layout.setContentsMargins(0, 0, 0, 0)
-        self._save_button = QPushButton("Save", self)
+        self._save_button = QPushButton("Add Dump", self)
         self._save_button.clicked.connect(self._save_current_data)
         save_button_layout.addStretch(1)
         save_button_layout.addWidget(self._save_button)
@@ -137,7 +139,7 @@ class HistoryWidget(QWidget):
             drag_handle = DragHandleLabel(self._history_list, item, row_widget)
             row_layout.addWidget(drag_handle)
 
-            dump.name_widget = QLineEdit(name, row_widget)
+            dump.name_widget = EmojiLineEdit(name, row_widget)
             def on_name_changed(*, name_widget: QLineEdit = dump.name_widget, old_name: str = name) -> None:
                 text = name_widget.text()
                 if text == old_name:
