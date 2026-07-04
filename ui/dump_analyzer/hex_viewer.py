@@ -57,6 +57,7 @@ class HexViewer(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._data = bytearray()
+        self._compare_data: bytes | memoryview = b''
         self._config = Config.instance()
         self._padding = 4
         self._current_size_hint: HexViewer._SizeHint = HexViewer._SizeHint(0, 0, 0)
@@ -84,14 +85,31 @@ class HexViewer(QWidget):
         '''Get the current data from the hex viewer.'''
         return memoryview(self._data)
     @data.setter
-    def data(self, data: bytes) -> None:
+    def data(self, data: bytes | memoryview) -> None:
         '''Set the data to be displayed in the hex viewer.'''
-        self._data_source = data
+        if not self._compare_data:
+            self._compare_data = data
         self._data = bytearray(data)
         self._set_selected_byte(None)
         self._set_hover_byte(None)
         self._calculate_size()
         self.repaint()
+    def set_data(self, data: bytes | memoryview) -> None:
+        '''Set the data to be displayed in the hex viewer.'''
+        self.data = data
+
+    @property
+    def compare_data(self) -> memoryview:
+        '''Get the data to compare against for highlighting changes.'''
+        return memoryview(self._compare_data)
+    @compare_data.setter
+    def compare_data(self, data: bytes | memoryview) -> None:
+        '''Set the data to compare against for highlighting changes.'''
+        self._compare_data = data
+        self.repaint()
+    def set_compare_data(self, data: bytes | memoryview) -> None:
+        '''Set the data to compare against for highlighting changes.'''
+        self.compare_data = data
 
     def set_font(self, font: QFont) -> None:
         self.setFont(font)
@@ -457,7 +475,7 @@ class HexViewer(QWidget):
         elif selected:
             text_color = self._colors[self.Colors.SELECTED]
 
-        if self._data_source[info.byte_index] != b:
+        if len(self._compare_data) > info.byte_index and self._compare_data[info.byte_index] != b:
             text_color = _blend_color(text_color, self._colors[self.Colors.CHANGED], 0.7)
 
         info.painter.setPen(text_color)

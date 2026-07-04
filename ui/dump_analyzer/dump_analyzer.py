@@ -5,6 +5,7 @@ import json
 import logging
 import sys
 from dataclasses import dataclass
+from datetime import datetime
 from types import SimpleNamespace
 from typing import Callable
 
@@ -107,6 +108,10 @@ class DumpAnalyzer (QMainWindow):
         self._bottom_dock_widget.setWidget(self._sections_widget)
 
         self._init_menu()
+
+        self._history_widget.load_dump_clicked.connect(self._hex_viewer.set_data)
+        self._history_widget.compare_dump_clicked.connect(self._hex_viewer.set_compare_data)
+        self._history_widget.save_requested.connect(lambda: self._history_widget.add_dump(self._hex_viewer.data))
 
     def _init_menu(self) -> None:
         '''Initialize the menu bar.'''
@@ -268,6 +273,7 @@ class DumpAnalyzer (QMainWindow):
                 self._data = f.read()
             self._hex_viewer.data = self._data
             self._config.last_opened_dump = file_name
+            self._history_widget.add_dump(self._data, file_name)
 
     def _read_from_usb(self) -> None:
         '''Read dump data from the USB device.'''
@@ -276,6 +282,7 @@ class DumpAnalyzer (QMainWindow):
             mouse = RedragonMouse()
             self._data = mouse.read_all()
             self._hex_viewer.data = self._data
+            self._history_widget.add_dump(self._data, f"USB {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         except Exception as e:
             logger.exception(f"Failed to read from USB: {e}")
             QMessageBox.critical(self, "Error", f"Failed to read from USB: {e}")

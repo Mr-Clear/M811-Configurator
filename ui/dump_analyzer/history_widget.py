@@ -91,8 +91,9 @@ class HistoryListWidget(QListWidget):
 
 class HistoryWidget(QWidget):
     FILE_NAME = "dumps.json"
-    dump_selected = Signal(bytes)
-    dump_loaded = Signal(bytes)
+    load_dump_clicked = Signal(bytes, str)
+    compare_dump_clicked = Signal(bytes, str)
+    save_requested = Signal()
 
     @dataclass
     class DumpInfo:
@@ -181,9 +182,9 @@ class HistoryWidget(QWidget):
 
             dump.load_button = QToolButton(row_widget)
             dump.load_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DirOpenIcon))
-            dump.load_button.setToolTip("Load")
-            def on_load_clicked(*, dump: HistoryWidget.DumpInfo = dump) -> None:
-                self.dump_loaded.emit(dump.data)
+            dump.load_button.setToolTip("Load into editor")
+            def on_load_clicked(*, dump: HistoryWidget.DumpInfo = dump, name: str = name) -> None:
+                self.load_dump_clicked.emit(dump.data, name)
             dump.load_button.clicked.connect(on_load_clicked)
             row_layout.addWidget(dump.load_button)
 
@@ -191,12 +192,26 @@ class HistoryWidget(QWidget):
             dump.compare_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogContentsView))
             dump.compare_button.setToolTip("Compare")
             dump.compare_button.setCheckable(True)
+            dump.compare_button.setAutoRaise(False)
+            dump.compare_button.setStyleSheet(
+                "QToolButton {"
+                " padding: 4px;"
+                " border: 1px solid palette(mid);"
+                " border-radius: 4px;"
+                " background-color: palette(button);"
+                "}"
+                "QToolButton:checked {"
+                " background-color: palette(highlight);"
+                " color: palette(highlighted-text);"
+                " border: 1px solid palette(dark);"
+                "}"
+            )
             dump.compare_button.setChecked(self._currently_selected_dump == dump)
-            def on_compare_clicked(*, dump: HistoryWidget.DumpInfo = dump) -> None:
+            def on_compare_clicked(*, dump: HistoryWidget.DumpInfo = dump, name: str = name) -> None:
                 if self._currently_selected_dump is not None and self._currently_selected_dump.compare_button:
                     self._currently_selected_dump.compare_button.setChecked(False)
                 self._currently_selected_dump = dump
-                self.dump_selected.emit(dump.data)
+                self.compare_dump_clicked.emit(dump.data, name)
             dump.compare_button.clicked.connect(on_compare_clicked)
             row_layout.addWidget(dump.compare_button)
 
@@ -239,11 +254,14 @@ class HistoryWidget(QWidget):
 
     def _save_current_data(self) -> None:
         '''Save the current data to the history of dumps to compare.'''
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.add_dump(f"{timestamp}", b'')
+        self.save_requested.emit()
 
-    def add_dump(self, name: str, data: bytes) -> None:
+    def add_dump(self, data: bytes | memoryview | bytearray, name: str | None = None) -> None:
         '''Add a dump to the history of dumps to compare.'''
+        if name is None:
+            name = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if not isinstance(data, bytes):
+            data = bytes(data)
         self._dumps[name] = HistoryWidget.DumpInfo(data)
         self._fill_layout()
         self._save_history()
