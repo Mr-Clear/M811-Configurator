@@ -63,11 +63,27 @@ class HistoryWidget(QWidget):
 
         for row, (name, dump) in enumerate(self._dumps.items()):
             dump.name_widget = QLineEdit(name, self)
-            def on_name_changed(text: str) -> None:
-                self._dumps[text] = self._dumps.pop(name)
-                self._save_history()
+            def on_name_changed(*, name_widget: QLineEdit = dump.name_widget, old_name: str = name) -> None:
+                text = name_widget.text()
+                if text == old_name:
+                    return
+                if text in self._dumps:
+                    logger.warning(f"Rename requested to existing dump name '{text}'")
+                    name_widget.setText(old_name)
+                    return
 
-            dump.name_widget.textChanged.connect(on_name_changed)
+                renamed_dumps: dict[str, HistoryWidget.DumpInfo] = {}
+                for current_name, current_dump in self._dumps.items():
+                    if current_name == old_name:
+                        renamed_dumps[text] = current_dump
+                    else:
+                        renamed_dumps[current_name] = current_dump
+
+                self._dumps = renamed_dumps
+                self._save_history()
+                self._fill_layout()
+
+            dump.name_widget.editingFinished.connect(on_name_changed)
             self._grid_layout.addWidget(dump.name_widget, row, 0)
 
             dump.delete_button = QToolButton(self)
@@ -119,8 +135,10 @@ class HistoryWidget(QWidget):
 
     def _save_history(self) -> None:
         '''Save the history of dumps to compare.'''
+        logger.debug(f"Saving {len(self._dumps)} dumps to {self.FILE_NAME}")
         dumps = {name: base64.b64encode(dump.data).decode("utf-8") for name, dump in self._dumps.items()}
         json.dump(dumps, open(self.FILE_NAME, "w"), indent=4)
+
     def _save_current_data(self) -> None:
         '''Save the current data to the history of dumps to compare.'''
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
