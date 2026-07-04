@@ -60,22 +60,22 @@ class DumpAnalyzer (QMainWindow):
         '''Initialize the user interface.'''
 
         self.setWindowTitle("Dump Analyzer")
-        self.resize(1000, 800)
+        self.resize(1200, 900)
 
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)
         central_layout = QVBoxLayout(central_widget)
-        splitter = QSplitter(Qt.Orientation.Vertical, central_widget)
-        central_layout.addWidget(splitter)
-        splitter_top = QWidget(splitter)
-        splitter.addWidget(splitter_top)
-        splitter_top_layout = QHBoxLayout(splitter_top)
-        splitter_top_layout.setContentsMargins(0, 0, 0, 0)
+        main_splitter = QSplitter(Qt.Orientation.Vertical, central_widget)
+        central_layout.addWidget(main_splitter)
+        upper_splitter = QSplitter(Qt.Orientation.Horizontal)
+        main_splitter.addWidget(upper_splitter)
 
         self._history_widget = HistoryWidget(self)
-        splitter_top_layout.addWidget(self._history_widget, stretch=1)
+        upper_splitter.addWidget(self._history_widget)
 
-        hex_layout = QVBoxLayout()
+        hex_container_widget = QWidget(self)
+        upper_splitter.addWidget(hex_container_widget)
+        hex_layout = QVBoxLayout(hex_container_widget)
         hex_layout.setContentsMargins(0, 0, 0, 0)
         hex_layout.setSpacing(0)
 
@@ -103,13 +103,11 @@ class DumpAnalyzer (QMainWindow):
         self._details_byte_selected = self._info_widgets["Selected:"]
         self._details_byte_selected.setVisible(self._visible_detail_bytes.selected)
 
-        splitter_top_layout.addLayout(hex_layout, stretch=3)
-
         self._sections_widget = SectionsWidget(self._root_section, self)
         self._sections_widget.sections_changed.connect(self._on_section_changed)
-        splitter.addWidget(self._sections_widget)
-        splitter.setStretchFactor(0, 3)
-        splitter.setStretchFactor(1, 1)
+        main_splitter.addWidget(self._sections_widget)
+        main_splitter.setStretchFactor(0, 3)
+        main_splitter.setStretchFactor(1, 1)
 
         self._init_menu()
 
