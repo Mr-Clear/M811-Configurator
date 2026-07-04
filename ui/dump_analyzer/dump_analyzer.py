@@ -10,9 +10,9 @@ from typing import Callable
 
 from PySide6.QtGui import QAction, Qt
 from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog,
-                               QFileDialog, QFontDialog, QHBoxLayout,
+                               QDockWidget, QFileDialog, QFontDialog,
                                QInputDialog, QMainWindow, QMessageBox,
-                               QScrollArea, QSplitter, QVBoxLayout, QWidget,
+                               QScrollArea, QVBoxLayout, QWidget,
                                QWidgetAction)
 
 from ui.config import Config
@@ -62,19 +62,8 @@ class DumpAnalyzer (QMainWindow):
         self.setWindowTitle("Dump Analyzer")
         self.resize(1200, 900)
 
-        central_widget = QWidget(self)
-        self.setCentralWidget(central_widget)
-        central_layout = QVBoxLayout(central_widget)
-        main_splitter = QSplitter(Qt.Orientation.Vertical, central_widget)
-        central_layout.addWidget(main_splitter)
-        upper_splitter = QSplitter(Qt.Orientation.Horizontal)
-        main_splitter.addWidget(upper_splitter)
-
-        self._history_widget = HistoryWidget(self)
-        upper_splitter.addWidget(self._history_widget)
 
         hex_container_widget = QWidget(self)
-        upper_splitter.addWidget(hex_container_widget)
         hex_layout = QVBoxLayout(hex_container_widget)
         hex_layout.setContentsMargins(0, 0, 0, 0)
         hex_layout.setSpacing(0)
@@ -91,6 +80,14 @@ class DumpAnalyzer (QMainWindow):
         self._hex_viewer.byte_clicked.connect(self._on_byte_clicked)
         scroll_area.setWidget(self._hex_viewer)
 
+        self.setCentralWidget(hex_container_widget)
+
+        self._left_dock_widget = QDockWidget("Dump History", self)
+        self._left_dock_widget.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetMovable)
+        self._history_widget = HistoryWidget(self)
+        self._left_dock_widget.setWidget(self._history_widget)
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self._left_dock_widget)
+
         infos = ["Hovered:", "Selected:"]
         max_title_width = max(self.fontMetrics().horizontalAdvance(info) for info in infos) + 2
         self._info_widgets: dict[str, ByteInfoWidget] = {}
@@ -103,11 +100,11 @@ class DumpAnalyzer (QMainWindow):
         self._details_byte_selected = self._info_widgets["Selected:"]
         self._details_byte_selected.setVisible(self._visible_detail_bytes.selected)
 
+        self._bottom_dock_widget = QDockWidget("Sections", self)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self._bottom_dock_widget)
         self._sections_widget = SectionsWidget(self._root_section, self)
         self._sections_widget.sections_changed.connect(self._on_section_changed)
-        main_splitter.addWidget(self._sections_widget)
-        main_splitter.setStretchFactor(0, 3)
-        main_splitter.setStretchFactor(1, 1)
+        self._bottom_dock_widget.setWidget(self._sections_widget)
 
         self._init_menu()
 
