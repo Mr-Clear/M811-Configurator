@@ -36,26 +36,28 @@ class DumpAnalyzer (QMainWindow):
         super().__init__(parent)
 
         self._config = Config.instance()
-        self._data: bytes = bytes()
         self._root_section: ListSection = self._config.sections
         self._hex_viewer: HexViewer
         self._sections_widget: SectionsWidget
         self._visible_detail_bytes: VisibleDetailBytes = self._config.visible_detail_bytes
         self._menues: SimpleNamespace
+        self._usb_data: bytes | None = None
 
         self._init_ui()
         self._hex_viewer.set_root_section(self._root_section)
 
+        data: bytes | None = None
         if self._config.last_opened_dump:
             last_dump_name = self._config.last_opened_dump
             if last_dump_name:
                 dump_data = self._history_widget.get_dump_data(last_dump_name)
                 if dump_data is not None:
-                    self._data = dump_data
+                    data = dump_data
+                    self._history_widget.compare_dump = last_dump_name
 
-        if not hasattr(self, "_data") or not self._data:
-            self._data = bytes(i % 256 for i in range(0x1C00))
-        self._hex_viewer.data = self._data
+        if not data:
+            data = bytes(i % 256 for i in range(0x1C00))
+        self._hex_viewer.data = data
 
     def _init_ui(self) -> None:
         '''Initialize the user interface.'''
@@ -75,7 +77,6 @@ class DumpAnalyzer (QMainWindow):
         hex_layout.addSpacing(5)
 
         self._hex_viewer = HexViewer()
-        self._hex_viewer.data = self._data
         self._hex_viewer.byte_hovered.connect(self._on_byte_hovered)
         self._hex_viewer.byte_hovered_leave.connect(self._on_byte_hovered_leave)
         self._hex_viewer.byte_clicked.connect(self._on_byte_clicked)
@@ -112,6 +113,7 @@ class DumpAnalyzer (QMainWindow):
         self._history_widget.load_dump_clicked.connect(self._on_dump_loaded)
         self._history_widget.compare_dump_clicked.connect(self._hex_viewer.set_compare_data)
         self._history_widget.save_requested.connect(lambda: self._history_widget.add_dump(self._hex_viewer.data))
+        self._hex_viewer.data_changed.connect(self._history_widget.on_loaded_data_changed)
 
     def _init_menu(self) -> None:
         '''Initialize the menu bar.'''
@@ -262,7 +264,7 @@ class DumpAnalyzer (QMainWindow):
 
     def _on_file_menu_show(self) -> None:
         '''Update the "File" menu actions based on the current state.'''
-        hex_changed = self._hex_viewer.data != memoryview(self._data)
+        hex_changed = self._hex_viewer.data != self._usb_data # type: ignore (Pylance doesn't understand that memoryview and bytes can be compared)
         self._menues.file_write_usb.setEnabled(hex_changed)
 
     def _open_dump(self) -> None:
@@ -270,18 +272,18 @@ class DumpAnalyzer (QMainWindow):
         file_name, _ = QFileDialog.getOpenFileName(self, "Open Dump", "", "All Files (*)")
         if file_name:
             with open(file_name, "rb") as f:
-                self._data = f.read()
-            self._hex_viewer.data = self._data
-            self._history_widget.add_dump(self._data, file_name)
+                data = f.read()
+            self._hex_viewer.data = data
+            self._history_widget.add_dump(data, file_name)
 
     def _read_from_usb(self) -> None:
         '''Read dump data from the USB device.'''
         try:
             from .usb import RedragonMouse
             mouse = RedragonMouse()
-            self._data = mouse.read_all()
-            self._hex_viewer.data = self._data
-            self._history_widget.add_dump(self._data, f"USB {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            self._usb_data = mouse.read_all()
+            self._hex_viewer.data = self._usb_data
+            self._history_widget.add_dump(self._usb_data, f"USB {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         except Exception as e:
             logger.exception(f"Failed to read from USB: {e}")
             QMessageBox.critical(self, "Error", f"Failed to read from USB: {e}")
@@ -291,7 +293,7 @@ class DumpAnalyzer (QMainWindow):
         try:
             from .usb import RedragonMouse
             mouse = RedragonMouse()
-            mouse.write_diff(self._data, self._hex_viewer.data)
+            mouse.write_diff(self._usb_data, self._hex_viewer.data)
             QMessageBox.information(self, "Success", "Data successfully written to USB device.")
         except Exception as e:
             logger.exception(f"Failed to write to USB: {e}")
@@ -328,8 +330,8 @@ class DumpAnalyzer (QMainWindow):
 
     def _on_dump_loaded(self, data: bytes, name: str) -> None:
         '''Handle a dump being loaded from the history widget.'''
-        self._data = data
-        self._hex_viewer.data = self._data
+        data = data
+        self._hex_viewer.data = data
         self._config.last_opened_dump = name
 
 def start_app() -> int:

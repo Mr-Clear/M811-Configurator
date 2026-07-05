@@ -53,14 +53,14 @@ class RedragonMouse:
         print()
         return bytes(data)
 
-    def write_diff(self, original: bytes, modified: bytes | bytearray | memoryview) -> None:
+    def write_diff(self, original: bytes | bytearray | memoryview | None, modified: bytes | bytearray | memoryview) -> None:
         self._unlock()
-        for i in range(0, len(original), 64):
-            chunk_orig = original[i:i+64]
-            if i < len(modified):
-                chunk_mod = modified[i:i+64]
+        for i in range(0, len(modified), 64):
+            chunk_mod = modified[i:i+64]
+            if original and i < len(modified):
+                chunk_orig = original[i:i+64]
             else:
-                chunk_mod = bytes()
+                chunk_orig = bytes()
             if chunk_orig != chunk_mod:
                 print(f"Writing bytes {i:04X} to {i+len(chunk_mod):04X}...")
                 self._write64(i, len(chunk_mod), *chunk_mod)

@@ -48,6 +48,20 @@ class DragHandleLabel(QLabel):
         super().mouseReleaseEvent(event)
 
 
+class HistoryRowWidget(QWidget):
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._active = False
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+    def set_active(self, active: bool) -> None:
+        self._active = active
+        if active:
+            self.setStyleSheet("HistoryRowWidget { background-color: palette(Button); border-radius: 8px; }")
+        else:
+            self.setStyleSheet("")
+
+
 class HistoryListWidget(QListWidget):
     order_changed = Signal()
 
@@ -100,6 +114,7 @@ class HistoryWidget(QWidget):
         data: bytes
         name_widget: QLineEdit | None = None
         list_item: QListWidgetItem | None = None
+        row_widget: HistoryRowWidget | None = None
         delete_button: QToolButton | None = None
         load_button: QToolButton | None = None
         compare_button: QToolButton | None = None
@@ -111,7 +126,7 @@ class HistoryWidget(QWidget):
         self._main_layout = QVBoxLayout()
         self._history_list = HistoryListWidget(self)
         self._history_list.setMinimumWidth(350)
-        self._history_list.setStyleSheet("QListWidget::item:selected { background-color: palette(mid); }")
+        self._history_list.setStyleSheet("HistoryListWidget::item:selected { background-color: palette(base); }")
         self._history_list.order_changed.connect(self._sync_order_from_list)
         save_button_widget = QWidget(self)
         save_button_layout = QHBoxLayout(save_button_widget)
@@ -133,7 +148,8 @@ class HistoryWidget(QWidget):
 
         for name, dump in self._dumps.items():
             item = QListWidgetItem(self._history_list)
-            row_widget = QWidget(self._history_list)
+            row_widget = HistoryRowWidget(self._history_list)
+            dump.row_widget = row_widget
             row_layout = QHBoxLayout(row_widget)
             row_layout.setContentsMargins(4, 2, 4, 2)
             row_layout.setSpacing(6)
@@ -300,3 +316,9 @@ class HistoryWidget(QWidget):
             logger.warning(f"Data requested for missing dump '{name}'")
             return None
         return dump.data
+
+    def on_loaded_data_changed(self, data: bytes | memoryview) -> None:
+        '''Highlight the dump in the history list that matches the loaded data.'''
+        for dump in self._dumps.values():
+            assert dump.row_widget is not None
+            dump.row_widget.set_active(dump.data == data)

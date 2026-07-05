@@ -31,6 +31,7 @@ class HexViewer(QWidget):
     byte_hovered = Signal(int)
     byte_hovered_leave = Signal()
     byte_clicked = Signal(int)
+    data_changed = Signal(memoryview)
 
     class Colors(Enum):
         NORMAL = 0
@@ -87,6 +88,8 @@ class HexViewer(QWidget):
     @data.setter
     def data(self, data: bytes | memoryview) -> None:
         '''Set the data to be displayed in the hex viewer.'''
+        if self._data == data: # type: ignore (Pylance doesn't understand that memoryview and bytes can be compared)
+            return
         if not self._compare_data:
             self._compare_data = data
         self._data = bytearray(data)
@@ -94,6 +97,7 @@ class HexViewer(QWidget):
         self._set_hover_byte(None)
         self._calculate_size()
         self.repaint()
+        self.data_changed.emit(memoryview(self._data))
 
     @property
     def compare_data(self) -> memoryview:
@@ -528,7 +532,9 @@ class HexViewer(QWidget):
                     new_value = (byte_value & 0x0F) | (digit << 4)
                 else:
                     new_value = (byte_value & 0xF0) | digit
-                self._data[self._selected_byte] = new_value
+                if new_value != byte_value:
+                    self._data[self._selected_byte] = new_value
+                    self.data_changed.emit(memoryview(self._data))
 
                 if self._edit_cursor_pos == 0:
                     self._edit_cursor_pos = 1
