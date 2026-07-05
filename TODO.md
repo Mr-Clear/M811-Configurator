@@ -10,7 +10,6 @@ Configure Redragon Mice on Linux
 
 ### In Progress
 
-- [ ] Compare data  
 
 ### Done ✓
 
@@ -19,5 +18,6 @@ Configure Redragon Mice on Linux
 - [x] Save Alpha in colors  
 - [x] Review error handling  
 - [x] Copy paste sections  
+- [x] Compare data  
 - [x] Autosave  
 

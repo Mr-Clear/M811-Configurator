@@ -107,7 +107,7 @@ class HistoryWidget(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._dumps: dict[str, HistoryWidget.DumpInfo] = {}
-        self._currently_selected_dump: HistoryWidget.DumpInfo | None = None
+        self._compare_dump: HistoryWidget.DumpInfo | None = None
         self._main_layout = QVBoxLayout()
         self._history_list = HistoryListWidget(self)
         self._history_list.order_changed.connect(self._sync_order_from_list)
@@ -173,8 +173,8 @@ class HistoryWidget(QWidget):
                 if removed_dump is None:
                     logger.warning(f"Delete requested for missing dump '{name}'")
                     return
-                if self._currently_selected_dump is removed_dump:
-                    self._currently_selected_dump = None
+                if self._compare_dump is removed_dump:
+                    self._compare_dump = None
                 self._save_history()
                 self._fill_layout()
             dump.delete_button.clicked.connect(on_delete_clicked)
@@ -206,11 +206,11 @@ class HistoryWidget(QWidget):
                 " border: 1px solid palette(dark);"
                 "}"
             )
-            dump.compare_button.setChecked(self._currently_selected_dump == dump)
+            dump.compare_button.setChecked(self._compare_dump == dump)
             def on_compare_clicked(*, dump: HistoryWidget.DumpInfo = dump, name: str = name) -> None:
-                if self._currently_selected_dump is not None and self._currently_selected_dump.compare_button:
-                    self._currently_selected_dump.compare_button.setChecked(False)
-                self._currently_selected_dump = dump
+                if self._compare_dump is not None and self._compare_dump.compare_button:
+                    self._compare_dump.compare_button.setChecked(False)
+                self._compare_dump = dump
                 self.compare_dump_clicked.emit(dump.data, name)
             dump.compare_button.clicked.connect(on_compare_clicked)
             row_layout.addWidget(dump.compare_button)
@@ -265,3 +265,33 @@ class HistoryWidget(QWidget):
         self._dumps[name] = HistoryWidget.DumpInfo(data)
         self._fill_layout()
         self._save_history()
+
+    @property
+    def compare_dump(self) -> str | None:
+        '''Get the name of the dump to compare.'''
+        if self._compare_dump is None:
+            return None
+        for name, dump in self._dumps.items():
+            if dump is self._compare_dump:
+                return name
+
+    @compare_dump.setter
+    def compare_dump(self, name: str) -> None:
+        '''Set the dump to compare.'''
+        dump = self._dumps.get(name)
+        if dump is None:
+            logger.warning(f"Compare requested for missing dump '{name}'")
+            return
+        if self._compare_dump is not None and self._compare_dump.compare_button:
+            self._compare_dump.compare_button.setChecked(False)
+        self._compare_dump = dump
+        if dump.compare_button:
+            dump.compare_button.setChecked(True)
+
+    def get_dump_data(self, name: str) -> bytes | None:
+        '''Get the data of a dump by name.'''
+        dump = self._dumps.get(name)
+        if dump is None:
+            logger.warning(f"Data requested for missing dump '{name}'")
+            return None
+        return dump.data

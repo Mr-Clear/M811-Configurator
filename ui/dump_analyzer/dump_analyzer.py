@@ -47,12 +47,12 @@ class DumpAnalyzer (QMainWindow):
         self._hex_viewer.set_root_section(self._root_section)
 
         if self._config.last_opened_dump:
-            try:
-                with open(self._config.last_opened_dump, "rb") as f:
-                    self._data = f.read()
-                self._hex_viewer.data = self._data
-            except Exception as e:
-                logger.error(f"Failed to load last opened dump: {e}")
+            last_dump_name = self._config.last_opened_dump
+            if last_dump_name:
+                dump_data = self._history_widget.get_dump_data(last_dump_name)
+                if dump_data is not None:
+                    self._data = dump_data
+
         if not hasattr(self, "_data") or not self._data:
             self._data = bytes(i % 256 for i in range(0x1C00))
         self._hex_viewer.data = self._data
@@ -109,7 +109,7 @@ class DumpAnalyzer (QMainWindow):
 
         self._init_menu()
 
-        self._history_widget.load_dump_clicked.connect(self._hex_viewer.set_data)
+        self._history_widget.load_dump_clicked.connect(self._on_dump_loaded)
         self._history_widget.compare_dump_clicked.connect(self._hex_viewer.set_compare_data)
         self._history_widget.save_requested.connect(lambda: self._history_widget.add_dump(self._hex_viewer.data))
 
@@ -272,7 +272,6 @@ class DumpAnalyzer (QMainWindow):
             with open(file_name, "rb") as f:
                 self._data = f.read()
             self._hex_viewer.data = self._data
-            self._config.last_opened_dump = file_name
             self._history_widget.add_dump(self._data, file_name)
 
     def _read_from_usb(self) -> None:
@@ -326,6 +325,12 @@ class DumpAnalyzer (QMainWindow):
         '''Handle changes to the section information.'''
         self._config.sections = self._sections_widget.root_section
         self._hex_viewer.repaint()
+
+    def _on_dump_loaded(self, data: bytes, name: str) -> None:
+        '''Handle a dump being loaded from the history widget.'''
+        self._data = data
+        self._hex_viewer.data = self._data
+        self._config.last_opened_dump = name
 
 def start_app() -> int:
     '''Creates the main window and starts the application event loop.'''

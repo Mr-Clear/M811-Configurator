@@ -94,9 +94,6 @@ class HexViewer(QWidget):
         self._set_hover_byte(None)
         self._calculate_size()
         self.repaint()
-    def set_data(self, data: bytes | memoryview) -> None:
-        '''Set the data to be displayed in the hex viewer.'''
-        self.data = data
 
     @property
     def compare_data(self) -> memoryview:
