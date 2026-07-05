@@ -110,11 +110,13 @@ class HistoryWidget(QWidget):
         self._compare_dump: HistoryWidget.DumpInfo | None = None
         self._main_layout = QVBoxLayout()
         self._history_list = HistoryListWidget(self)
+        self._history_list.setMinimumWidth(350)
+        self._history_list.setStyleSheet("QListWidget::item:selected { background-color: palette(mid); }")
         self._history_list.order_changed.connect(self._sync_order_from_list)
         save_button_widget = QWidget(self)
         save_button_layout = QHBoxLayout(save_button_widget)
         save_button_layout.setContentsMargins(0, 0, 0, 0)
-        self._save_button = QPushButton("Add Dump", self)
+        self._save_button = QPushButton("Save Current Data", self)
         self._save_button.clicked.connect(self._save_current_data)
         save_button_layout.addStretch(1)
         save_button_layout.addWidget(self._save_button)
@@ -165,6 +167,7 @@ class HistoryWidget(QWidget):
             row_layout.addWidget(dump.name_widget, 1)
 
             dump.delete_button = QToolButton(row_widget)
+            dump.delete_button.setFixedSize(26, 26)
             dump.delete_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_TrashIcon))
             dump.delete_button.setToolTip("Delete")
             def on_delete_clicked(*, name: str = name) -> None:
@@ -181,6 +184,7 @@ class HistoryWidget(QWidget):
             row_layout.addWidget(dump.delete_button)
 
             dump.load_button = QToolButton(row_widget)
+            dump.load_button.setFixedSize(dump.delete_button.size())
             dump.load_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DirOpenIcon))
             dump.load_button.setToolTip("Load into editor")
             def on_load_clicked(*, dump: HistoryWidget.DumpInfo = dump, name: str = name) -> None:
@@ -190,6 +194,7 @@ class HistoryWidget(QWidget):
 
             dump.compare_button = QToolButton(row_widget)
             dump.compare_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogContentsView))
+            dump.compare_button.setFixedSize(dump.delete_button.size())
             dump.compare_button.setToolTip("Compare")
             dump.compare_button.setCheckable(True)
             dump.compare_button.setAutoRaise(False)
@@ -210,7 +215,7 @@ class HistoryWidget(QWidget):
             def on_compare_clicked(*, dump: HistoryWidget.DumpInfo = dump, name: str = name) -> None:
                 if self._compare_dump is not None and self._compare_dump.compare_button:
                     self._compare_dump.compare_button.setChecked(False)
-                self._compare_dump = dump
+                self.compare_dump = name
                 self.compare_dump_clicked.emit(dump.data, name)
             dump.compare_button.clicked.connect(on_compare_clicked)
             row_layout.addWidget(dump.compare_button)
