@@ -308,16 +308,14 @@ class DumpAnalyzer (QMainWindow):
 
     def _read_from_usb(self) -> None:
         '''Read dump data from the USB device.'''
+        progress_window = USBProgressWindow()
         try:
             from .usb import RedragonMouse
             mouse = RedragonMouse()
-            progress_window = USBProgressWindow()
             progress_window.set_title("Reading from USB...")
             progress_window.set_target_size(0x1C00)
             progress_window.show()
             self._usb_data = mouse.read_all(progress_window.set_progress)
-            progress_window.close()
-            progress_window.deleteLater()
             self._hex_viewer.data = self._usb_data
             self._hex_viewer.compare_data = self._usb_data
             dump_name = f"USB⬇ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
@@ -327,6 +325,8 @@ class DumpAnalyzer (QMainWindow):
             logger.exception(f"Failed to read from USB: {e}")
             QMessageBox.critical(self, "Error", f"Failed to read from USB: {e}")
         finally:
+            progress_window.close()
+            progress_window.deleteLater()
             self._check_usb_upload_possible()
 
     def _write_to_usb(self) -> None:
