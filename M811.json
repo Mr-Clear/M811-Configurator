@@ -70,8 +70,1097 @@
         },
         {
             "type": "List",
-            "name": "Effects 5",
-            "start": 105,
+            "name": "Buttons 1",
+            "start": 130,
+            "color": "#0a94fff6",
+            "size": 96,
+            "subsections": [
+                {
+                    "type": "Value",
+                    "name": "Button 1",
+                    "start": 0,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 2",
+                    "start": 4,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 3",
+                    "start": 8,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 4",
+                    "start": 12,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 5",
+                    "start": 16,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 6",
+                    "start": 20,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 7",
+                    "start": 24,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 8",
+                    "start": 28,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 9",
+                    "start": 32,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 10",
+                    "start": 36,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 11",
+                    "start": 40,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 12",
+                    "start": 44,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 13",
+                    "start": 48,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 14",
+                    "start": 52,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 15",
+                    "start": 56,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 16",
+                    "start": 60,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 14",
+                    "start": 64,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 18",
+                    "start": 68,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 19",
+                    "start": 88,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 20",
+                    "start": 92,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                }
+            ]
+        },
+        {
+            "type": "Array",
+            "name": "DPIs 2",
+            "start": 258,
+            "color": "#14ff0004",
+            "repetitions": 5,
+            "gap": 3,
+            "child": {
+                "type": "List",
+                "name": "DPI",
+                "start": 2,
+                "color": "#64ff0000",
+                "size": 3,
+                "subsections": [
+                    {
+                        "type": "Value",
+                        "name": "DPI Enabled",
+                        "start": 0,
+                        "color": "#ffff0000",
+                        "length": 1,
+                        "min_value": 0,
+                        "max_value": 255
+                    },
+                    {
+                        "type": "Value",
+                        "name": "DPI Value",
+                        "start": 1,
+                        "color": "#ffff0000",
+                        "length": 2,
+                        "min_value": 0,
+                        "max_value": 255
+                    }
+                ]
+            },
+            "padding": 3
+        },
+        {
+            "type": "List",
+            "name": "Buttons 2",
+            "start": 322,
+            "color": "#1494fff6",
+            "size": 96,
+            "subsections": [
+                {
+                    "type": "Value",
+                    "name": "Button 1",
+                    "start": 0,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 2",
+                    "start": 4,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 3",
+                    "start": 8,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 4",
+                    "start": 12,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 5",
+                    "start": 16,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 6",
+                    "start": 20,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 7",
+                    "start": 24,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 8",
+                    "start": 28,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 9",
+                    "start": 32,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 10",
+                    "start": 36,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 11",
+                    "start": 40,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 12",
+                    "start": 44,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 13",
+                    "start": 48,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 14",
+                    "start": 52,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 15",
+                    "start": 56,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 16",
+                    "start": 60,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 14",
+                    "start": 64,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 18",
+                    "start": 68,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 19",
+                    "start": 88,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 20",
+                    "start": 92,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                }
+            ]
+        },
+        {
+            "type": "Array",
+            "name": "DPIs 3",
+            "start": 434,
+            "color": "#14ff0004",
+            "repetitions": 5,
+            "gap": 3,
+            "child": {
+                "type": "List",
+                "name": "DPI",
+                "start": 2,
+                "color": "#64ff0000",
+                "size": 3,
+                "subsections": [
+                    {
+                        "type": "Value",
+                        "name": "DPI Enabled",
+                        "start": 0,
+                        "color": "#ffff0000",
+                        "length": 1,
+                        "min_value": 0,
+                        "max_value": 255
+                    },
+                    {
+                        "type": "Value",
+                        "name": "DPI Value",
+                        "start": 1,
+                        "color": "#ffff0000",
+                        "length": 2,
+                        "min_value": 0,
+                        "max_value": 255
+                    }
+                ]
+            },
+            "padding": 3
+        },
+        {
+            "type": "List",
+            "name": "Buttons 3",
+            "start": 498,
+            "color": "#1494fff6",
+            "size": 96,
+            "subsections": [
+                {
+                    "type": "Value",
+                    "name": "Button 1",
+                    "start": 0,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 2",
+                    "start": 4,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 3",
+                    "start": 8,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 4",
+                    "start": 12,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 5",
+                    "start": 16,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 6",
+                    "start": 20,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 7",
+                    "start": 24,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 8",
+                    "start": 28,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 9",
+                    "start": 32,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 10",
+                    "start": 36,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 11",
+                    "start": 40,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 12",
+                    "start": 44,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 13",
+                    "start": 48,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 14",
+                    "start": 52,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 15",
+                    "start": 56,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 16",
+                    "start": 60,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 14",
+                    "start": 64,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 18",
+                    "start": 68,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 19",
+                    "start": 88,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 20",
+                    "start": 92,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                }
+            ]
+        },
+        {
+            "type": "Array",
+            "name": "DPIs 4",
+            "start": 610,
+            "color": "#14ff0004",
+            "repetitions": 5,
+            "gap": 3,
+            "child": {
+                "type": "List",
+                "name": "DPI",
+                "start": 2,
+                "color": "#64ff0000",
+                "size": 3,
+                "subsections": [
+                    {
+                        "type": "Value",
+                        "name": "DPI Enabled",
+                        "start": 0,
+                        "color": "#ffff0000",
+                        "length": 1,
+                        "min_value": 0,
+                        "max_value": 255
+                    },
+                    {
+                        "type": "Value",
+                        "name": "DPI Value",
+                        "start": 1,
+                        "color": "#ffff0000",
+                        "length": 2,
+                        "min_value": 0,
+                        "max_value": 255
+                    }
+                ]
+            },
+            "padding": 3
+        },
+        {
+            "type": "List",
+            "name": "Buttons 4",
+            "start": 674,
+            "color": "#1494fff6",
+            "size": 96,
+            "subsections": [
+                {
+                    "type": "Value",
+                    "name": "Button 1",
+                    "start": 0,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 2",
+                    "start": 4,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 3",
+                    "start": 8,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 4",
+                    "start": 12,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 5",
+                    "start": 16,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 6",
+                    "start": 20,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 7",
+                    "start": 24,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 8",
+                    "start": 28,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 9",
+                    "start": 32,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 10",
+                    "start": 36,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 11",
+                    "start": 40,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 12",
+                    "start": 44,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 13",
+                    "start": 48,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 14",
+                    "start": 52,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 15",
+                    "start": 56,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 16",
+                    "start": 60,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 14",
+                    "start": 64,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 18",
+                    "start": 68,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 19",
+                    "start": 88,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 20",
+                    "start": 92,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                }
+            ]
+        },
+        {
+            "type": "Array",
+            "name": "DPIs 5",
+            "start": 786,
+            "color": "#14ff0004",
+            "repetitions": 5,
+            "gap": 3,
+            "child": {
+                "type": "List",
+                "name": "DPI",
+                "start": 2,
+                "color": "#64ff0000",
+                "size": 3,
+                "subsections": [
+                    {
+                        "type": "Value",
+                        "name": "DPI Enabled",
+                        "start": 0,
+                        "color": "#ffff0000",
+                        "length": 1,
+                        "min_value": 0,
+                        "max_value": 255
+                    },
+                    {
+                        "type": "Value",
+                        "name": "DPI Value",
+                        "start": 1,
+                        "color": "#ffff0000",
+                        "length": 2,
+                        "min_value": 0,
+                        "max_value": 255
+                    }
+                ]
+            },
+            "padding": 3
+        },
+        {
+            "type": "List",
+            "name": "Buttons 5",
+            "start": 850,
+            "color": "#1494fff6",
+            "size": 96,
+            "subsections": [
+                {
+                    "type": "Value",
+                    "name": "Button 1",
+                    "start": 0,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 2",
+                    "start": 4,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 3",
+                    "start": 8,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 4",
+                    "start": 12,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 5",
+                    "start": 16,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 6",
+                    "start": 20,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 7",
+                    "start": 24,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 8",
+                    "start": 28,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 9",
+                    "start": 32,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 10",
+                    "start": 36,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 11",
+                    "start": 40,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 12",
+                    "start": 44,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 13",
+                    "start": 48,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 14",
+                    "start": 52,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 15",
+                    "start": 56,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 16",
+                    "start": 60,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 14",
+                    "start": 64,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 18",
+                    "start": 68,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 19",
+                    "start": 88,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Button 20",
+                    "start": 92,
+                    "color": "#ff94fff6",
+                    "length": 4,
+                    "min_value": 0,
+                    "max_value": 255
+                }
+            ]
+        },
+        {
+            "type": "List",
+            "name": "Effects 1",
+            "start": 1097,
             "color": "#6482007b",
             "size": 7,
             "subsections": [
@@ -79,7 +1168,7 @@
                     "type": "Value",
                     "name": "R",
                     "start": 0,
-                    "color": "#ffff0000",
+                    "color": "#ffff0004",
                     "length": 1,
                     "min_value": 0,
                     "max_value": 255
@@ -139,6 +1228,312 @@
                     "max_value": 255
                 }
             ]
+        },
+        {
+            "type": "List",
+            "name": "Effects 2",
+            "start": 1105,
+            "color": "#6482007b",
+            "size": 7,
+            "subsections": [
+                {
+                    "type": "Value",
+                    "name": "R",
+                    "start": 0,
+                    "color": "#ffff0004",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "G",
+                    "start": 1,
+                    "color": "#ff00ff00",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "B",
+                    "start": 2,
+                    "color": "#ff0000ff",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Mode Low",
+                    "start": 3,
+                    "color": "#ff82007b",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Speed",
+                    "start": 4,
+                    "color": "#ff82007b",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Mode High",
+                    "start": 5,
+                    "color": "#ff82007b",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Brightness",
+                    "start": 6,
+                    "color": "#ff82007b",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                }
+            ]
+        },
+        {
+            "type": "List",
+            "name": "Effects 3",
+            "start": 1113,
+            "color": "#6482007b",
+            "size": 7,
+            "subsections": [
+                {
+                    "type": "Value",
+                    "name": "R",
+                    "start": 0,
+                    "color": "#ffff0004",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "G",
+                    "start": 1,
+                    "color": "#ff00ff00",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "B",
+                    "start": 2,
+                    "color": "#ff0000ff",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Mode Low",
+                    "start": 3,
+                    "color": "#ff82007b",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Speed",
+                    "start": 4,
+                    "color": "#ff82007b",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Mode High",
+                    "start": 5,
+                    "color": "#ff82007b",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Brightness",
+                    "start": 6,
+                    "color": "#ff82007b",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                }
+            ]
+        },
+        {
+            "type": "List",
+            "name": "Effects 4",
+            "start": 1121,
+            "color": "#6482007b",
+            "size": 7,
+            "subsections": [
+                {
+                    "type": "Value",
+                    "name": "R",
+                    "start": 0,
+                    "color": "#ffff0004",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "G",
+                    "start": 1,
+                    "color": "#ff00ff00",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "B",
+                    "start": 2,
+                    "color": "#ff0000ff",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Mode Low",
+                    "start": 3,
+                    "color": "#ff82007b",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Speed",
+                    "start": 4,
+                    "color": "#ff82007b",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Mode High",
+                    "start": 5,
+                    "color": "#ff82007b",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Brightness",
+                    "start": 6,
+                    "color": "#ff82007b",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                }
+            ]
+        },
+        {
+            "type": "List",
+            "name": "Effects 5",
+            "start": 1129,
+            "color": "#6482007b",
+            "size": 7,
+            "subsections": [
+                {
+                    "type": "Value",
+                    "name": "R",
+                    "start": 0,
+                    "color": "#ffff0004",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "G",
+                    "start": 1,
+                    "color": "#ff00ff00",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "B",
+                    "start": 2,
+                    "color": "#ff0000ff",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Mode Low",
+                    "start": 3,
+                    "color": "#ff82007b",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Speed",
+                    "start": 4,
+                    "color": "#ff82007b",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Mode High",
+                    "start": 5,
+                    "color": "#ff82007b",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                },
+                {
+                    "type": "Value",
+                    "name": "Brightness",
+                    "start": 6,
+                    "color": "#ff82007b",
+                    "length": 1,
+                    "min_value": 0,
+                    "max_value": 255
+                }
+            ]
+        },
+        {
+            "type": "Array",
+            "name": "Scroll Speeds",
+            "start": 32,
+            "color": "#1497ff80",
+            "repetitions": 5,
+            "gap": 1,
+            "child": {
+                "type": "Value",
+                "name": "Scroll Speed",
+                "start": 0,
+                "color": "#ff97ff80",
+                "length": 1,
+                "min_value": 0,
+                "max_value": 255
+            },
+            "padding": 0
         }
     ]
 }
