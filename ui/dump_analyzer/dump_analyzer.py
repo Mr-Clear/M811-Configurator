@@ -13,7 +13,7 @@ from PySide6.QtGui import QAction, Qt
 from PySide6.QtWidgets import (QApplication, QCheckBox, QColorDialog,
                                QDockWidget, QFileDialog, QFontDialog,
                                QInputDialog, QMainWindow, QMessageBox,
-                               QScrollArea, QVBoxLayout, QWidget,
+                               QScrollArea, QStyle, QVBoxLayout, QWidget,
                                QWidgetAction)
 
 from ui.config import Config
@@ -108,11 +108,14 @@ class DumpAnalyzer (QMainWindow):
         self._bottom_dock_widget.setWidget(self._sections_widget)
 
         self._init_menu()
+        self._init_tool_bar()
+        self._check_usb_upload_possible()
 
         self._history_widget.load_dump_clicked.connect(self._on_dump_loaded)
         self._history_widget.compare_dump_clicked.connect(self._hex_viewer.set_compare_data)
         self._history_widget.save_requested.connect(lambda: self._history_widget.add_dump(self._hex_viewer.data))
         self._hex_viewer.data_changed.connect(self._history_widget.on_loaded_data_changed)
+        self._hex_viewer.data_changed.connect(self._check_usb_upload_possible)
 
     def _init_menu(self) -> None:
         '''Initialize the menu bar.'''
@@ -120,12 +123,16 @@ class DumpAnalyzer (QMainWindow):
         m.file = self.menuBar().addMenu("File")
         m.file.aboutToShow.connect(self._on_file_menu_show)
         m.file_open = m.file.addAction("Open Dump...")
+        m.file_open.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogOpenButton))
         m.file_open.triggered.connect(self._open_dump)
-        m_file_save = m.file.addAction("Save Dump...")
-        m_file_save.triggered.connect(self._save_dump)
+        m.file_save = m.file.addAction("Save Dump...")
+        m.file_save.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton))
+        m.file_save.triggered.connect(self._save_dump)
         m.file_read_usb = m.file.addAction("Read from USB")
+        m.file_read_usb.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_BrowserReload))
         m.file_read_usb.triggered.connect(self._read_from_usb)
         m.file_write_usb = m.file.addAction("Write to USB")
+        m.file_write_usb.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogToParent))
         m.file_write_usb.triggered.connect(self._write_to_usb)
         m.file.addSeparator()
         m.file_load_sections = m.file.addAction("Load Sections...")
@@ -228,6 +235,17 @@ class DumpAnalyzer (QMainWindow):
 
         self._menues = m
 
+    def _init_tool_bar(self) -> None:
+        '''Initialize the tool bar.'''
+        self._tool_bar = self.addToolBar("Tool Bar")
+        self._tool_bar.setMovable(False)
+        self._tool_bar.addAction(self._menues.file_open)
+        self._tool_bar.addAction(self._menues.file_save)
+        self._tool_bar.addSeparator()
+        self._tool_bar.addAction(self._menues.file_read_usb)
+        self._tool_bar.addAction(self._menues.file_write_usb)
+        self._tool_bar.addSeparator()
+
     def _on_details_hovered_toggled(self, checked: bool) -> None:
         '''Handle toggling of the hovered byte details view option.'''
         self._visible_detail_bytes.hovered = checked
@@ -265,6 +283,10 @@ class DumpAnalyzer (QMainWindow):
 
     def _on_file_menu_show(self) -> None:
         '''Update the "File" menu actions based on the current state.'''
+        self._check_usb_upload_possible()
+
+    def _check_usb_upload_possible(self) -> None:
+        '''Check if USB upload is possible and update the menu action.'''
         hex_changed = self._usb_data is not None and self._hex_viewer.data != self._usb_data # type: ignore (Pylance doesn't understand that memoryview and bytes can be compared)
         self._menues.file_write_usb.setEnabled(hex_changed)
 
@@ -304,6 +326,8 @@ class DumpAnalyzer (QMainWindow):
         except Exception as e:
             logger.exception(f"Failed to read from USB: {e}")
             QMessageBox.critical(self, "Error", f"Failed to read from USB: {e}")
+        finally:
+            self._check_usb_upload_possible()
 
     def _write_to_usb(self) -> None:
         '''Write modified dump data to the USB device.'''
