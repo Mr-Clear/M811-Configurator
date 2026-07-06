@@ -1,6 +1,6 @@
 """Section that repeats one subsection multiple times."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from ui.dump_analyzer.sections.parent_section import AbstractParentSection
@@ -13,6 +13,8 @@ class ArraySection(AbstractParentSection):
     repetitions: int = 1 # Number of repetitions of the child section
     gap: int = 0  # Gap between each repetition of the child section
     padding: int = 0  # Free space after the last repetition of the child section
+    _children_cache_key: tuple[int, int, int, int, int] | None = field(default=None, init=False, repr=False)
+    _children_cache: list[Section] = field(default_factory=list, init=False, repr=False)
 
 
     @classmethod
@@ -29,21 +31,37 @@ class ArraySection(AbstractParentSection):
 
     def children(self, prototype_only: bool = False) -> list[Section]:
         if self.child_section is None:
+            self._children_cache_key = None
+            self._children_cache = []
             return []
         if prototype_only:
             return [self.child_section]
-        else:
-            children: list[Section] = [self.child_section]
+
+        key = (
+            id(self.child_section),
+            self.repetitions,
+            self.gap,
+            self.child_section.relative_start,
+            self.child_section.size,
+        )
+        if self._children_cache_key != key:
+            child = self.child_section
+            children: list[Section] = [child]
             for i in range(1, self.repetitions):
-                copy = Section.from_dict(self.child_section.to_dict())
-                copy.parent = self
-                copy.relative_start = self.child_section.relative_start + i * (self.child_section.size + self.gap)
-                children.append(copy)
-            return children
+                clone = Section.from_dict(child.to_dict())
+                clone.parent = self
+                clone.relative_start = child.relative_start + i * (child.size + self.gap)
+                children.append(clone)
+            self._children_cache_key = key
+            self._children_cache = children
+        return list(self._children_cache)
+
     def add_section(self, subsection: Section) -> None:
         if self.child_section is not None:
             raise ValueError(f"ArraySection {self} already has a subsection.")
         self.child_section = subsection
+        self._children_cache_key = None
+        self._children_cache = []
 
     def fill_dict(self, d: dict[str, Any]) -> None:
         super().fill_dict(d)
@@ -64,3 +82,5 @@ class ArraySection(AbstractParentSection):
         self.child_section = Section.from_dict(data["child"]) if data.get("child") else None
         if self.child_section:
             self.child_section.parent = self
+        self._children_cache_key = None
+        self._children_cache = []
