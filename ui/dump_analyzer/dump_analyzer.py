@@ -23,6 +23,7 @@ from .byte_info_widget import ByteInfoWidget
 from .hex_viewer import HexViewer
 from .sections.list_section import ListSection
 from .sections_widget import SectionsWidget
+from .usb_progress_window import USBProgressWindow
 
 logger = logging.getLogger(__name__)
 
@@ -41,12 +42,12 @@ class DumpAnalyzer (QMainWindow):
         self._sections_widget: SectionsWidget
         self._visible_detail_bytes: VisibleDetailBytes = self._config.visible_detail_bytes
         self._menues: SimpleNamespace
-        self._usb_data: bytes | None = None
+        self._usb_data: bytes | memoryview | None = None
 
         self._init_ui()
         self._hex_viewer.set_root_section(self._root_section)
 
-        data: bytes | None = None
+        data: bytes = b''
         if self._config.last_opened_dump:
             last_dump_name = self._config.last_opened_dump
             if last_dump_name:
@@ -55,8 +56,6 @@ class DumpAnalyzer (QMainWindow):
                     data = dump_data
                     self._history_widget.compare_dump = last_dump_name
 
-        if not data:
-            data = bytes(i % 256 for i in range(0x1C00))
         self._hex_viewer.data = data
 
     def _init_ui(self) -> None:
@@ -264,7 +263,7 @@ class DumpAnalyzer (QMainWindow):
 
     def _on_file_menu_show(self) -> None:
         '''Update the "File" menu actions based on the current state.'''
-        hex_changed = self._hex_viewer.data != self._usb_data # type: ignore (Pylance doesn't understand that memoryview and bytes can be compared)
+        hex_changed = self._usb_data is not None and self._hex_viewer.data != self._usb_data # type: ignore (Pylance doesn't understand that memoryview and bytes can be compared)
         self._menues.file_write_usb.setEnabled(hex_changed)
 
     def _open_dump(self) -> None:
@@ -281,9 +280,18 @@ class DumpAnalyzer (QMainWindow):
         try:
             from .usb import RedragonMouse
             mouse = RedragonMouse()
-            self._usb_data = mouse.read_all()
+            progress_window = USBProgressWindow()
+            progress_window.set_title("Reading from USB...")
+            progress_window.set_target_size(0x1C00)
+            progress_window.show()
+            self._usb_data = mouse.read_all(progress_window.set_progress)
+            progress_window.close()
+            progress_window.deleteLater()
             self._hex_viewer.data = self._usb_data
-            self._history_widget.add_dump(self._usb_data, f"USB {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            self._hex_viewer.compare_data = self._usb_data
+            dump_name = f"USB⬇ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            self._history_widget.add_dump(self._usb_data, dump_name)
+            self._history_widget.compare_dump = dump_name
         except Exception as e:
             logger.exception(f"Failed to read from USB: {e}")
             QMessageBox.critical(self, "Error", f"Failed to read from USB: {e}")
@@ -293,8 +301,18 @@ class DumpAnalyzer (QMainWindow):
         try:
             from .usb import RedragonMouse
             mouse = RedragonMouse()
-            mouse.write_diff(self._usb_data, self._hex_viewer.data)
-            QMessageBox.information(self, "Success", "Data successfully written to USB device.")
+            progress_window = USBProgressWindow()
+            progress_window.set_title("Writing to USB...")
+            progress_window.set_target_size(len(self._hex_viewer.data))
+            progress_window.show()
+            mouse.write_diff(self._usb_data, self._hex_viewer.data, progress_window.set_progress)
+            progress_window.close()
+            progress_window.deleteLater()
+            dump_name = f"USB⬆ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            self._history_widget.add_dump(self._hex_viewer.data, dump_name)
+            self._history_widget.compare_dump = dump_name
+            self._hex_viewer.compare_data = self._hex_viewer.data
+            self._usb_data = bytes(self._hex_viewer.data)
         except Exception as e:
             logger.exception(f"Failed to write to USB: {e}")
             QMessageBox.critical(self, "Error", f"Failed to write to USB: {e}")

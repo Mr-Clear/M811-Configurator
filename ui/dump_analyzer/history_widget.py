@@ -131,7 +131,7 @@ class HistoryWidget(QWidget):
         save_button_widget = QWidget(self)
         save_button_layout = QHBoxLayout(save_button_widget)
         save_button_layout.setContentsMargins(0, 0, 0, 0)
-        self._save_button = QPushButton("Save Current Data", self)
+        self._save_button = QPushButton("Create Dump", self)
         self._save_button.clicked.connect(self._save_current_data)
         save_button_layout.addStretch(1)
         save_button_layout.addWidget(self._save_button)
@@ -286,6 +286,7 @@ class HistoryWidget(QWidget):
         self._dumps[name] = HistoryWidget.DumpInfo(data)
         self._fill_layout()
         self._save_history()
+        self.on_loaded_data_changed(data)
 
     @property
     def compare_dump(self) -> str | None:

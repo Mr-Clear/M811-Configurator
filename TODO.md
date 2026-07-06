@@ -6,7 +6,6 @@ Configure Redragon Mice on Linux
 
 ### Todo
 
-- [ ] Upload  
 
 ### In Progress
 
@@ -20,4 +19,5 @@ Configure Redragon Mice on Linux
 - [x] Copy paste sections  
 - [x] Compare data  
 - [x] Autosave  
+- [x] Upload  
 
