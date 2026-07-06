@@ -35,7 +35,7 @@ class SectionsWidget(QWidget):
         self._tree_view.header().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
         self._tree_view.selectionModel().selectionChanged.connect(self._on_tree_selection_changed)
         self._tree_view.customContextMenuRequested.connect(self._show_tree_context_menu)
-        self._tree_view.expandAll()
+        self._tree_view.expand(self._tree_view_model.index(0, 0, QModelIndex()))
         left_layout.addWidget(self._tree_view)
         splitter.addWidget(left_panel)
         self._details_widget = SectionWidget(self)
@@ -71,7 +71,7 @@ class SectionsWidget(QWidget):
 
         next_index = self._next_index_after_removal(parent_index, row)
         self._tree_view_model.layoutChanged.emit()
-        self._tree_view.expandAll()
+        self._tree_view.expand(self._tree_view_model.index(0, 0, QModelIndex()))
         self._tree_view.setCurrentIndex(next_index)
         self.sections_changed.emit()
 
@@ -143,7 +143,7 @@ class SectionsWidget(QWidget):
         '''Set the root section of the section tree.'''
         self._root = value
         self._tree_view_model.set_root(value)
-        self._tree_view.expandAll()
+        self._tree_view.expand(self._tree_view_model.index(0, 0, QModelIndex()))
         self._tree_view.setCurrentIndex(self._tree_view_model.index(0, 0, QModelIndex()))
 
 
