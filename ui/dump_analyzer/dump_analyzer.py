@@ -121,6 +121,8 @@ class DumpAnalyzer (QMainWindow):
         m.file.aboutToShow.connect(self._on_file_menu_show)
         m.file_open = m.file.addAction("Open Dump...")
         m.file_open.triggered.connect(self._open_dump)
+        m_file_save = m.file.addAction("Save Dump...")
+        m_file_save.triggered.connect(self._save_dump)
         m.file_read_usb = m.file.addAction("Read from USB")
         m.file_read_usb.triggered.connect(self._read_from_usb)
         m.file_write_usb = m.file.addAction("Write to USB")
@@ -274,6 +276,13 @@ class DumpAnalyzer (QMainWindow):
                 data = f.read()
             self._hex_viewer.data = data
             self._history_widget.add_dump(data, file_name)
+
+    def _save_dump(self) -> None:
+        '''Save the current dump to a file.'''
+        file_name, _ = QFileDialog.getSaveFileName(self, "Save Dump", "", "All Files (*)")
+        if file_name:
+            with open(file_name, "wb") as f:
+                f.write(self._hex_viewer.data)
 
     def _read_from_usb(self) -> None:
         '''Read dump data from the USB device.'''
