@@ -6,6 +6,24 @@
     "size": 7151,
     "subsections": [
         {
+            "type": "Array",
+            "name": "Scroll Speeds",
+            "start": 32,
+            "color": "#1497ff80",
+            "repetitions": 5,
+            "gap": 1,
+            "child": {
+                "type": "Value",
+                "name": "Scroll Speed",
+                "start": 0,
+                "color": "#ff97ff80",
+                "length": 1,
+                "min_value": 0,
+                "max_value": 255
+            },
+            "padding": 0
+        },
+        {
             "type": "Value",
             "name": "Active Profile",
             "start": 44,
@@ -1158,6 +1176,51 @@
             ]
         },
         {
+            "type": "Array",
+            "name": "Profile Colors",
+            "start": 1024,
+            "color": "#14ffffff",
+            "repetitions": 5,
+            "gap": 0,
+            "child": {
+                "type": "List",
+                "name": "Color",
+                "start": 0,
+                "color": "#c8ffffff",
+                "size": 3,
+                "subsections": [
+                    {
+                        "type": "Value",
+                        "name": "R",
+                        "start": 0,
+                        "color": "#ffff0000",
+                        "length": 1,
+                        "min_value": 0,
+                        "max_value": 255
+                    },
+                    {
+                        "type": "Value",
+                        "name": "G",
+                        "start": 1,
+                        "color": "#ff00ff00",
+                        "length": 1,
+                        "min_value": 0,
+                        "max_value": 255
+                    },
+                    {
+                        "type": "Value",
+                        "name": "B",
+                        "start": 2,
+                        "color": "#ff0000ff",
+                        "length": 1,
+                        "min_value": 0,
+                        "max_value": 255
+                    }
+                ]
+            },
+            "padding": 0
+        },
+        {
             "type": "List",
             "name": "Effects 1",
             "start": 1097,
@@ -1165,31 +1228,40 @@
             "size": 7,
             "subsections": [
                 {
-                    "type": "Value",
-                    "name": "R",
+                    "type": "List",
+                    "name": "Color",
                     "start": 0,
-                    "color": "#ffff0004",
-                    "length": 1,
-                    "min_value": 0,
-                    "max_value": 255
-                },
-                {
-                    "type": "Value",
-                    "name": "G",
-                    "start": 1,
-                    "color": "#ff00ff00",
-                    "length": 1,
-                    "min_value": 0,
-                    "max_value": 255
-                },
-                {
-                    "type": "Value",
-                    "name": "B",
-                    "start": 2,
-                    "color": "#ff0000ff",
-                    "length": 1,
-                    "min_value": 0,
-                    "max_value": 255
+                    "color": "#c8ffffff",
+                    "size": 3,
+                    "subsections": [
+                        {
+                            "type": "Value",
+                            "name": "R",
+                            "start": 0,
+                            "color": "#ffff0000",
+                            "length": 1,
+                            "min_value": 0,
+                            "max_value": 255
+                        },
+                        {
+                            "type": "Value",
+                            "name": "G",
+                            "start": 1,
+                            "color": "#ff00ff00",
+                            "length": 1,
+                            "min_value": 0,
+                            "max_value": 255
+                        },
+                        {
+                            "type": "Value",
+                            "name": "B",
+                            "start": 2,
+                            "color": "#ff0000ff",
+                            "length": 1,
+                            "min_value": 0,
+                            "max_value": 255
+                        }
+                    ]
                 },
                 {
                     "type": "Value",
@@ -1237,31 +1309,40 @@
             "size": 7,
             "subsections": [
                 {
-                    "type": "Value",
-                    "name": "R",
+                    "type": "List",
+                    "name": "Color",
                     "start": 0,
-                    "color": "#ffff0004",
-                    "length": 1,
-                    "min_value": 0,
-                    "max_value": 255
-                },
-                {
-                    "type": "Value",
-                    "name": "G",
-                    "start": 1,
-                    "color": "#ff00ff00",
-                    "length": 1,
-                    "min_value": 0,
-                    "max_value": 255
-                },
-                {
-                    "type": "Value",
-                    "name": "B",
-                    "start": 2,
-                    "color": "#ff0000ff",
-                    "length": 1,
-                    "min_value": 0,
-                    "max_value": 255
+                    "color": "#c8ffffff",
+                    "size": 3,
+                    "subsections": [
+                        {
+                            "type": "Value",
+                            "name": "R",
+                            "start": 0,
+                            "color": "#ffff0000",
+                            "length": 1,
+                            "min_value": 0,
+                            "max_value": 255
+                        },
+                        {
+                            "type": "Value",
+                            "name": "G",
+                            "start": 1,
+                            "color": "#ff00ff00",
+                            "length": 1,
+                            "min_value": 0,
+                            "max_value": 255
+                        },
+                        {
+                            "type": "Value",
+                            "name": "B",
+                            "start": 2,
+                            "color": "#ff0000ff",
+                            "length": 1,
+                            "min_value": 0,
+                            "max_value": 255
+                        }
+                    ]
                 },
                 {
                     "type": "Value",
@@ -1309,31 +1390,40 @@
             "size": 7,
             "subsections": [
                 {
-                    "type": "Value",
-                    "name": "R",
+                    "type": "List",
+                    "name": "Color",
                     "start": 0,
-                    "color": "#ffff0004",
-                    "length": 1,
-                    "min_value": 0,
-                    "max_value": 255
-                },
-                {
-                    "type": "Value",
-                    "name": "G",
-                    "start": 1,
-                    "color": "#ff00ff00",
-                    "length": 1,
-                    "min_value": 0,
-                    "max_value": 255
-                },
-                {
-                    "type": "Value",
-                    "name": "B",
-                    "start": 2,
-                    "color": "#ff0000ff",
-                    "length": 1,
-                    "min_value": 0,
-                    "max_value": 255
+                    "color": "#c8ffffff",
+                    "size": 3,
+                    "subsections": [
+                        {
+                            "type": "Value",
+                            "name": "R",
+                            "start": 0,
+                            "color": "#ffff0000",
+                            "length": 1,
+                            "min_value": 0,
+                            "max_value": 255
+                        },
+                        {
+                            "type": "Value",
+                            "name": "G",
+                            "start": 1,
+                            "color": "#ff00ff00",
+                            "length": 1,
+                            "min_value": 0,
+                            "max_value": 255
+                        },
+                        {
+                            "type": "Value",
+                            "name": "B",
+                            "start": 2,
+                            "color": "#ff0000ff",
+                            "length": 1,
+                            "min_value": 0,
+                            "max_value": 255
+                        }
+                    ]
                 },
                 {
                     "type": "Value",
@@ -1381,31 +1471,40 @@
             "size": 7,
             "subsections": [
                 {
-                    "type": "Value",
-                    "name": "R",
+                    "type": "List",
+                    "name": "Color",
                     "start": 0,
-                    "color": "#ffff0004",
-                    "length": 1,
-                    "min_value": 0,
-                    "max_value": 255
-                },
-                {
-                    "type": "Value",
-                    "name": "G",
-                    "start": 1,
-                    "color": "#ff00ff00",
-                    "length": 1,
-                    "min_value": 0,
-                    "max_value": 255
-                },
-                {
-                    "type": "Value",
-                    "name": "B",
-                    "start": 2,
-                    "color": "#ff0000ff",
-                    "length": 1,
-                    "min_value": 0,
-                    "max_value": 255
+                    "color": "#c8ffffff",
+                    "size": 3,
+                    "subsections": [
+                        {
+                            "type": "Value",
+                            "name": "R",
+                            "start": 0,
+                            "color": "#ffff0000",
+                            "length": 1,
+                            "min_value": 0,
+                            "max_value": 255
+                        },
+                        {
+                            "type": "Value",
+                            "name": "G",
+                            "start": 1,
+                            "color": "#ff00ff00",
+                            "length": 1,
+                            "min_value": 0,
+                            "max_value": 255
+                        },
+                        {
+                            "type": "Value",
+                            "name": "B",
+                            "start": 2,
+                            "color": "#ff0000ff",
+                            "length": 1,
+                            "min_value": 0,
+                            "max_value": 255
+                        }
+                    ]
                 },
                 {
                     "type": "Value",
@@ -1453,31 +1552,40 @@
             "size": 7,
             "subsections": [
                 {
-                    "type": "Value",
-                    "name": "R",
+                    "type": "List",
+                    "name": "Color",
                     "start": 0,
-                    "color": "#ffff0004",
-                    "length": 1,
-                    "min_value": 0,
-                    "max_value": 255
-                },
-                {
-                    "type": "Value",
-                    "name": "G",
-                    "start": 1,
-                    "color": "#ff00ff00",
-                    "length": 1,
-                    "min_value": 0,
-                    "max_value": 255
-                },
-                {
-                    "type": "Value",
-                    "name": "B",
-                    "start": 2,
-                    "color": "#ff0000ff",
-                    "length": 1,
-                    "min_value": 0,
-                    "max_value": 255
+                    "color": "#c8ffffff",
+                    "size": 3,
+                    "subsections": [
+                        {
+                            "type": "Value",
+                            "name": "R",
+                            "start": 0,
+                            "color": "#ffff0000",
+                            "length": 1,
+                            "min_value": 0,
+                            "max_value": 255
+                        },
+                        {
+                            "type": "Value",
+                            "name": "G",
+                            "start": 1,
+                            "color": "#ff00ff00",
+                            "length": 1,
+                            "min_value": 0,
+                            "max_value": 255
+                        },
+                        {
+                            "type": "Value",
+                            "name": "B",
+                            "start": 2,
+                            "color": "#ff0000ff",
+                            "length": 1,
+                            "min_value": 0,
+                            "max_value": 255
+                        }
+                    ]
                 },
                 {
                     "type": "Value",
@@ -1516,24 +1624,6 @@
                     "max_value": 255
                 }
             ]
-        },
-        {
-            "type": "Array",
-            "name": "Scroll Speeds",
-            "start": 32,
-            "color": "#1497ff80",
-            "repetitions": 5,
-            "gap": 1,
-            "child": {
-                "type": "Value",
-                "name": "Scroll Speed",
-                "start": 0,
-                "color": "#ff97ff80",
-                "length": 1,
-                "min_value": 0,
-                "max_value": 255
-            },
-            "padding": 0
         }
     ]
 }
