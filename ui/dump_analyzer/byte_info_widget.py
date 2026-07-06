@@ -157,6 +157,20 @@ class ByteInfoWidget(QWidget):
         for element, (container, _) in self._elements.items():
             container.setVisible(element in view_options)
 
+    def read_byte(self, byte_index: int | None, length: int, data: memoryview) -> int | None:
+        '''Read a byte value from the data.'''
+        from ui.dump_analyzer.dump_analyzer import IntegerFormat
+        if byte_index is None or byte_index + length > len(data):
+            return None
+        value = 0
+        if Config.instance().integer_format == IntegerFormat.LITTLE_ENDIAN:
+            for i in range(length):
+                value |= data[byte_index + i] << (8 * i)
+        else:
+            for i in range(length):
+                value |= data[byte_index + i] << (8 * (length - 1 - i))
+        return value
+
     def format_byte(self, element: Elements, byte_index: int | None, data: memoryview) -> str:
         '''Format a byte value as a string.'''
         if byte_index is None or byte_index >= len(data):
@@ -174,17 +188,11 @@ class ByteInfoWidget(QWidget):
             case E.BIN1:
                 return f'{data[byte_index]:08b}'
             case E.HEX2:
-                if byte_index + 1 < len(data):
-                    byte2_value = data[byte_index + 1] + (data[byte_index] << 8)
-                    return f'0x{byte2_value:04X}'
-                else:
-                    return "N/A "
+                v = self.read_byte(byte_index, 2, data)
+                return f'0x{v:04X}' if v is not None else "N/A  "
             case E.DEC2:
-                if byte_index + 1 < len(data):
-                    byte2_value = data[byte_index + 1] + (data[byte_index] << 8)
-                    return f'{byte2_value:5d}'
-                else:
-                    return "N/A  "
+                v = self.read_byte(byte_index, 2, data)
+                return f'{v:5d}' if v is not None else "N/A  "
             case E.BIN2:
                 if byte_index + 1 < len(data):
                     byte2_value = data[byte_index + 1] + (data[byte_index] << 8)
@@ -192,17 +200,11 @@ class ByteInfoWidget(QWidget):
                 else:
                     return "N/A" + " " * 13
             case E.HEX4:
-                if byte_index + 3 < len(data):
-                    byte4_value = (data[byte_index + 3] << 24) + (data[byte_index + 2] << 16) + (data[byte_index + 1] << 8) + data[byte_index]
-                    return f'0x{byte4_value:08X}'
-                else:
-                    return "N/A" + " " * 5
+                v = self.read_byte(byte_index, 4, data)
+                return f'0x{v:08X}' if v is not None else "N/A      "
             case E.DEC4:
-                if byte_index + 3 < len(data):
-                    byte4_value = (data[byte_index + 3] << 24) + (data[byte_index + 2] << 16) + (data[byte_index + 1] << 8) + data[byte_index]
-                    return f'{byte4_value:10d}'
-                else:
-                    return "N/A" + " " * 7
+                v = self.read_byte(byte_index, 4, data)
+                return f'{v:10d}' if v is not None else "N/A      "
             case E.BIN4:
                 if byte_index + 3 < len(data):
                     byte4_value = (data[byte_index + 3] << 24) + (data[byte_index + 2] << 16) + (data[byte_index + 1] << 8) + data[byte_index]

@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 ''' Window to show and analyze dumps from the mouse. '''
 
+from enum import Enum
 import json
 import logging
 import sys
@@ -31,6 +32,10 @@ logger = logging.getLogger(__name__)
 class VisibleDetailBytes:
     hovered: bool = True
     selected: bool = True
+
+class IntegerFormat(Enum):
+    LITTLE_ENDIAN = 0
+    BIG_ENDIAN = 1
 
 class DumpAnalyzer (QMainWindow):
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -189,6 +194,16 @@ class DumpAnalyzer (QMainWindow):
                     self._hex_viewer.set_encoding(encoding)
             action.toggled.connect(on_click)
 
+        m.view_integer_format = m.view.addMenu("Integer Format")
+        m.view_integer_format_le = m.view_integer_format.addAction("Little Endian")
+        m.view_integer_format_le.setCheckable(True)
+        m.view_integer_format_le.setChecked(self._config.integer_format == IntegerFormat.LITTLE_ENDIAN)
+        m.view_integer_format_le.triggered.connect(lambda: self._set_integer_format(IntegerFormat.LITTLE_ENDIAN))
+        m.view_integer_format_be = m.view_integer_format.addAction("Big Endian")
+        m.view_integer_format_be.setCheckable(True)
+        m.view_integer_format_be.setChecked(self._config.integer_format == IntegerFormat.BIG_ENDIAN)
+        m.view_integer_format_be.triggered.connect(lambda: self._set_integer_format(IntegerFormat.BIG_ENDIAN))
+
         m.view_colors = m.view.addMenu("Colors")
         def add_color_action(name: str, color: HexViewer.Colors) -> QAction:
             action = m.view_colors.addAction(name)
@@ -268,6 +283,12 @@ class DumpAnalyzer (QMainWindow):
             font = dialog.selectedFont()
             self._hex_viewer.set_font(font)
             self._config.hex_viewer_font = font
+
+    def _set_integer_format(self, integer_format: IntegerFormat) -> None:
+        '''Set the integer format for the hex viewer.'''
+        self._config.integer_format = integer_format
+        self._menues.view_integer_format_le.setChecked(integer_format == IntegerFormat.LITTLE_ENDIAN)
+        self._menues.view_integer_format_be.setChecked(integer_format == IntegerFormat.BIG_ENDIAN)
 
     def _on_byte_hovered(self, byte_index: int) -> None:
         '''Handle byte hovered event.'''

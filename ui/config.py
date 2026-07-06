@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from .dump_analyzer.byte_info_widget import ByteInfoWidget
     from .dump_analyzer.dump_analyzer import VisibleDetailBytes
     from .dump_analyzer.hex_viewer import HexViewer
+    from .dump_analyzer.dump_analyzer import IntegerFormat
 
 class Config:
     _FILE_PATH: str = "config.json"
@@ -116,6 +117,23 @@ class Config:
     def encoding(self, encoding: str) -> None:
         '''Set the encoding defined in the configuration.'''
         self.data["encoding"] = encoding
+        self._save()
+
+    @property
+    def integer_format(self) -> IntegerFormat:
+        '''Get the integer format defined in the configuration.'''
+        from .dump_analyzer.dump_analyzer import IntegerFormat
+        if "integer_format" not in self.data:
+            return IntegerFormat.LITTLE_ENDIAN
+        value = self.data["integer_format"]
+        try:
+            return IntegerFormat[value]
+        except KeyError:
+            raise ValueError(f"Invalid integer_format value: {value}")
+    @integer_format.setter
+    def integer_format(self, value: IntegerFormat) -> None:
+        '''Set the integer format defined in the configuration.'''
+        self.data["integer_format"] = value.name
         self._save()
 
     @property

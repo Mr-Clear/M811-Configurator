@@ -5,7 +5,7 @@ from enum import Enum
 from functools import cached_property
 from typing import Sequence
 
-from PySide6.QtCore import QEvent, QPoint, QPointF, QSize, QTimer, Signal
+from PySide6.QtCore import QEvent, QPoint, QPointF, QRect, QSize, QTimer, Signal
 from PySide6.QtGui import (QColor, QCursor, QFont, QFontMetrics, QKeyEvent,
                            QMouseEvent, QPainter, QPaintEvent, QPalette,
                            QResizeEvent, QShowEvent, Qt, QWheelEvent)
@@ -74,8 +74,12 @@ class HexViewer(QWidget):
         self._edit_cursor_pos = 0
         self._root_section: ListSection | None = None
         self._encoding = self._config.encoding
+        self._byte_char_cache: list[str] = []
+        self._byte_char_width_cache: list[int] = []
+        self._paint_section_cache: dict[int, list[Section]] | None = None
         self._line_width = self._config.hex_viewer_line_width
         self.setFont(self._config.hex_viewer_font)
+        self._rebuild_byte_char_cache()
 
         self.resize(800, 600)
         self.setMouseTracking(True)
@@ -96,7 +100,7 @@ class HexViewer(QWidget):
         self._set_selected_byte(None)
         self._set_hover_byte(None)
         self._calculate_size()
-        self.repaint()
+        self.update()
         self.data_changed.emit(memoryview(self._data))
 
     @property
@@ -107,7 +111,7 @@ class HexViewer(QWidget):
     def compare_data(self, data: bytes | memoryview) -> None:
         '''Set the data to compare against for highlighting changes.'''
         self._compare_data = data
-        self.repaint()
+        self.update()
     def set_compare_data(self, data: bytes | memoryview) -> None:
         '''Set the data to compare against for highlighting changes.'''
         self.compare_data = data
@@ -115,7 +119,7 @@ class HexViewer(QWidget):
     def set_font(self, font: QFont) -> None:
         self.setFont(font)
         self._calculate_size()
-        self.repaint()
+        self.update()
 
     def get_byte_index_at_position(self, pos: QPoint | QPointF, line_start: bool) -> int | None:
         size_hint = self._current_size_hint
@@ -161,11 +165,49 @@ class HexViewer(QWidget):
 
     def set_root_section(self, section: ListSection) -> None:
         self._root_section = section
-        self.repaint()
+        self.update()
 
     def set_encoding(self, encoding: str) -> None:
         self._encoding = encoding
-        self.repaint()
+        self._rebuild_byte_char_cache()
+        self.update()
+
+    def _rebuild_byte_char_cache(self) -> None:
+        cache: list[str] = []
+        widths: list[int] = []
+        metrics = self.fontMetrics()
+        for b in range(256):
+            try:
+                char = bytes([b]).decode(self._encoding)
+            except UnicodeDecodeError:
+                char = '�'
+            if not char.isprintable():
+                char = '☐'
+            cache.append(char)
+            widths.append(metrics.horizontalAdvance(char))
+        self._byte_char_cache = cache
+        self._byte_char_width_cache = widths
+
+    def _byte_update_rect(self, byte_idx: int) -> QRect:
+        hex_pos = self._get_hex_position(byte_idx)
+        ascii_pos = self._get_ascii_position(byte_idx)
+        top = hex_pos.y() - self._char_ascent - 1
+        height = self._char_height + 2
+        hex_rect = QRect(hex_pos.x() - 1, top, self._hex_width * 2 + self._space_width + 2, height)
+        ascii_rect = QRect(ascii_pos.x() - 1, top, self._char_width + 2, height)
+        return hex_rect.united(ascii_rect)
+
+    def _update_bytes(self, *byte_indices: int | None) -> None:
+        rect: QRect | None = None
+        for byte_idx in byte_indices:
+            if byte_idx is None or byte_idx < 0 or byte_idx >= len(self._data):
+                continue
+            byte_rect = self._byte_update_rect(byte_idx)
+            rect = byte_rect if rect is None else rect.united(byte_rect)
+        if rect is None:
+            self.update()
+        else:
+            self.update(rect)
 
     def _init_colors(self) -> None:
         colors = self._config.hex_viewer_colors
@@ -190,7 +232,7 @@ class HexViewer(QWidget):
         color_config = self._config.hex_viewer_colors
         color_config[color.name.lower()] = value.name()
         self._config.hex_viewer_colors = color_config
-        self.repaint()
+        self.update()
 
     @property
     def line_width(self) -> tuple[HexViewer.LineWidth, int | None]:
@@ -272,24 +314,39 @@ class HexViewer(QWidget):
 
     def _set_selected_byte(self, byte_idx: int | None) -> None:
         if byte_idx != self._selected_byte:
+            old_byte = self._selected_byte
             self._selected_byte = byte_idx
             if byte_idx is not None:
                 self.byte_clicked.emit(byte_idx)
-            self.repaint()
+            self._update_bytes(old_byte, byte_idx)
 
     def _set_hover_byte(self, byte_idx: int | None) -> None:
         if byte_idx != self._hover_byte:
+            old_byte = self._hover_byte
             self._hover_byte = byte_idx
             if byte_idx is not None:
                 self.byte_hovered.emit(byte_idx)
             else:
                 self.byte_hovered_leave.emit()
-            self.repaint()
+            self._update_bytes(old_byte, byte_idx)
 
     def _sections_for_byte_index(self, byte_idx: int) -> list[Section]:
         if self._root_section is None:
             return []
         return self._root_section.get_sections_for_index(byte_idx)
+
+    def _sections_for_byte_index_cached(self, byte_idx: int) -> list[Section]:
+        if self._paint_section_cache is None:
+            sections = self._sections_for_byte_index(byte_idx)
+            sections.sort(key=lambda s: (s.level, s.absolute_start))
+            return sections
+        cached = self._paint_section_cache.get(byte_idx)
+        if cached is not None:
+            return cached
+        sections = self._sections_for_byte_index(byte_idx)
+        sections.sort(key=lambda s: (s.level, s.absolute_start))
+        self._paint_section_cache[byte_idx] = sections
+        return sections
 
     def sizeHint(self) -> QSize:
         return self._current_size_hint.size
@@ -351,9 +408,7 @@ class HexViewer(QWidget):
 
         @cached_property
         def sections(self) -> list[Section]:
-            sections = self.outer._sections_for_byte_index(self.byte_index)
-            sections.sort(key=lambda s: (s.level, s.absolute_start))
-            return sections
+            return self.outer._sections_for_byte_index_cached(self.byte_index)
         @property
         def top_section(self) -> Section | None:
             return self.sections[-1] if self.sections else None
@@ -390,6 +445,7 @@ class HexViewer(QWidget):
         painter = QPainter(self)
         painter.setFont(self.font())
         data = memoryview(self._data)
+        self._paint_section_cache = {}
 
         range_start = self.get_byte_index_at_position(event.rect().topLeft(), True) or 0
         range_start = max(range_start - self._current_size_hint.bytes_per_line, 0)
@@ -415,6 +471,7 @@ class HexViewer(QWidget):
                 self.paint_text(info)
 
             painter.setPen(self.palette().color(QPalette.ColorRole.WindowText))
+        self._paint_section_cache = None
         painter.end()
 
     def paint_background(self, info: _PaintInfo) -> None:
@@ -453,7 +510,7 @@ class HexViewer(QWidget):
                     info.painter.drawLine(info.ascii_pos.x() + self._char_width, info.ascii_pos.y() - self._char_ascent,
                                           info.ascii_pos.x() + self._char_width, info.ascii_pos.y() - self._char_ascent + self._char_height - 1)
                 if not info.same_down(level):
-                    down_left = self._sections_for_byte_index(info.byte_index + self._current_size_hint.bytes_per_line - 1)
+                    down_left = self._sections_for_byte_index_cached(info.byte_index + self._current_size_hint.bytes_per_line - 1)
                     same_down_left = info.same_left(level) and section in down_left
                     d = self._space_width - 1 if info.same_left(level) and same_down_left else 0
                     info.painter.drawLine(info.hex_pos.x() - d, info.hex_pos.y() - self._char_ascent + self._char_height - 1,
@@ -487,14 +544,8 @@ class HexViewer(QWidget):
             cursor_y = info.hex_pos.y() - self._char_ascent
             info.painter.drawLine(cursor_x, cursor_y, cursor_x, cursor_y + self._char_height)
 
-        try:
-            char = bytes([b]).decode(self._encoding)
-        except UnicodeDecodeError:
-            char = '�'
-        if not char.isprintable():
-            char = '☐'
-
-        char_width = info.painter.fontMetrics().horizontalAdvance(char)
+        char = self._byte_char_cache[b]
+        char_width = self._byte_char_width_cache[b]
         char_x = info.ascii_pos.x() + (self._char_width - char_width) // 2
         info.painter.drawText(QPoint(char_x, info.ascii_pos.y()), char)
 
@@ -538,13 +589,15 @@ class HexViewer(QWidget):
 
                 if self._edit_cursor_pos == 0:
                     self._edit_cursor_pos = 1
+                    previous_byte = self._selected_byte
                 else:
                     self._edit_cursor_pos = 0
+                    previous_byte = self._selected_byte
                     if self._selected_byte + 1 < len(self._data):
                         self._selected_byte += 1
 
                 self.byte_clicked.emit(self._selected_byte)
-                self.repaint()
+                self._update_bytes(previous_byte, self._selected_byte)
 
         elif event.key() == Qt.Key.Key_Escape:
             self._set_selected_byte(None)
@@ -552,7 +605,7 @@ class HexViewer(QWidget):
             if self._selected_byte is not None:
                 if self._edit_cursor_pos == 1:
                     self._edit_cursor_pos = 0
-                    self.repaint()
+                    self._update_bytes(self._selected_byte)
                 elif self._selected_byte > 0:
                     self._edit_cursor_pos = 1
                     self._set_selected_byte(self._selected_byte - 1)
@@ -562,7 +615,7 @@ class HexViewer(QWidget):
             if self._selected_byte is not None:
                 if self._edit_cursor_pos == 0:
                     self._edit_cursor_pos = 1
-                    self.repaint()
+                    self._update_bytes(self._selected_byte)
                 elif self._selected_byte + 1 < len(self._data):
                     self._edit_cursor_pos = 0
                     self._set_selected_byte(self._selected_byte + 1)
