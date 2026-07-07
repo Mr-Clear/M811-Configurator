@@ -283,6 +283,8 @@ class HexViewer(QWidget):
         lines = (len(self._data) + count - 1) // count
         height = lines * line_height + 2 * self._padding
         self._current_size_hint = self._SizeHint(width(count) + 2 * self._padding, height, count)
+        self.setMinimumHeight(self._current_size_hint.height)
+        self.updateGeometry()
         if self._line_width[0] == HexViewer.LineWidth.FIXED:
             self.setMinimumWidth(self._current_size_hint.width)
         else:
@@ -365,7 +367,7 @@ class HexViewer(QWidget):
         return start_address, end_address, start_hex, end_hex, start_ascii, end_ascii
 
     def resizeEvent(self, event: QResizeEvent) -> None:
-        self.setMinimumHeight(self._calculate_size().height)
+        self._calculate_size()
         self._start_address, self._end_address, self._start_hex, self._end_hex, self._start_ascii, self._end_ascii = self.calculate_text_positions(self._current_size_hint.bytes_per_line)
         super().resizeEvent(event)
 
