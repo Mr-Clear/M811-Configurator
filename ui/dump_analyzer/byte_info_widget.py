@@ -7,6 +7,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QStackedWidget, QWidget
 
 from ..config import Config
+from ..tools.decode import decode_utf16, decode_utf8
 
 
 class ByteInfoWidget(QWidget):
@@ -215,26 +216,8 @@ class ByteInfoWidget(QWidget):
                 byte_value = data[byte_index]
                 return chr(byte_value) if 32 <= byte_value <= 126 else '.'
             case E.UTF8:
-                # For UTF-8, we need to decode the bytes starting at byte_index
-                # and find the first valid UTF-8 character.
-                try:
-                    # Find the end of the UTF-8 character starting at byte_index
-                    for end in range(byte_index + 1, min(byte_index + 4, len(data) + 1)):
-                        char_bytes = data[byte_index:end].tobytes()
-                        char = char_bytes.decode('utf-8')
-                        return char
-                except UnicodeDecodeError:
-                    return "�"  # Replacement character for invalid UTF-8
-                return "N/A"
+                return decode_utf8(data.tobytes(), byte_index)[0]
             case E.UTF16:
-                # For UTF-16, we need to decode the bytes starting at byte_index
-                # and find the first valid UTF-16 character.
-                try:
-                    # UTF-16 requires at least 2 bytes
-                    if byte_index + 1 < len(data):
-                        char_bytes = data[byte_index:byte_index + 2].tobytes()
-                        char = char_bytes.decode('utf-16le')  # Assuming little-endian
-                        return char
-                except UnicodeDecodeError:
-                    return "�"  # Replacement character for invalid UTF-16
-                return "N/A"
+                return decode_utf16(data.tobytes(), byte_index)[0]
+            case _:
+                raise ValueError(f"Unknown element: {element}")

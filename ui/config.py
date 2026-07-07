@@ -94,7 +94,7 @@ class Config:
     def visible_details(self) -> set[ByteInfoWidget.Elements]:
         '''Get the visible details defined in the configuration.'''
         from .dump_analyzer.byte_info_widget import ByteInfoWidget
-        defaults = {ByteInfoWidget.Elements.TITLE, ByteInfoWidget.Elements.HEX1, ByteInfoWidget.Elements.DEC1, ByteInfoWidget.Elements.BIN1}
+        defaults = {ByteInfoWidget.Elements.TITLE, ByteInfoWidget.Elements.ADDRESS, ByteInfoWidget.Elements.HEX1, ByteInfoWidget.Elements.DEC1, ByteInfoWidget.Elements.BIN1}
         if "details" not in self.data:
             return defaults
         d: dict[str, bool] = self.data["details"]
