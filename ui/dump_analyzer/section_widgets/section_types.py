@@ -1,4 +1,5 @@
 """Provides all section types and their widgets."""
+from __future__ import annotations
 
 from typing import TYPE_CHECKING
 

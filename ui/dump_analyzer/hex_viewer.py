@@ -1,4 +1,5 @@
 ''' Widget for displaying binary data in a hex viewer format. '''
+from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
