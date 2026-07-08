@@ -72,7 +72,7 @@ class DumpAnalyzer (QMainWindow):
 
         hex_container_widget = QWidget(self)
         hex_layout = QVBoxLayout(hex_container_widget)
-        hex_layout.setContentsMargins(0, 0, 0, 0)
+        hex_layout.setContentsMargins(4, 8, 8, 4)
         hex_layout.setSpacing(0)
 
         scroll_area = QScrollArea(self)
@@ -89,7 +89,6 @@ class DumpAnalyzer (QMainWindow):
         self.setCentralWidget(hex_container_widget)
 
         self._left_dock_widget = QDockWidget("Dump History", self)
-        self._left_dock_widget.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetMovable)
         self._history_widget = HistoryWidget(self)
         self._left_dock_widget.setWidget(self._history_widget)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self._left_dock_widget)

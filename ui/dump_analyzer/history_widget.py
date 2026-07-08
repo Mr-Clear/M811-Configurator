@@ -124,6 +124,7 @@ class HistoryWidget(QWidget):
         self._dumps: dict[str, HistoryWidget.DumpInfo] = {}
         self._compare_dump: HistoryWidget.DumpInfo | None = None
         self._main_layout = QVBoxLayout()
+        self._main_layout.setContentsMargins(8, 0, 4, 4)
         self._history_list = HistoryListWidget(self)
         self._history_list.setMinimumWidth(350)
         self._history_list.setStyleSheet("HistoryListWidget::item:selected { background-color: palette(base); }")

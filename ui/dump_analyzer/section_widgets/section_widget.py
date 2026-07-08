@@ -49,6 +49,7 @@ class SectionWidget(QWidget):
         monospace_font = self.font()
         monospace_font.setFamily("Courier")
         main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(4, 0, 0, 0)
 
         # Col 1: Name and color
         layout = QHBoxLayout()
@@ -162,7 +163,7 @@ class SectionWidget(QWidget):
             self._current_color = section.color
 
             editor_type = _editor_for_type(type(section))
-            if editor_type != type(self._section_editor):
+            if editor_type is not type(self._section_editor):
                 layout = self._section_editor_container.layout()
                 assert layout is not None
                 # Remove children of section editor

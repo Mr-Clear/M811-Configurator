@@ -18,11 +18,11 @@ class SectionsWidget(QWidget):
         super().__init__(parent)
         self._root = root
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(8, 0, 8, 8)
         splitter = QSplitter(Qt.Orientation.Horizontal, self)
         left_panel = QWidget(self)
         left_layout = QVBoxLayout(left_panel)
-        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setContentsMargins(0, 0, 4, 0)
         self._tree_view = QTreeView(self)
         self._tree_view_model = SectionsTreeModel(self._root, self)
         self._tree_view.setModel(self._tree_view_model)
