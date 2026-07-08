@@ -1624,6 +1624,51 @@
                     "max_value": 255
                 }
             ]
+        },
+        {
+            "type": "Array",
+            "name": "Macros",
+            "start": 1144,
+            "color": "#32414100",
+            "repetitions": 30,
+            "gap": 5,
+            "child": {
+                "type": "Array",
+                "name": "Macro",
+                "start": 0,
+                "color": "#32888800",
+                "repetitions": 65,
+                "gap": 0,
+                "child": {
+                    "type": "List",
+                    "name": "New List",
+                    "start": 0,
+                    "color": "#ff888800",
+                    "size": 3,
+                    "subsections": [
+                        {
+                            "type": "Value",
+                            "name": "Type",
+                            "start": 0,
+                            "color": null,
+                            "length": 1,
+                            "min_value": 0,
+                            "max_value": 255
+                        },
+                        {
+                            "type": "Value",
+                            "name": "Data",
+                            "start": 0,
+                            "color": null,
+                            "length": 1,
+                            "min_value": 0,
+                            "max_value": 255
+                        }
+                    ]
+                },
+                "padding": 0
+            },
+            "padding": 0
         }
     ]
 }
