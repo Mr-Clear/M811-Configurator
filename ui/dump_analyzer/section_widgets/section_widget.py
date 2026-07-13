@@ -7,13 +7,14 @@ from typing import Generic, TypeVar
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QFontMetrics
-from PySide6.QtWidgets import (QColorDialog, QHBoxLayout, QLabel, QLineEdit,
+from PySide6.QtWidgets import (QColorDialog, QComboBox, QHBoxLayout, QLabel, QLineEdit,
                                QPushButton, QSpinBox, QToolButton, QVBoxLayout,
                                QWidget)
 
 from ui.config import Config
 from ui.dump_analyzer.section_widgets.section_types import get_section_types
 
+from ...redragon_mouse import ValueFunction
 from ..sections.section import Section
 
 
@@ -30,6 +31,7 @@ class SectionWidget(QWidget):
         super().__init__(parent)
         self._section: Section | None = None
         self._name_text: QLineEdit
+        self._function_combo: QComboBox
         self._start_spin_box: QSpinBox
         self._size_label: QLabel
         self._color_label: QLabel
@@ -51,7 +53,7 @@ class SectionWidget(QWidget):
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(4, 0, 0, 0)
 
-        # Col 1: Name and color
+        # Col 1: Name, function and color
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(QLabel("Name:", self))
@@ -59,6 +61,15 @@ class SectionWidget(QWidget):
         self._name_text.textChanged.connect(self._on_change)
         layout.addWidget(self._name_text)
         layout.addSpacing(8)
+
+        layout.addWidget(QLabel("Function:", self))
+        self._function_combo = QComboBox(self)
+        for function in ValueFunction:
+            self._function_combo.addItem(str(function), function)
+        self._function_combo.currentIndexChanged.connect(self._on_change)
+        layout.addWidget(self._function_combo)
+        layout.addSpacing(8)
+
         layout.addWidget(QLabel("Color:", self))
         self._color_label = QLabel(self)
         self._color_label.setFont(monospace_font)
@@ -149,6 +160,7 @@ class SectionWidget(QWidget):
 
         if section is None:
             self._name_text.setText("")
+            self._function_combo.setCurrentIndex(0)
             self._start_spin_box.setValue(0)
             self._size_label.setText('')
             self._color_label.setText('')
@@ -157,6 +169,7 @@ class SectionWidget(QWidget):
             enabled = False
         else:
             self._name_text.setText(f"{section.name}")
+            self._function_combo.setCurrentIndex(self._function_combo.findData(section.function))
             self._start_spin_box.setMinimum(0)
             self._start_spin_box.setMaximum(section.parent.size - 1 if section.parent else 0xFFFF)
             self._start_spin_box.setValue(section.relative_start)
@@ -284,6 +297,7 @@ class SectionWidget(QWidget):
             return
         self._section_editor.save_section()
         self._section.name = self._name_text.text()
+        self._section.function = self._function_combo.currentData()
         self._section.relative_start = int(self._start_spin_box.text(), 16)
         self._section.color = self._current_color
         self.section_changed.emit()

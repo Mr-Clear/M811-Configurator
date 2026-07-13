@@ -8,14 +8,20 @@ from typing import TYPE_CHECKING, Any
 from PySide6.QtGui import QColor
 
 if TYPE_CHECKING:
+    from ui.redragon_mouse import ValueFunction
     from .parent_section import AbstractParentSection
 
 @dataclass
 class Section(ABC):
     name: str
+    function: ValueFunction
     relative_start: int
     parent: AbstractParentSection | None = None
     color: QColor | None = None
+
+    @property
+    def id(self) -> str:
+        return f'0x{self.absolute_start:04X}({self.name})'
 
     @classmethod
     @abstractmethod
@@ -65,6 +71,7 @@ class Section(ABC):
         d ={
             "type": self.type_name(),
             "name": self.name,
+            "function": self.function.name,
             "start": self.relative_start,
             "color": self.color.name(QColor.NameFormat.HexArgb) if self.color else None,
         }
@@ -123,6 +130,7 @@ class Section(ABC):
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> Section:
+        from ui.redragon_mouse import ValueFunction
         '''Create a section from a dictionary.'''
         type_name = data.get("type")
         if type_name == "List":
@@ -136,7 +144,7 @@ class Section(ABC):
             t = ArraySection
         else:
             raise ValueError(f"Unknown section type: {type_name}")
-        s = t(name=data["name"], relative_start=data["start"])
+        s = t(name=data["name"], function=ValueFunction[data["function"]], relative_start=data["start"])
         s.color = QColor(data["color"]) if data.get("color") else None
         s.load_from_dict(data)
         return s

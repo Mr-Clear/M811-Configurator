@@ -5,6 +5,8 @@ from PySide6.QtCore import (QAbstractItemModel, QModelIndex, QObject, QPoint,
 from PySide6.QtWidgets import (QHeaderView, QMenu, QSplitter, QTreeView,
                                QVBoxLayout, QWidget)
 
+from ui.redragon_mouse import ValueFunction
+
 from .section_widgets.clipboard import copy_section_to_clipboard
 from .section_widgets.section_widget import SectionWidget
 from .sections.list_section import ListSection
@@ -109,7 +111,7 @@ class SectionsWidget(QWidget):
         if not parent_index.isValid():
             return False
         parent = parent_index.internalPointer()
-        if parent == self._tree_view_model.root:
+        if parent is self._tree_view_model.root:
             return False
         return isinstance(parent, ListSection)
 
@@ -154,7 +156,7 @@ class SectionsTreeModel(QAbstractItemModel):
 
     def set_root(self, root: Section) -> None:
         '''Set the root section of the tree model.'''
-        self._root = ListSection(name="INVISIBLE_ROOT", relative_start=0, length=0xFFFF, subsections=[root])
+        self._root = ListSection(name="INVISIBLE_ROOT", function=ValueFunction.NONE, relative_start=0, length=0xFFFF, subsections=[root])
         self.layoutChanged.emit()
 
     @property
@@ -184,12 +186,12 @@ class SectionsTreeModel(QAbstractItemModel):
         if not index.isValid():
             return QModelIndex()
         section = index.internalPointer()
-        if section == self._root:
+        if section is self._root:
             return QModelIndex()
         parent_section = self._find_parent(self._root, section)
         if parent_section is None:
             return QModelIndex()
-        if parent_section == self._root:
+        if parent_section is self._root:
             return self.createIndex(0, 0, self._root)
         grandparent_section = self._find_parent(self._root, parent_section)
         if grandparent_section is None:
@@ -225,7 +227,7 @@ class SectionsTreeModel(QAbstractItemModel):
 
     def _find_parent(self, current: Section, target: Section) -> Section | None:
         for child in current.children(True):
-            if child == target:
+            if child is target:
                 return current
             parent = self._find_parent(child, target)
             if parent is not None:

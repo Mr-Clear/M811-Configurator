@@ -1,6 +1,7 @@
 {
     "type": "List",
     "name": "M811",
+    "function": "NONE",
     "start": 0,
     "color": null,
     "size": 7151,
@@ -8,6 +9,7 @@
         {
             "type": "Array",
             "name": "Scroll Speeds",
+            "function": "NONE",
             "start": 32,
             "color": "#1497ff80",
             "repetitions": 5,
@@ -15,6 +17,7 @@
             "child": {
                 "type": "Value",
                 "name": "Scroll Speed",
+                "function": "SCROLL_SPEED",
                 "start": 0,
                 "color": "#ff97ff80",
                 "length": 1,
@@ -26,6 +29,7 @@
         {
             "type": "Value",
             "name": "Active Profile",
+            "function": "ACTIVE_PROFILE",
             "start": 44,
             "color": "#ffbd8eff",
             "length": 1,
@@ -35,6 +39,7 @@
         {
             "type": "Array",
             "name": "Poll Rates",
+            "function": "NONE",
             "start": 50,
             "color": "#1437ff00",
             "repetitions": 5,
@@ -42,6 +47,7 @@
             "child": {
                 "type": "Value",
                 "name": "Poll Rate",
+                "function": "POLL_RATE",
                 "start": 0,
                 "color": "#ff00ff33",
                 "length": 1,
@@ -53,6 +59,7 @@
         {
             "type": "Array",
             "name": "DPIs 1",
+            "function": "DPI_LIST",
             "start": 66,
             "color": "#14ff0004",
             "repetitions": 5,
@@ -60,6 +67,7 @@
             "child": {
                 "type": "List",
                 "name": "DPI",
+                "function": "DPI",
                 "start": 2,
                 "color": "#64ff0000",
                 "size": 3,
@@ -67,6 +75,7 @@
                     {
                         "type": "Value",
                         "name": "DPI Enabled",
+                        "function": "NONE",
                         "start": 0,
                         "color": "#ffff0000",
                         "length": 1,
@@ -76,6 +85,7 @@
                     {
                         "type": "Value",
                         "name": "DPI Value",
+                        "function": "NONE",
                         "start": 1,
                         "color": "#ffff0000",
                         "length": 2,
@@ -89,6 +99,7 @@
         {
             "type": "List",
             "name": "Buttons 1",
+            "function": "BUTTON_LIST",
             "start": 130,
             "color": "#0a94fff6",
             "size": 96,
@@ -96,6 +107,7 @@
                 {
                     "type": "Value",
                     "name": "Button 1",
+                    "function": "BUTTON",
                     "start": 0,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -105,6 +117,7 @@
                 {
                     "type": "Value",
                     "name": "Button 2",
+                    "function": "BUTTON",
                     "start": 4,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -114,6 +127,7 @@
                 {
                     "type": "Value",
                     "name": "Button 3",
+                    "function": "BUTTON",
                     "start": 8,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -123,6 +137,7 @@
                 {
                     "type": "Value",
                     "name": "Button 4",
+                    "function": "BUTTON",
                     "start": 12,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -132,6 +147,7 @@
                 {
                     "type": "Value",
                     "name": "Button 5",
+                    "function": "BUTTON",
                     "start": 16,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -141,6 +157,7 @@
                 {
                     "type": "Value",
                     "name": "Button 6",
+                    "function": "BUTTON",
                     "start": 20,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -150,6 +167,7 @@
                 {
                     "type": "Value",
                     "name": "Button 7",
+                    "function": "BUTTON",
                     "start": 24,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -159,6 +177,7 @@
                 {
                     "type": "Value",
                     "name": "Button 8",
+                    "function": "BUTTON",
                     "start": 28,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -168,6 +187,7 @@
                 {
                     "type": "Value",
                     "name": "Button 9",
+                    "function": "BUTTON",
                     "start": 32,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -177,6 +197,7 @@
                 {
                     "type": "Value",
                     "name": "Button 10",
+                    "function": "BUTTON",
                     "start": 36,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -186,6 +207,7 @@
                 {
                     "type": "Value",
                     "name": "Button 11",
+                    "function": "BUTTON",
                     "start": 40,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -195,6 +217,7 @@
                 {
                     "type": "Value",
                     "name": "Button 12",
+                    "function": "BUTTON",
                     "start": 44,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -204,6 +227,7 @@
                 {
                     "type": "Value",
                     "name": "Button 13",
+                    "function": "BUTTON",
                     "start": 48,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -213,6 +237,7 @@
                 {
                     "type": "Value",
                     "name": "Button 14",
+                    "function": "BUTTON",
                     "start": 52,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -222,6 +247,7 @@
                 {
                     "type": "Value",
                     "name": "Button 15",
+                    "function": "BUTTON",
                     "start": 56,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -231,6 +257,7 @@
                 {
                     "type": "Value",
                     "name": "Button 16",
+                    "function": "BUTTON",
                     "start": 60,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -240,6 +267,7 @@
                 {
                     "type": "Value",
                     "name": "Button 14",
+                    "function": "BUTTON",
                     "start": 64,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -249,6 +277,7 @@
                 {
                     "type": "Value",
                     "name": "Button 18",
+                    "function": "BUTTON",
                     "start": 68,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -258,6 +287,7 @@
                 {
                     "type": "Value",
                     "name": "Button 19",
+                    "function": "BUTTON",
                     "start": 88,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -267,6 +297,7 @@
                 {
                     "type": "Value",
                     "name": "Button 20",
+                    "function": "BUTTON",
                     "start": 92,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -278,6 +309,7 @@
         {
             "type": "Array",
             "name": "DPIs 2",
+            "function": "DPI_LIST",
             "start": 258,
             "color": "#14ff0004",
             "repetitions": 5,
@@ -285,6 +317,7 @@
             "child": {
                 "type": "List",
                 "name": "DPI",
+                "function": "DPI",
                 "start": 2,
                 "color": "#64ff0000",
                 "size": 3,
@@ -292,6 +325,7 @@
                     {
                         "type": "Value",
                         "name": "DPI Enabled",
+                        "function": "NONE",
                         "start": 0,
                         "color": "#ffff0000",
                         "length": 1,
@@ -301,6 +335,7 @@
                     {
                         "type": "Value",
                         "name": "DPI Value",
+                        "function": "NONE",
                         "start": 1,
                         "color": "#ffff0000",
                         "length": 2,
@@ -314,6 +349,7 @@
         {
             "type": "List",
             "name": "Buttons 2",
+            "function": "BUTTON_LIST",
             "start": 322,
             "color": "#1494fff6",
             "size": 96,
@@ -321,6 +357,7 @@
                 {
                     "type": "Value",
                     "name": "Button 1",
+                    "function": "BUTTON",
                     "start": 0,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -330,6 +367,7 @@
                 {
                     "type": "Value",
                     "name": "Button 2",
+                    "function": "BUTTON",
                     "start": 4,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -339,6 +377,7 @@
                 {
                     "type": "Value",
                     "name": "Button 3",
+                    "function": "BUTTON",
                     "start": 8,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -348,6 +387,7 @@
                 {
                     "type": "Value",
                     "name": "Button 4",
+                    "function": "BUTTON",
                     "start": 12,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -357,6 +397,7 @@
                 {
                     "type": "Value",
                     "name": "Button 5",
+                    "function": "BUTTON",
                     "start": 16,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -366,6 +407,7 @@
                 {
                     "type": "Value",
                     "name": "Button 6",
+                    "function": "BUTTON",
                     "start": 20,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -375,6 +417,7 @@
                 {
                     "type": "Value",
                     "name": "Button 7",
+                    "function": "BUTTON",
                     "start": 24,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -384,6 +427,7 @@
                 {
                     "type": "Value",
                     "name": "Button 8",
+                    "function": "BUTTON",
                     "start": 28,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -393,6 +437,7 @@
                 {
                     "type": "Value",
                     "name": "Button 9",
+                    "function": "BUTTON",
                     "start": 32,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -402,6 +447,7 @@
                 {
                     "type": "Value",
                     "name": "Button 10",
+                    "function": "BUTTON",
                     "start": 36,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -411,6 +457,7 @@
                 {
                     "type": "Value",
                     "name": "Button 11",
+                    "function": "BUTTON",
                     "start": 40,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -420,6 +467,7 @@
                 {
                     "type": "Value",
                     "name": "Button 12",
+                    "function": "BUTTON",
                     "start": 44,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -429,6 +477,7 @@
                 {
                     "type": "Value",
                     "name": "Button 13",
+                    "function": "BUTTON",
                     "start": 48,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -438,6 +487,7 @@
                 {
                     "type": "Value",
                     "name": "Button 14",
+                    "function": "BUTTON",
                     "start": 52,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -447,6 +497,7 @@
                 {
                     "type": "Value",
                     "name": "Button 15",
+                    "function": "BUTTON",
                     "start": 56,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -456,6 +507,7 @@
                 {
                     "type": "Value",
                     "name": "Button 16",
+                    "function": "BUTTON",
                     "start": 60,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -465,6 +517,7 @@
                 {
                     "type": "Value",
                     "name": "Button 14",
+                    "function": "BUTTON",
                     "start": 64,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -474,6 +527,7 @@
                 {
                     "type": "Value",
                     "name": "Button 18",
+                    "function": "BUTTON",
                     "start": 68,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -483,6 +537,7 @@
                 {
                     "type": "Value",
                     "name": "Button 19",
+                    "function": "BUTTON",
                     "start": 88,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -492,6 +547,7 @@
                 {
                     "type": "Value",
                     "name": "Button 20",
+                    "function": "BUTTON",
                     "start": 92,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -503,6 +559,7 @@
         {
             "type": "Array",
             "name": "DPIs 3",
+            "function": "NONE",
             "start": 434,
             "color": "#14ff0004",
             "repetitions": 5,
@@ -510,6 +567,7 @@
             "child": {
                 "type": "List",
                 "name": "DPI",
+                "function": "NONE",
                 "start": 2,
                 "color": "#64ff0000",
                 "size": 3,
@@ -517,6 +575,7 @@
                     {
                         "type": "Value",
                         "name": "DPI Enabled",
+                        "function": "NONE",
                         "start": 0,
                         "color": "#ffff0000",
                         "length": 1,
@@ -526,6 +585,7 @@
                     {
                         "type": "Value",
                         "name": "DPI Value",
+                        "function": "NONE",
                         "start": 1,
                         "color": "#ffff0000",
                         "length": 2,
@@ -539,6 +599,7 @@
         {
             "type": "List",
             "name": "Buttons 3",
+            "function": "BUTTON_LIST",
             "start": 498,
             "color": "#1494fff6",
             "size": 96,
@@ -546,6 +607,7 @@
                 {
                     "type": "Value",
                     "name": "Button 1",
+                    "function": "BUTTON",
                     "start": 0,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -555,6 +617,7 @@
                 {
                     "type": "Value",
                     "name": "Button 2",
+                    "function": "BUTTON",
                     "start": 4,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -564,6 +627,7 @@
                 {
                     "type": "Value",
                     "name": "Button 3",
+                    "function": "BUTTON",
                     "start": 8,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -573,6 +637,7 @@
                 {
                     "type": "Value",
                     "name": "Button 4",
+                    "function": "BUTTON",
                     "start": 12,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -582,6 +647,7 @@
                 {
                     "type": "Value",
                     "name": "Button 5",
+                    "function": "BUTTON",
                     "start": 16,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -591,6 +657,7 @@
                 {
                     "type": "Value",
                     "name": "Button 6",
+                    "function": "BUTTON",
                     "start": 20,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -600,6 +667,7 @@
                 {
                     "type": "Value",
                     "name": "Button 7",
+                    "function": "BUTTON",
                     "start": 24,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -609,6 +677,7 @@
                 {
                     "type": "Value",
                     "name": "Button 8",
+                    "function": "BUTTON",
                     "start": 28,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -618,6 +687,7 @@
                 {
                     "type": "Value",
                     "name": "Button 9",
+                    "function": "BUTTON",
                     "start": 32,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -627,6 +697,7 @@
                 {
                     "type": "Value",
                     "name": "Button 10",
+                    "function": "BUTTON",
                     "start": 36,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -636,6 +707,7 @@
                 {
                     "type": "Value",
                     "name": "Button 11",
+                    "function": "BUTTON",
                     "start": 40,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -645,6 +717,7 @@
                 {
                     "type": "Value",
                     "name": "Button 12",
+                    "function": "BUTTON",
                     "start": 44,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -654,6 +727,7 @@
                 {
                     "type": "Value",
                     "name": "Button 13",
+                    "function": "BUTTON",
                     "start": 48,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -663,6 +737,7 @@
                 {
                     "type": "Value",
                     "name": "Button 14",
+                    "function": "BUTTON",
                     "start": 52,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -672,6 +747,7 @@
                 {
                     "type": "Value",
                     "name": "Button 15",
+                    "function": "BUTTON",
                     "start": 56,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -681,6 +757,7 @@
                 {
                     "type": "Value",
                     "name": "Button 16",
+                    "function": "BUTTON",
                     "start": 60,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -690,6 +767,7 @@
                 {
                     "type": "Value",
                     "name": "Button 14",
+                    "function": "BUTTON",
                     "start": 64,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -699,6 +777,7 @@
                 {
                     "type": "Value",
                     "name": "Button 18",
+                    "function": "BUTTON",
                     "start": 68,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -708,6 +787,7 @@
                 {
                     "type": "Value",
                     "name": "Button 19",
+                    "function": "BUTTON",
                     "start": 88,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -717,6 +797,7 @@
                 {
                     "type": "Value",
                     "name": "Button 20",
+                    "function": "BUTTON",
                     "start": 92,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -728,6 +809,7 @@
         {
             "type": "Array",
             "name": "DPIs 4",
+            "function": "NONE",
             "start": 610,
             "color": "#14ff0004",
             "repetitions": 5,
@@ -735,6 +817,7 @@
             "child": {
                 "type": "List",
                 "name": "DPI",
+                "function": "NONE",
                 "start": 2,
                 "color": "#64ff0000",
                 "size": 3,
@@ -742,6 +825,7 @@
                     {
                         "type": "Value",
                         "name": "DPI Enabled",
+                        "function": "NONE",
                         "start": 0,
                         "color": "#ffff0000",
                         "length": 1,
@@ -751,6 +835,7 @@
                     {
                         "type": "Value",
                         "name": "DPI Value",
+                        "function": "NONE",
                         "start": 1,
                         "color": "#ffff0000",
                         "length": 2,
@@ -764,6 +849,7 @@
         {
             "type": "List",
             "name": "Buttons 4",
+            "function": "BUTTON_LIST",
             "start": 674,
             "color": "#1494fff6",
             "size": 96,
@@ -771,6 +857,7 @@
                 {
                     "type": "Value",
                     "name": "Button 1",
+                    "function": "BUTTON",
                     "start": 0,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -780,6 +867,7 @@
                 {
                     "type": "Value",
                     "name": "Button 2",
+                    "function": "BUTTON",
                     "start": 4,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -789,6 +877,7 @@
                 {
                     "type": "Value",
                     "name": "Button 3",
+                    "function": "BUTTON",
                     "start": 8,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -798,6 +887,7 @@
                 {
                     "type": "Value",
                     "name": "Button 4",
+                    "function": "BUTTON",
                     "start": 12,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -807,6 +897,7 @@
                 {
                     "type": "Value",
                     "name": "Button 5",
+                    "function": "BUTTON",
                     "start": 16,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -816,6 +907,7 @@
                 {
                     "type": "Value",
                     "name": "Button 6",
+                    "function": "BUTTON",
                     "start": 20,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -825,6 +917,7 @@
                 {
                     "type": "Value",
                     "name": "Button 7",
+                    "function": "BUTTON",
                     "start": 24,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -834,6 +927,7 @@
                 {
                     "type": "Value",
                     "name": "Button 8",
+                    "function": "BUTTON",
                     "start": 28,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -843,6 +937,7 @@
                 {
                     "type": "Value",
                     "name": "Button 9",
+                    "function": "BUTTON",
                     "start": 32,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -852,6 +947,7 @@
                 {
                     "type": "Value",
                     "name": "Button 10",
+                    "function": "BUTTON",
                     "start": 36,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -861,6 +957,7 @@
                 {
                     "type": "Value",
                     "name": "Button 11",
+                    "function": "BUTTON",
                     "start": 40,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -870,6 +967,7 @@
                 {
                     "type": "Value",
                     "name": "Button 12",
+                    "function": "BUTTON",
                     "start": 44,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -879,6 +977,7 @@
                 {
                     "type": "Value",
                     "name": "Button 13",
+                    "function": "BUTTON",
                     "start": 48,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -888,6 +987,7 @@
                 {
                     "type": "Value",
                     "name": "Button 14",
+                    "function": "BUTTON",
                     "start": 52,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -897,6 +997,7 @@
                 {
                     "type": "Value",
                     "name": "Button 15",
+                    "function": "BUTTON",
                     "start": 56,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -906,6 +1007,7 @@
                 {
                     "type": "Value",
                     "name": "Button 16",
+                    "function": "BUTTON",
                     "start": 60,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -915,6 +1017,7 @@
                 {
                     "type": "Value",
                     "name": "Button 14",
+                    "function": "BUTTON",
                     "start": 64,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -924,6 +1027,7 @@
                 {
                     "type": "Value",
                     "name": "Button 18",
+                    "function": "BUTTON",
                     "start": 68,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -933,6 +1037,7 @@
                 {
                     "type": "Value",
                     "name": "Button 19",
+                    "function": "BUTTON",
                     "start": 88,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -942,6 +1047,7 @@
                 {
                     "type": "Value",
                     "name": "Button 20",
+                    "function": "BUTTON",
                     "start": 92,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -953,6 +1059,7 @@
         {
             "type": "Array",
             "name": "DPIs 5",
+            "function": "NONE",
             "start": 786,
             "color": "#14ff0004",
             "repetitions": 5,
@@ -960,6 +1067,7 @@
             "child": {
                 "type": "List",
                 "name": "DPI",
+                "function": "NONE",
                 "start": 2,
                 "color": "#64ff0000",
                 "size": 3,
@@ -967,6 +1075,7 @@
                     {
                         "type": "Value",
                         "name": "DPI Enabled",
+                        "function": "NONE",
                         "start": 0,
                         "color": "#ffff0000",
                         "length": 1,
@@ -976,6 +1085,7 @@
                     {
                         "type": "Value",
                         "name": "DPI Value",
+                        "function": "NONE",
                         "start": 1,
                         "color": "#ffff0000",
                         "length": 2,
@@ -989,6 +1099,7 @@
         {
             "type": "List",
             "name": "Buttons 5",
+            "function": "BUTTON_LIST",
             "start": 850,
             "color": "#1494fff6",
             "size": 96,
@@ -996,6 +1107,7 @@
                 {
                     "type": "Value",
                     "name": "Button 1",
+                    "function": "BUTTON",
                     "start": 0,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -1005,6 +1117,7 @@
                 {
                     "type": "Value",
                     "name": "Button 2",
+                    "function": "BUTTON",
                     "start": 4,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -1014,6 +1127,7 @@
                 {
                     "type": "Value",
                     "name": "Button 3",
+                    "function": "BUTTON",
                     "start": 8,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -1023,6 +1137,7 @@
                 {
                     "type": "Value",
                     "name": "Button 4",
+                    "function": "BUTTON",
                     "start": 12,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -1032,6 +1147,7 @@
                 {
                     "type": "Value",
                     "name": "Button 5",
+                    "function": "BUTTON",
                     "start": 16,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -1041,6 +1157,7 @@
                 {
                     "type": "Value",
                     "name": "Button 6",
+                    "function": "BUTTON",
                     "start": 20,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -1050,6 +1167,7 @@
                 {
                     "type": "Value",
                     "name": "Button 7",
+                    "function": "BUTTON",
                     "start": 24,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -1059,6 +1177,7 @@
                 {
                     "type": "Value",
                     "name": "Button 8",
+                    "function": "BUTTON",
                     "start": 28,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -1068,6 +1187,7 @@
                 {
                     "type": "Value",
                     "name": "Button 9",
+                    "function": "BUTTON",
                     "start": 32,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -1077,6 +1197,7 @@
                 {
                     "type": "Value",
                     "name": "Button 10",
+                    "function": "BUTTON",
                     "start": 36,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -1086,6 +1207,7 @@
                 {
                     "type": "Value",
                     "name": "Button 11",
+                    "function": "BUTTON",
                     "start": 40,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -1095,6 +1217,7 @@
                 {
                     "type": "Value",
                     "name": "Button 12",
+                    "function": "BUTTON",
                     "start": 44,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -1104,6 +1227,7 @@
                 {
                     "type": "Value",
                     "name": "Button 13",
+                    "function": "BUTTON",
                     "start": 48,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -1113,6 +1237,7 @@
                 {
                     "type": "Value",
                     "name": "Button 14",
+                    "function": "BUTTON",
                     "start": 52,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -1122,6 +1247,7 @@
                 {
                     "type": "Value",
                     "name": "Button 15",
+                    "function": "BUTTON",
                     "start": 56,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -1131,6 +1257,7 @@
                 {
                     "type": "Value",
                     "name": "Button 16",
+                    "function": "BUTTON",
                     "start": 60,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -1140,6 +1267,7 @@
                 {
                     "type": "Value",
                     "name": "Button 14",
+                    "function": "BUTTON",
                     "start": 64,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -1149,6 +1277,7 @@
                 {
                     "type": "Value",
                     "name": "Button 18",
+                    "function": "BUTTON",
                     "start": 68,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -1158,6 +1287,7 @@
                 {
                     "type": "Value",
                     "name": "Button 19",
+                    "function": "BUTTON",
                     "start": 88,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -1167,6 +1297,7 @@
                 {
                     "type": "Value",
                     "name": "Button 20",
+                    "function": "BUTTON",
                     "start": 92,
                     "color": "#ff94fff6",
                     "length": 4,
@@ -1178,6 +1309,7 @@
         {
             "type": "Array",
             "name": "Profile Colors",
+            "function": "NONE",
             "start": 1024,
             "color": "#14ffffff",
             "repetitions": 5,
@@ -1185,6 +1317,7 @@
             "child": {
                 "type": "List",
                 "name": "Color",
+                "function": "NONE",
                 "start": 0,
                 "color": "#c8ffffff",
                 "size": 3,
@@ -1192,6 +1325,7 @@
                     {
                         "type": "Value",
                         "name": "R",
+                        "function": "NONE",
                         "start": 0,
                         "color": "#ffff0000",
                         "length": 1,
@@ -1201,6 +1335,7 @@
                     {
                         "type": "Value",
                         "name": "G",
+                        "function": "NONE",
                         "start": 1,
                         "color": "#ff00ff00",
                         "length": 1,
@@ -1210,6 +1345,7 @@
                     {
                         "type": "Value",
                         "name": "B",
+                        "function": "NONE",
                         "start": 2,
                         "color": "#ff0000ff",
                         "length": 1,
@@ -1223,6 +1359,7 @@
         {
             "type": "List",
             "name": "Effects 1",
+            "function": "EFFECT",
             "start": 1097,
             "color": "#6482007b",
             "size": 7,
@@ -1230,6 +1367,7 @@
                 {
                     "type": "List",
                     "name": "Color",
+                    "function": "NONE",
                     "start": 0,
                     "color": "#c8ffffff",
                     "size": 3,
@@ -1237,6 +1375,7 @@
                         {
                             "type": "Value",
                             "name": "R",
+                            "function": "NONE",
                             "start": 0,
                             "color": "#ffff0000",
                             "length": 1,
@@ -1246,6 +1385,7 @@
                         {
                             "type": "Value",
                             "name": "G",
+                            "function": "NONE",
                             "start": 1,
                             "color": "#ff00ff00",
                             "length": 1,
@@ -1255,6 +1395,7 @@
                         {
                             "type": "Value",
                             "name": "B",
+                            "function": "NONE",
                             "start": 2,
                             "color": "#ff0000ff",
                             "length": 1,
@@ -1266,6 +1407,7 @@
                 {
                     "type": "Value",
                     "name": "Mode Low",
+                    "function": "NONE",
                     "start": 3,
                     "color": "#ff82007b",
                     "length": 1,
@@ -1275,6 +1417,7 @@
                 {
                     "type": "Value",
                     "name": "Speed",
+                    "function": "NONE",
                     "start": 4,
                     "color": "#ff82007b",
                     "length": 1,
@@ -1284,6 +1427,7 @@
                 {
                     "type": "Value",
                     "name": "Mode High",
+                    "function": "NONE",
                     "start": 5,
                     "color": "#ff82007b",
                     "length": 1,
@@ -1293,6 +1437,7 @@
                 {
                     "type": "Value",
                     "name": "Brightness",
+                    "function": "NONE",
                     "start": 6,
                     "color": "#ff82007b",
                     "length": 1,
@@ -1304,6 +1449,7 @@
         {
             "type": "List",
             "name": "Effects 2",
+            "function": "EFFECT",
             "start": 1105,
             "color": "#6482007b",
             "size": 7,
@@ -1311,6 +1457,7 @@
                 {
                     "type": "List",
                     "name": "Color",
+                    "function": "NONE",
                     "start": 0,
                     "color": "#c8ffffff",
                     "size": 3,
@@ -1318,6 +1465,7 @@
                         {
                             "type": "Value",
                             "name": "R",
+                            "function": "NONE",
                             "start": 0,
                             "color": "#ffff0000",
                             "length": 1,
@@ -1327,6 +1475,7 @@
                         {
                             "type": "Value",
                             "name": "G",
+                            "function": "NONE",
                             "start": 1,
                             "color": "#ff00ff00",
                             "length": 1,
@@ -1336,6 +1485,7 @@
                         {
                             "type": "Value",
                             "name": "B",
+                            "function": "NONE",
                             "start": 2,
                             "color": "#ff0000ff",
                             "length": 1,
@@ -1347,6 +1497,7 @@
                 {
                     "type": "Value",
                     "name": "Mode Low",
+                    "function": "NONE",
                     "start": 3,
                     "color": "#ff82007b",
                     "length": 1,
@@ -1356,6 +1507,7 @@
                 {
                     "type": "Value",
                     "name": "Speed",
+                    "function": "NONE",
                     "start": 4,
                     "color": "#ff82007b",
                     "length": 1,
@@ -1365,6 +1517,7 @@
                 {
                     "type": "Value",
                     "name": "Mode High",
+                    "function": "NONE",
                     "start": 5,
                     "color": "#ff82007b",
                     "length": 1,
@@ -1374,6 +1527,7 @@
                 {
                     "type": "Value",
                     "name": "Brightness",
+                    "function": "NONE",
                     "start": 6,
                     "color": "#ff82007b",
                     "length": 1,
@@ -1385,6 +1539,7 @@
         {
             "type": "List",
             "name": "Effects 3",
+            "function": "EFFECT",
             "start": 1113,
             "color": "#6482007b",
             "size": 7,
@@ -1392,6 +1547,7 @@
                 {
                     "type": "List",
                     "name": "Color",
+                    "function": "NONE",
                     "start": 0,
                     "color": "#c8ffffff",
                     "size": 3,
@@ -1399,6 +1555,7 @@
                         {
                             "type": "Value",
                             "name": "R",
+                            "function": "NONE",
                             "start": 0,
                             "color": "#ffff0000",
                             "length": 1,
@@ -1408,6 +1565,7 @@
                         {
                             "type": "Value",
                             "name": "G",
+                            "function": "NONE",
                             "start": 1,
                             "color": "#ff00ff00",
                             "length": 1,
@@ -1417,6 +1575,7 @@
                         {
                             "type": "Value",
                             "name": "B",
+                            "function": "NONE",
                             "start": 2,
                             "color": "#ff0000ff",
                             "length": 1,
@@ -1428,6 +1587,7 @@
                 {
                     "type": "Value",
                     "name": "Mode Low",
+                    "function": "NONE",
                     "start": 3,
                     "color": "#ff82007b",
                     "length": 1,
@@ -1437,6 +1597,7 @@
                 {
                     "type": "Value",
                     "name": "Speed",
+                    "function": "NONE",
                     "start": 4,
                     "color": "#ff82007b",
                     "length": 1,
@@ -1446,6 +1607,7 @@
                 {
                     "type": "Value",
                     "name": "Mode High",
+                    "function": "NONE",
                     "start": 5,
                     "color": "#ff82007b",
                     "length": 1,
@@ -1455,6 +1617,7 @@
                 {
                     "type": "Value",
                     "name": "Brightness",
+                    "function": "NONE",
                     "start": 6,
                     "color": "#ff82007b",
                     "length": 1,
@@ -1466,6 +1629,7 @@
         {
             "type": "List",
             "name": "Effects 4",
+            "function": "EFFECT",
             "start": 1121,
             "color": "#6482007b",
             "size": 7,
@@ -1473,6 +1637,7 @@
                 {
                     "type": "List",
                     "name": "Color",
+                    "function": "NONE",
                     "start": 0,
                     "color": "#c8ffffff",
                     "size": 3,
@@ -1480,6 +1645,7 @@
                         {
                             "type": "Value",
                             "name": "R",
+                            "function": "NONE",
                             "start": 0,
                             "color": "#ffff0000",
                             "length": 1,
@@ -1489,6 +1655,7 @@
                         {
                             "type": "Value",
                             "name": "G",
+                            "function": "NONE",
                             "start": 1,
                             "color": "#ff00ff00",
                             "length": 1,
@@ -1498,6 +1665,7 @@
                         {
                             "type": "Value",
                             "name": "B",
+                            "function": "NONE",
                             "start": 2,
                             "color": "#ff0000ff",
                             "length": 1,
@@ -1509,6 +1677,7 @@
                 {
                     "type": "Value",
                     "name": "Mode Low",
+                    "function": "NONE",
                     "start": 3,
                     "color": "#ff82007b",
                     "length": 1,
@@ -1518,6 +1687,7 @@
                 {
                     "type": "Value",
                     "name": "Speed",
+                    "function": "NONE",
                     "start": 4,
                     "color": "#ff82007b",
                     "length": 1,
@@ -1527,6 +1697,7 @@
                 {
                     "type": "Value",
                     "name": "Mode High",
+                    "function": "NONE",
                     "start": 5,
                     "color": "#ff82007b",
                     "length": 1,
@@ -1536,6 +1707,7 @@
                 {
                     "type": "Value",
                     "name": "Brightness",
+                    "function": "NONE",
                     "start": 6,
                     "color": "#ff82007b",
                     "length": 1,
@@ -1547,6 +1719,7 @@
         {
             "type": "List",
             "name": "Effects 5",
+            "function": "EFFECT",
             "start": 1129,
             "color": "#6482007b",
             "size": 7,
@@ -1554,6 +1727,7 @@
                 {
                     "type": "List",
                     "name": "Color",
+                    "function": "NONE",
                     "start": 0,
                     "color": "#c8ffffff",
                     "size": 3,
@@ -1561,6 +1735,7 @@
                         {
                             "type": "Value",
                             "name": "R",
+                            "function": "NONE",
                             "start": 0,
                             "color": "#ffff0000",
                             "length": 1,
@@ -1570,6 +1745,7 @@
                         {
                             "type": "Value",
                             "name": "G",
+                            "function": "NONE",
                             "start": 1,
                             "color": "#ff00ff00",
                             "length": 1,
@@ -1579,6 +1755,7 @@
                         {
                             "type": "Value",
                             "name": "B",
+                            "function": "NONE",
                             "start": 2,
                             "color": "#ff0000ff",
                             "length": 1,
@@ -1590,6 +1767,7 @@
                 {
                     "type": "Value",
                     "name": "Mode Low",
+                    "function": "NONE",
                     "start": 3,
                     "color": "#ff82007b",
                     "length": 1,
@@ -1599,6 +1777,7 @@
                 {
                     "type": "Value",
                     "name": "Speed",
+                    "function": "NONE",
                     "start": 4,
                     "color": "#ff82007b",
                     "length": 1,
@@ -1608,6 +1787,7 @@
                 {
                     "type": "Value",
                     "name": "Mode High",
+                    "function": "NONE",
                     "start": 5,
                     "color": "#ff82007b",
                     "length": 1,
@@ -1617,6 +1797,7 @@
                 {
                     "type": "Value",
                     "name": "Brightness",
+                    "function": "NONE",
                     "start": 6,
                     "color": "#ff82007b",
                     "length": 1,
@@ -1628,6 +1809,7 @@
         {
             "type": "Array",
             "name": "Macros",
+            "function": "NONE",
             "start": 1144,
             "color": "#32414100",
             "repetitions": 30,
@@ -1635,13 +1817,15 @@
             "child": {
                 "type": "Array",
                 "name": "Macro",
+                "function": "MACROS",
                 "start": 0,
                 "color": "#32888800",
                 "repetitions": 65,
                 "gap": 0,
                 "child": {
                     "type": "List",
-                    "name": "New List",
+                    "name": "Macro Step",
+                    "function": "MACRO_STEP",
                     "start": 0,
                     "color": "#ff888800",
                     "size": 3,
@@ -1649,6 +1833,7 @@
                         {
                             "type": "Value",
                             "name": "Type",
+                            "function": "NONE",
                             "start": 0,
                             "color": null,
                             "length": 1,
@@ -1658,9 +1843,10 @@
                         {
                             "type": "Value",
                             "name": "Data",
+                            "function": "NONE",
                             "start": 0,
                             "color": null,
-                            "length": 1,
+                            "length": 2,
                             "min_value": 0,
                             "max_value": 255
                         }
