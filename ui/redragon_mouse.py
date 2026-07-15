@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from enum import Enum
-from typing import TYPE_CHECKING, Callable
+from typing import Iterator
 
 from PySide6.QtCore import QObject, Signal
 
@@ -105,45 +105,41 @@ class MouseData(Observable):
     def _parse_definition(self, root_section: ListSection) -> None:
         """Parses the root section to find memory offsets for all values. Raises an error on inconsistencies."""
         MODE_COUNT = 5
+        BUTTON_COUNT = 18
         errors: list[str] = []
+        sections = list(self._walk_sections(root_section))
 
         active_mode: ValueSection | None = None
-        def find_active_mode(section: Section) -> None:
-            nonlocal active_mode
+        for section in sections:
             if section.function == ValueFunction.ACTIVE_MODE:
                 if active_mode is not None:
                     errors.append(f"Multiple sections with function ACTIVE_MODE found: {active_mode.id} and {section.id}")
+                elif isinstance(section, ValueSection):
+                    active_mode = section
                 else:
-                    if isinstance(section, ValueSection):
-                        active_mode = section
-                    else:
-                        errors.append(f"Section with function ACTIVE_MODE is not a ValueSection: {section.id}")
-        self._walk_sections(root_section, find_active_mode)
+                    errors.append(f"Section with function ACTIVE_MODE is not a ValueSection: {section.id}")
         if active_mode is None:
             errors.append("No section with function ACTIVE_MODE found in the mouse definition.")
 
         scroll_speeds: list[ValueSection] = []
-        def find_scroll_speeds(section: Section) -> None:
+        for section in sections:
             if section.function == ValueFunction.SCROLL_SPEED:
                 if isinstance(section, ValueSection):
                     scroll_speeds.append(section)
                 else:
                     errors.append(f"Section with function SCROLL_SPEED is not a ValueSection: {section.id}")
-        self._walk_sections(root_section, find_scroll_speeds)
         if not scroll_speeds:
             errors.append("No scroll speeds found.")
         if len(scroll_speeds) != MODE_COUNT:
             errors.append(f"Found {len(scroll_speeds)} scroll speeds but expected {MODE_COUNT}")
 
         dpis: list[AbstractParentSection] = []
-        def find_dpis(section: Section) -> None:
-            nonlocal dpis
+        for section in sections:
             if section.function == ValueFunction.DPI_LIST:
                 if isinstance(section, AbstractParentSection):
                     dpis.append(section)
                 else:
                     errors.append(f"Section with function DPI_LIST is not an parent section: {section.id}")
-        self._walk_sections(root_section, find_dpis)
         if not len(dpis) == MODE_COUNT:
             errors.append(f"Found {len(dpis)} DPI lists but expected {MODE_COUNT}")
         for dpi in dpis:
@@ -151,20 +147,37 @@ class MouseData(Observable):
                 errors.append(f"Found {len(dpi.children())} DPIs in DPI list {dpi.id} but expected 5")
 
         mode_colors: list[ListSection] = []
-        def find_mode_colors(section: Section) -> None:
+        for section in sections:
             if section.function == ValueFunction.MODE_COLOR:
                 if isinstance(section, ListSection):
                     mode_colors.append(section)
                 else:
                     errors.append(f"Section with function MODE_COLOR is not a ListSection: {section.id}")
-        self._walk_sections(root_section, find_mode_colors)
         if not len(mode_colors) == MODE_COUNT:
             errors.append(f"Found {len(mode_colors)} mode colors but expected {MODE_COUNT}")
 
+        buttons_sections: list[AbstractParentSection] = []
+        for section in sections:
+            if section.function == ValueFunction.BUTTON_LIST:
+                if isinstance(section, AbstractParentSection):
+                    buttons_sections.append(section)
+                else:
+                    errors.append(f"Section with function BUTTON_LIST is not an parent section: {section.id}")
+        buttons: list[list[ValueSection]] = []
+        for button_section in buttons_sections:
+            button_list: list[ValueSection] = []
+            for child in button_section.children():
+                if isinstance(child, ValueSection):
+                    button_list.append(child)
+                else:
+                    errors.append(f"Child of BUTTON_LIST section {button_section.id} is not a ValueSection: {child.id}")
+            buttons.append(button_list)
+        if not len(buttons) == MODE_COUNT:
+            errors.append(f"Found {len(buttons)} button lists but expected {MODE_COUNT}")
+
         if errors:
             raise ValueError("\n".join(errors))
-        assert active_mode is not None
-        assert dpis is not None
+        assert active_mode is not None # for static type checking
 
         self._values.clear()
         self._modes.clear()
@@ -278,11 +291,11 @@ class MouseData(Observable):
 
 
 
-    def _walk_sections(self, section: Section, callback: Callable[[Section], None]) -> None:
-        callback(section)
+    def _walk_sections(self, section: Section) -> Iterator[Section]:
+        yield section
         if isinstance(section, AbstractParentSection):
             for child in section.children():
-                self._walk_sections(child, callback)
+                yield from self._walk_sections(child)
 
     def to_json(self) -> dict[str, object]:
         """Returns a JSON-serializable representation of the mouse data."""
