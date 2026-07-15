@@ -28,8 +28,8 @@
         },
         {
             "type": "Value",
-            "name": "Active Profile",
-            "function": "ACTIVE_PROFILE",
+            "name": "Active Mode",
+            "function": "ACTIVE_MODE",
             "start": 44,
             "color": "#ffbd8eff",
             "length": 1,
@@ -559,7 +559,7 @@
         {
             "type": "Array",
             "name": "DPIs 3",
-            "function": "NONE",
+            "function": "DPI_LIST",
             "start": 434,
             "color": "#14ff0004",
             "repetitions": 5,
@@ -809,7 +809,7 @@
         {
             "type": "Array",
             "name": "DPIs 4",
-            "function": "NONE",
+            "function": "DPI_LIST",
             "start": 610,
             "color": "#14ff0004",
             "repetitions": 5,
@@ -1059,7 +1059,7 @@
         {
             "type": "Array",
             "name": "DPIs 5",
-            "function": "NONE",
+            "function": "DPI_LIST",
             "start": 786,
             "color": "#14ff0004",
             "repetitions": 5,
@@ -1308,7 +1308,7 @@
         },
         {
             "type": "Array",
-            "name": "Profile Colors",
+            "name": "Mode Colors",
             "function": "NONE",
             "start": 1024,
             "color": "#14ffffff",
@@ -1317,7 +1317,7 @@
             "child": {
                 "type": "List",
                 "name": "Color",
-                "function": "NONE",
+                "function": "MODE_COLOR",
                 "start": 0,
                 "color": "#c8ffffff",
                 "size": 3,
@@ -1817,7 +1817,7 @@
             "child": {
                 "type": "Array",
                 "name": "Macro",
-                "function": "MACROS",
+                "function": "MACRO",
                 "start": 0,
                 "color": "#32888800",
                 "repetitions": 65,

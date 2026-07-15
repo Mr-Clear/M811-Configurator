@@ -2,20 +2,20 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QObject, Signal
 
-if TYPE_CHECKING:
-    from ui.dump_analyzer.sections.list_section import ListSection
+from ui.dump_analyzer.sections.list_section import ListSection
 from ui.dump_analyzer.sections.parent_section import AbstractParentSection
 from ui.dump_analyzer.sections.section import Section
 from ui.dump_analyzer.sections.value_section import ValueSection
 
 from .keyboard import Modifier, ScanCode
 
+JSON_OBJECT = dict[str, object] | list[object] | str | int | float | bool | None
 
 class ValueFunction(Enum):
     NONE = 0
@@ -26,7 +26,7 @@ class ValueFunction(Enum):
     DPI_LIST = 5
     EFFECT = 6
     MACRO_STEP = 7
-    MACROS = 8
+    MACRO = 8
     MODE_COLOR = 9
     POLL_RATE = 10
     SCROLL_SPEED = 11
@@ -34,15 +34,15 @@ class ValueFunction(Enum):
     def __str__(self) -> str:
         return self.name.replace("_", " ").title()
 
-class Observable(ABC):
+class Observable(QObject):
     changed = Signal()
 
     def __init__(self, mouse: MouseData):
+        super().__init__()
         self._mouse = mouse
-        self._mouse._register_value(self)
-    
+
     @abstractmethod
-    def to_json(self) -> dict | list | str | int | float | bool | None:
+    def to_json(self) -> JSON_OBJECT:
         pass
 
 class Value(Observable):
@@ -51,6 +51,9 @@ class Value(Observable):
         super().__init__(mouse)
         self._offset = offset
         self._length = length
+        self._mouse.register_value(self)
+        if self.__class__ is Value:
+            raise TypeError("Value is an abstract class and cannot be instantiated directly.")
 
     @property
     def mouse_data(self) -> MouseData:
@@ -63,7 +66,7 @@ class Value(Observable):
     @property
     def length(self) -> int:
         return self._length
-    
+
     @property
     def end_offset(self) -> int:
         return self.offset + self.length - 1
@@ -75,22 +78,28 @@ class Value(Observable):
     def raw_data(self, value: bytes | bytearray | memoryview) -> None:
         if len(value) != self.length:
             raise ValueError(f"Data length must be {self.length}, got {len(value)}")
-        self.mouse_data._set_value(self.offset, value)
+        self.mouse_data.set_value(self.offset, value)
 
     def contains_offset(self, offset: int) -> bool:
         return self.offset <= offset < self.offset + self.length
-    
+
     def __len__(self) -> int:
         return self.length
-    
+
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}(0x{self.offset:04X}-0x{self.end_offset:04X})'
+
 class MouseData(Observable):
     """Holds a dump of the mouse memory and provides access to the values within it."""
-    def __init__(self, definition: ListSection, data: bytes | bytearray | memoryview = b'') -> None:
-        self.data = bytearray(data)
+    def __init__(self, definition: ListSection, data: bytes | bytearray | memoryview | None = None) -> None:
+        super().__init__(self)
+        self._data: bytearray = bytearray(b'\x00' * 0xFFFF)
         self._values: list[Value] = []
-        self._active_mode: ActiveMode | None = None
+        self._active_mode: ActiveMode
         self._modes: list[Mode] = []
         self._macros: list[Macro] = []
+        if data is not None:
+            self.data = bytearray(data)
         self._parse_definition(definition)
 
     def _parse_definition(self, root_section: ListSection) -> None:
@@ -98,38 +107,77 @@ class MouseData(Observable):
         MODE_COUNT = 5
         errors: list[str] = []
 
-        scroll_speeds: list[ValueSection] = []
         active_mode: ValueSection | None = None
-
         def find_active_mode(section: Section) -> None:
             nonlocal active_mode
             if section.function == ValueFunction.ACTIVE_MODE:
                 if active_mode is not None:
                     errors.append(f"Multiple sections with function ACTIVE_MODE found: {active_mode.id} and {section.id}")
                 else:
-                    active_mode = section
+                    if isinstance(section, ValueSection):
+                        active_mode = section
+                    else:
+                        errors.append(f"Section with function ACTIVE_MODE is not a ValueSection: {section.id}")
         self._walk_sections(root_section, find_active_mode)
-
-        def find_scroll_speeds(section: Section) -> None:
-            if section.function == ValueFunction.SCROLL_SPEED:
-                scroll_speeds.append(section)
-        self._walk_sections(root_section, find_scroll_speeds)
-
         if active_mode is None:
             errors.append("No section with function ACTIVE_MODE found in the mouse definition.")
+
+        scroll_speeds: list[ValueSection] = []
+        def find_scroll_speeds(section: Section) -> None:
+            if section.function == ValueFunction.SCROLL_SPEED:
+                if isinstance(section, ValueSection):
+                    scroll_speeds.append(section)
+                else:
+                    errors.append(f"Section with function SCROLL_SPEED is not a ValueSection: {section.id}")
+        self._walk_sections(root_section, find_scroll_speeds)
         if not scroll_speeds:
             errors.append("No scroll speeds found.")
         if len(scroll_speeds) != MODE_COUNT:
             errors.append(f"Found {len(scroll_speeds)} scroll speeds but expected {MODE_COUNT}")
 
+        dpis: list[AbstractParentSection] = []
+        def find_dpis(section: Section) -> None:
+            nonlocal dpis
+            if section.function == ValueFunction.DPI_LIST:
+                if isinstance(section, AbstractParentSection):
+                    dpis.append(section)
+                else:
+                    errors.append(f"Section with function DPI_LIST is not an parent section: {section.id}")
+        self._walk_sections(root_section, find_dpis)
+        if not len(dpis) == MODE_COUNT:
+            errors.append(f"Found {len(dpis)} DPI lists but expected {MODE_COUNT}")
+        for dpi in dpis:
+            if len(dpi.children()) != 5:
+                errors.append(f"Found {len(dpi.children())} DPIs in DPI list {dpi.id} but expected 5")
+
+        mode_colors: list[ListSection] = []
+        def find_mode_colors(section: Section) -> None:
+            if section.function == ValueFunction.MODE_COLOR:
+                if isinstance(section, ListSection):
+                    mode_colors.append(section)
+                else:
+                    errors.append(f"Section with function MODE_COLOR is not a ListSection: {section.id}")
+        self._walk_sections(root_section, find_mode_colors)
+        if not len(mode_colors) == MODE_COUNT:
+            errors.append(f"Found {len(mode_colors)} mode colors but expected {MODE_COUNT}")
+
         if errors:
             raise ValueError("\n".join(errors))
-        
+        assert active_mode is not None
+        assert dpis is not None
+
         self._values.clear()
         self._modes.clear()
         self._active_mode = ActiveMode(self, active_mode.absolute_start)
         for i in range(MODE_COUNT):
-            mode = Mode(self, ScrollSpeed(self, scroll_speeds[i].absolute_start))
+            scroll_speed = ScrollSpeed(self, scroll_speeds[i].absolute_start)
+            poll_rate = PollRate(self, 0x32 + i * 2)
+            dpi_list = [Dpi(self, c.absolute_start) for c in dpis[i].children()]
+            dpis_obj = Dpis(self, dpi_list)
+            effects = Effect(self, 0x0449 + i * 8)
+            buttons = Buttons(self, [])
+            color = Color(self, mode_colors[i].absolute_start)
+            mode = Mode(self, scroll_speed, poll_rate, dpis_obj, effects, buttons, color)
             self._modes.append(mode)
 
     @property
@@ -141,18 +189,18 @@ class MouseData(Observable):
             raise ValueError(f"New data length {len(value)} is too short for existing values, last value ends at {self._values[-1].end_offset}")
         old_data = bytes(self._data)
         self._data = bytearray(value)
-        for value in self._values:
-            if value.raw_data != old_data[value.offset:value.end_offset + 1]:
-                value.changed.emit()
+        for v in self._values:
+            if v.raw_data != old_data[v.offset:v.end_offset + 1]: # type: ignore (Pylance is wrong!)
+                v.changed.emit()
 
     @property
     def active_mode(self) -> ActiveMode:
         return self._active_mode
-    
+
     def mode(self, index: int) -> Mode:
         return self._modes[index]
-    
-    def _set_value(self, offset: int, data: bytes | bytearray | memoryview) -> None:
+
+    def set_value(self, offset: int, data: bytes | bytearray | memoryview) -> None:
         """Set the value at the given offset and length. Notifies all registered values that are changed."""
         if offset < 0 or offset + len(data) > len(self._data):
             raise ValueError(f"Offset {offset} and length {len(data)} are out of bounds for data of length {len(self._data)}")
@@ -179,12 +227,13 @@ class MouseData(Observable):
         for value in changed_values:
             value.changed.emit()
 
-    def _register_value(self, value: 'Value') -> None:
+    def register_value(self, value: Value) -> None:
         """Register a new value. Raises an error if the value is out of bounds or overlaps with existing values."""
         if value.offset < 0 or value.offset + value.length > len(self._data):
             raise ValueError(f"Value at offset {value.offset} with length {value.length} is out of bounds for data of length {len(self._data)}")
-        if self._find_values(value.offset, value.length):
-            raise ValueError(f"Value at offset {value.offset} with length {value.length} overlaps with existing values.")
+        existing_values = self._find_values(value.offset, value.length)
+        if existing_values:
+            raise ValueError(f"{value} overlaps with existing values: {existing_values}")
         self._values.append(value)
         self._values.sort(key=lambda v: v.offset)
 
@@ -202,8 +251,8 @@ class MouseData(Observable):
             else:
                 left = mid + 1
         return None
-    
-    def _find_values(self, offset: int, length: int) -> list['Value']:
+
+    def _find_values(self, offset: int, length: int) -> list[Value]:
         """Use binary search to find all values that overlap with the given range."""
         if length <= 0:
             return []
@@ -220,28 +269,30 @@ class MouseData(Observable):
             else:
                 right = mid
 
-        result = []
+        result: list[Value] = []
         for value in self._values[left:]:
             if value.offset >= end:
                 break
             result.append(value)
         return result
-    
-        
-    
-    def _walk_sections(self, section: Section, callback: callable[[Section], None]) -> None:
+
+
+
+    def _walk_sections(self, section: Section, callback: Callable[[Section], None]) -> None:
         callback(section)
         if isinstance(section, AbstractParentSection):
             for child in section.children():
                 self._walk_sections(child, callback)
-    
-    def to_json(self) -> dict:
+
+    def to_json(self) -> dict[str, object]:
         """Returns a JSON-serializable representation of the mouse data."""
         return {
             "active_mode": self.active_mode.to_json(),
             "modes": [mode.to_json() for mode in self._modes],
-            "data": self.data.hex()
+            "macros": [macro.to_json() for macro in self._macros],
+            #"data": self.data.hex()
         }
+
 
 
 class IntValue(Value):
@@ -258,63 +309,47 @@ class IntValue(Value):
     def value(self, value: int) -> None:
         if not (self._min <= value <= self._max):
             raise ValueError(f"Value must be between {self._min} and {self._max}, got {value}")
-        self._mouse._set_value(self.offset, bytes([value]))
+        self._mouse.set_value(self.offset, bytes([value]))
 
-    def to_json(self) -> dict:
+    def to_json(self) -> int:
         return self.value
-    
+
 
 class ActiveMode(IntValue):
     """Represents the active mode of the mouse."""
     def __init__(self, mouse: MouseData, offset: int):
         super().__init__(mouse, offset, 1, 1, 5)
-    
+
 class Mode(Observable):
-    def __init__(self, mouse: MouseData, scroll_speed: ScrollSpeed, poll_rates: PollRates, dpis: Dpis, effects: Effects, buttons: Buttons):
+    def __init__(self, mouse: MouseData, scroll_speed: ScrollSpeed, poll_rate: PollRate, dpis: Dpis, effects: Effect, buttons: Buttons, color: Color):
         super().__init__(mouse)
         self._scroll_speed = scroll_speed
         self._scroll_speed.changed.connect(self.changed.emit)
-        self._poll_rates = poll_rates
-        self._poll_rates.changed.connect(self.changed.emit)
+        self._poll_rate = poll_rate
+        self._poll_rate.changed.connect(self.changed.emit)
         self._dpis = dpis
         self._dpis.changed.connect(self.changed.emit)
         self._effects = effects
         self._effects.changed.connect(self.changed.emit)
         self._buttons = buttons
         self._buttons.changed.connect(self.changed.emit)
-    
-    def to_json(self) -> dict:
+        self._color = color
+        self._color.changed.connect(self.changed.emit)
+
+    def to_json(self) -> dict[str, object]:
         return {
             "scroll_speed": self._scroll_speed.to_json(),
-            "poll_rates": self._poll_rates.to_json(),
+            "poll_rate": self._poll_rate.to_json(),
             "dpis": self._dpis.to_json(),
-            "effects": self._effects.to_json(),
+            "effect": self._effects.to_json(),
             "buttons": self._buttons.to_json(),
+            "color": self._color.to_json(),
         }
-    
+
 class PollRate(IntValue):
     """Represents a single poll rate of the mouse."""
     def __init__(self, mouse: MouseData, offset: int):
         super().__init__(mouse, offset, 1, 0, 255)
-
-class PollRates(Observable):
-    """Represents the poll rates of the mouse."""
-    def __init__(self, mouse: MouseData, offset: int):
-        super().__init__(mouse)
-        self._offset = offset
-        self._length = 5
-        self._poll_rates = [Value(mouse, offset + i, 1) for i in range(self._length)]
-        for poll_rate in self._poll_rates:
-            poll_rate.changed.connect(self.changed.emit)
-
-    @property
-    def poll_rates(self) -> list[int]:
-        return [poll_rate.raw_data[0] for poll_rate in self._poll_rates]
-
-    def to_json(self) -> dict:
-        return {
-            "poll_rates": self.poll_rates
-        }
 
 class MacroStep(Value):
     """Represents a single step of a macro."""
@@ -323,10 +358,10 @@ class MacroStep(Value):
 
     def is_active(self) -> bool:
         return self.raw_data[0] != 0x00
-    
-    def to_json(self) -> dict:
-        return tuple(self.raw_data)
-    
+
+    def to_json(self) -> list[object]:
+        return list(self.raw_data)
+
 class Macro(Observable):
     """A single macro."""
     STEP_COUNT = 65
@@ -344,26 +379,30 @@ class Macro(Observable):
                 return i
         return len(self._steps)
 
-    def to_json(self) -> dict:
+    def to_json(self) -> list[object]:
         return [step.to_json() for step in self._steps]
 
 class Dpi(Value):
     """Represents a single DPI setting of the mouse."""
     def __init__(self, mouse: MouseData, offset: int):
         super().__init__(mouse, offset, 2)
-    
+
     @property
     def value(self) -> int:
         return int.from_bytes(self.raw_data, byteorder='little')
     @value.setter
     def value(self, value: int) -> None:
-        if not (self._min <= value <= self._max):
-            raise ValueError(f"Value must be between {self._min} and {self._max}, got {value}")
-        self._mouse._set_value(self.offset, value.to_bytes(2, byteorder='little'))
+        min_dpi = min(DPI_VALUES.keys())
+        max_dpi = max(DPI_VALUES.keys())
+        if not (min_dpi <= value <= max_dpi):
+            raise ValueError(f"Value must be between {min_dpi} and {max_dpi}, got {value}")
+        if value not in DPI_VALUES:
+            raise ValueError(f"Value must be one of {list(DPI_VALUES.keys())}, got {value}")
+        self._mouse.set_value(self.offset, value.to_bytes(2, byteorder='little'))
 
-    def to_json(self) -> dict:
+    def to_json(self) -> int:
         return self.value
-    
+
 class Dpis(Observable):
     """Represents the DPI settings"""
     def __init__(self, mouse: MouseData, dpis: list[Dpi]):
@@ -375,7 +414,7 @@ class Dpis(Observable):
     def set_value(self, index: int, value: int) -> None:
         self._dpis[index].value = value
 
-    def to_json(self) -> dict:
+    def to_json(self) -> list[object]:
         return [dpis.value for dpis in self._dpis]
 
 class ScrollSpeed(Value):
@@ -390,11 +429,11 @@ class ScrollSpeed(Value):
     def value(self, value: int) -> None:
         if not (0 <= value <= 255):
             raise ValueError(f"Scroll speed must be between 0 and 255, got {value}")
-        self._mouse._set_value(self.offset, bytes([value]))
+        self._mouse.set_value(self.offset, bytes([value]))
 
-    def to_json(self) -> dict:
+    def to_json(self) -> int:
         return self.value
-    
+
 class Buttons(Observable):
     """All buttons for one mode."""
     def __init__(self, mouse: MouseData, buttons: list[Button]):
@@ -406,9 +445,9 @@ class Buttons(Observable):
     def button(self, index: int) -> Button:
         return self._buttons[index]
 
-    def to_json(self) -> dict:
+    def to_json(self) -> list[object]:
         return [button.to_json() for button in self._buttons]
-    
+
 class Color(Value):
     """Represents a color setting."""
     def __init__(self, mouse: MouseData, offset: int):
@@ -416,17 +455,17 @@ class Color(Value):
 
     @property
     def rgb(self) -> tuple[int, int, int]:
-        return tuple(self.raw_data)
+        return tuple(self.raw_data) # type: ignore
     @rgb.setter
     def rgb(self, value: tuple[int, int, int]) -> None:
         if len(value) != 3 or any(not (0 <= v <= 255) for v in value):
             raise ValueError(f"Color must be a tuple of 3 integers between 0 and 255, got {value}")
-        self._mouse._set_value(self.offset, bytes(value))
+        self._mouse.set_value(self.offset, bytes(value))
 
-    def to_json(self) -> dict:
-        return self.rgb
+    def to_json(self) -> list[object]:
+        return list(self.rgb)
 
-class Effect(Enum):
+class EffectType(Enum):
     """Represents the effect of a mode."""
     STATIC = (0, 0)
     BREATHING = (1, 0)
@@ -439,47 +478,56 @@ class Effect(Enum):
     def name(self) -> str:
         return self._name_.replace("_", " ").title()
 
-class Effects(Value):
+class EffectConfig(Observable):
+    """Represents the effect configuration of a mode."""
+    def __init__(self, mouse: MouseData, offset: int):
+        super().__init__(mouse)
+        self._low_byte = IntValue(mouse, offset, 1, 0, 255)
+        self._high_byte = IntValue(mouse, offset + 2, 1, 0, 255)
+        self._low_byte.changed.connect(self.changed.emit)
+        self._high_byte.changed.connect(self.changed.emit)
+
+    def to_json(self) -> str:
+        return f'0x{self._low_byte.value:02x}{self._high_byte.value:02x}'
+
+class Effect(Observable):
     """Effects of a mode."""
     def __init__(self, mouse: MouseData, offset: int):
-        super().__init__(mouse, offset, 1)
+        super().__init__(mouse)
         self._color = Color(mouse, offset)
         self._color.changed.connect(self.changed.emit)
         self._speed = IntValue(mouse, offset + 4, 1, 0, 5)
         self._speed.changed.connect(self.changed.emit)
-        self._brightness = IntValue(mouse, offset + 5, 1, 0, 3)
+        self._brightness = IntValue(mouse, offset + 6, 1, 0, 3)
         self._brightness.changed.connect(self.changed.emit)
+        self._config = EffectConfig(mouse, offset + 3)
 
     @property
     def color(self) -> Color:
         return self._color
-    
+
+    @property
+    def config(self) -> EffectConfig:
+        return self._config
+
     @property
     def speed(self) -> IntValue:
         return self._speed
-    
+
     @property
     def brightness(self) -> IntValue:
         return self._brightness
-    
-    @property
-    def mode(self) -> Effect:
-        return Effect(self.raw_data[3], self.raw_data[5])
-    @mode.setter
-    def mode(self, value: Effect) -> None:
-        self._mouse._set_value(self.offset + 3, bytes([value.value[0]]))
-        self._mouse._set_value(self.offset + 5, bytes([value.value[1]]))
 
-    def to_json(self) -> dict:
+    def to_json(self) -> dict[str, object]:
         return {
-            "mode": self.mode.name,
+            "mode": self.config.to_json(),
             "color": self.color.to_json(),
             "brightness": self.brightness.to_json(),
             "speed": self.speed.to_json()
         }
 
 
-class Button(Value, ABC):
+class Button(Value):
     ''' Base class for button definitions. '''
 
     def __init__(self, mouse: MouseData, offset: int):
@@ -543,7 +591,7 @@ class ButtonOff(Button):
     ''' Button without functionality. '''
 
     def __init__(self, mouse: MouseData, offset: int):
-        super().__init__(mouse, offset, 4)
+        super().__init__(mouse, offset)
         self._data = list(self.raw_data)
         if self._data != [0x00, 0x00, 0x00, 0x00]:
             raise ValueError(f"Invalid ButtonOff data: {self._data}")
@@ -870,7 +918,7 @@ class ButtonSniper(Button):
             raise ValueError('Sniper data must be a list of 4 integers.')
         if data[0] != 0x9a:
             raise ValueError(f"Invalid Sniper data: {data}")
-        self.dpi_level = [data[2], data[1] - 1]
+        self.dpi_level = (data[2], data[1] - 1)
 
     @classmethod
     def type_name(cls) -> str:
@@ -879,7 +927,7 @@ class ButtonSniper(Button):
     @property
     def dpi(self) -> int:
         ''' The DPI level of the sniper button. '''
-        return int_to_dpi(self.dpi_level)
+        return dpi_to_int(self.dpi_level)
 
     def to_raw(self) -> list[int]:
         return [0x9a, self.dpi_level[1] + 1, self.dpi_level[0], self.dpi_level[0]]
@@ -944,36 +992,36 @@ class ButtomCustom(Button):
 
 
 
-def _build_dpi_values() -> dict[int, list[int]]:
-    values: dict[int, list[int]] = {}
+def _build_dpi_values() -> dict[int, tuple[int, int]]:
+    values: dict[int, tuple[int, int]] = {}
 
     # 200..6200 in 100-DPI steps: low byte increases by +2, with +3 at specific steps.
     low_byte = 0x04
-    values[200] = [low_byte, 0]
+    values[200] = (low_byte, 0)
     plus_three_steps = {2, 6, 10, 14, 17, 21, 25, 29, 32, 36, 40, 43, 47, 51, 54, 59}
     for step, dpi in enumerate(range(300, 6300, 100), start=1):
         low_byte += 3 if step in plus_three_steps else 2
-        values[dpi] = [low_byte, 0]
+        values[dpi] = (low_byte, 0)
 
     # 6400..12400 in 200-DPI steps: reuse low bytes from 3200..6200 with high byte set.
     for dpi in range(6400, 12401, 200):
         base_dpi = dpi // 2
-        values[dpi] = [values[base_dpi][0], 1]
+        values[dpi] = (values[base_dpi][0], 1)
 
     return values
-DPI_VALUES: dict[int, list[int]] = _build_dpi_values()
+DPI_VALUES: dict[int, tuple[int, int]] = _build_dpi_values()
 
-def dpi_to_int(dpi: list[int]) -> int:
-    ''' Converts a list of 2 integers representing the low and high bytes of a DPI level to an integer. '''
+def dpi_to_int(dpi: tuple[int, int]) -> int:
+    ''' Converts a tuple of 2 integers representing the low and high bytes of a DPI level to an integer. '''
     if len(dpi) != 2:
-        raise ValueError('DPI data must be a list of 2 integers.')
+        raise ValueError('DPI data must be a tuple of 2 integers.')
     for value, data in DPI_VALUES.items():
         if data == dpi:
             return value
     raise ValueError(f"Unknown DPI value for data: {dpi}")
 
-def int_to_dpi(value: int) -> list[int]:
-    ''' Converts an integer DPI value to a list of 2 integers representing the low and high bytes of the DPI level. '''
+def int_to_dpi(value: int) -> tuple[int, int]:
+    ''' Converts an integer DPI value to a tuple of 2 integers representing the low and high bytes of the DPI level. '''
     if value not in DPI_VALUES:
         raise ValueError(f"Unknown DPI value: {value}")
     return DPI_VALUES[value]

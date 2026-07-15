@@ -144,7 +144,7 @@ class Section(ABC):
             t = ArraySection
         else:
             raise ValueError(f"Unknown section type: {type_name}")
-        s = t(name=data["name"], function=ValueFunction[data["function"]], relative_start=data["start"])
+        s = t(name=data["name"], function=ValueFunction[data.get("function", "NONE")], relative_start=data["start"])
         s.color = QColor(data["color"]) if data.get("color") else None
         s.load_from_dict(data)
         return s

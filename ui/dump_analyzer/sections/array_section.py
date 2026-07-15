@@ -14,7 +14,7 @@ class ArraySection(AbstractParentSection):
     gap: int = 0  # Gap between each repetition of the child section
     padding: int = 0  # Free space after the last repetition of the child section
     _children_cache_key: tuple[int, int, int, int, int] | None = field(default=None, init=False, repr=False)
-    _children_cache: list[Section] = field(default_factory=list, init=False, repr=False)
+    _children_cache: list[Section] = field(default_factory=list, init=False, repr=False) # type: ignore
 
 
     @classmethod

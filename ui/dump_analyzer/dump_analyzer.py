@@ -380,7 +380,7 @@ class DumpAnalyzer (QMainWindow):
                 assert isinstance(section_list, ListSection)
                 self._sections_widget.root_section = section_list
             except Exception as e:
-                logger.error(f"Failed to load sections: {e}")
+                logger.error(f"Failed to load sections: {e}", exc_info=True)
                 QMessageBox.critical(self, "Error", f"Failed to load sections: {e}")
 
     def _save_sections(self) -> None:

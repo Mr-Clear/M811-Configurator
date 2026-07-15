@@ -17,10 +17,11 @@ from PySide6.QtWidgets import (QAbstractButton, QHBoxLayout, QLabel,
 
 from ui.dump_analyzer.sections.list_section import ListSection
 from ui.dump_analyzer.sections.section import Section
+from ui.redragon_mouse import ValueFunction
 
+from .clipboard import get_section_from_clipboard
 from .section_types import get_section_types
 from .section_widget import SectionDetailsWidgetBase
-from .clipboard import get_section_from_clipboard
 
 logger = getLogger(__name__)
 
@@ -224,7 +225,7 @@ class ListSectionWidget(SectionDetailsWidgetBase[ListSection]):
         if self.section is None:
             return
         number = self._find_free_new_section_number()
-        new_section = section_type(name=f"New Section {number}", relative_start=0)
+        new_section = section_type(name=f"New Section {number}", function=ValueFunction.NONE, relative_start=0)
         self._add_section(new_section)
 
     def _add_section(self, section: Section) -> None:

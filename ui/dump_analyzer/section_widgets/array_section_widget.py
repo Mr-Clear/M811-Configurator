@@ -1,12 +1,15 @@
 """Widget to edit array section details."""
 
-from PySide6.QtWidgets import QComboBox, QFormLayout, QSpinBox, QToolButton, QWidget
+from PySide6.QtWidgets import (QComboBox, QFormLayout, QSpinBox, QToolButton,
+                               QWidget)
+
+from ui.redragon_mouse import ValueFunction
 
 from ..sections.array_section import ArraySection
 from ..sections.section import Section
+from .clipboard import get_section_from_clipboard
 from .section_types import get_section_types
 from .section_widget import SectionDetailsWidgetBase
-from .clipboard import get_section_from_clipboard
 
 
 class ArraySectionWidget(SectionDetailsWidgetBase[ArraySection]):
@@ -56,7 +59,7 @@ class ArraySectionWidget(SectionDetailsWidgetBase[ArraySection]):
             self.section.child_section = self._unsaved_section
         elif self.section.child_section is None or type(self.section.child_section) != self._selected_type():
             old_child = self.section.child_section
-            self.section.child_section = self._selected_type()(f'New {self._selected_type().type_name()}', 0, self.section)
+            self.section.child_section = self._selected_type()(f'New {self._selected_type().type_name()}', ValueFunction.NONE, 0, self.section)
             if old_child:
                 self.section.child_section.relative_start = old_child.relative_start
                 self.section.child_section.color = old_child.color

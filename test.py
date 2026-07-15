@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
-from ui.redragon_mouse import MouseDefinition
-from ui.dump_analyzer.sections.list_section import ListSection
 import json
 
-with open("M811.json", "r") as f:
-    section_list = ListSection.from_dict(json.load(f))
-mouse_definition = MouseDefinition(section_list)
+from ui.dump_analyzer.sections.list_section import ListSection, Section
+from ui.redragon_mouse import MouseData
+from pprint import pprint as pp
 
-print(f"Mouse definition: {mouse_definition._active_mode.absolute_start:04x}")
+with open("M811.json", "r") as f:
+    section_list = Section.from_dict(json.load(f))
+assert isinstance(section_list, ListSection)
+
+with open("M811.dump", "rb") as f:
+    data = f.read()
+mouse_data = MouseData(section_list, data)
+pp(mouse_data.to_json())

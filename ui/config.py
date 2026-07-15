@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, Any
 
 from PySide6.QtGui import QFont
 
+from ui.redragon_mouse import ValueFunction
+
 from .dump_analyzer.sections.list_section import ListSection
 
 if TYPE_CHECKING:
@@ -66,7 +68,7 @@ class Config:
     def sections(self) -> ListSection:
         '''Get the sections defined in the configuration.'''
         if "sections" not in self.data:
-            return ListSection(name="M811", relative_start=0, length=0xFFFF)
+            return ListSection(name="M811", function=ValueFunction.NONE, relative_start=0, length=0xFFFF)
         section_list = ListSection.from_dict(self.data["sections"])
         if not isinstance(section_list, ListSection):
             raise ValueError("Root section must be a ListSection.")
