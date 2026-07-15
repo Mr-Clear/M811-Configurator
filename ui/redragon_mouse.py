@@ -106,6 +106,8 @@ class MouseData(Observable):
         """Parses the root section to find memory offsets for all values. Raises an error on inconsistencies."""
         MODE_COUNT = 5
         BUTTON_COUNT = 20
+        MACROS_COUNT = 30
+        MACRO_STEP_COUNT = Macro.STEP_COUNT
         errors: list[str] = []
         sections = list(self._walk_sections(root_section))
 
@@ -177,12 +179,34 @@ class MouseData(Observable):
         if not len(buttons) == MODE_COUNT:
             errors.append(f"Found {len(buttons)} button lists but expected {MODE_COUNT}")
 
+        macro_sections: list[AbstractParentSection] = []
+        for section in sections:
+            if section.function == ValueFunction.MACRO:
+                if isinstance(section, AbstractParentSection):
+                    macro_sections.append(section)
+                else:
+                    errors.append(f"Section with function MACRO is not an parent section: {section.id}")
+        macros: list[list[MacroStep]] = []
+        for macro_section in macro_sections:
+            macro_steps: list[MacroStep] = []
+            for child in macro_section.children():
+                if isinstance(child, ListSection) and child.function == ValueFunction.MACRO_STEP:
+                    macro_steps.append(MacroStep(self, child.absolute_start))
+                else:
+                    errors.append(f"Child of MACRO section {macro_section.id} is not a ListSection with function MACRO_STEP: {child.id}")
+            macros.append(macro_steps)
+            if not len(macro_steps) == MACRO_STEP_COUNT:
+                errors.append(f"Found {len(macro_steps)} steps in MACRO section {macro_section.id} but expected {MACRO_STEP_COUNT}")
+        if not len(macros) == MACROS_COUNT:
+            errors.append(f"Found {len(macros)} macros but expected {MACROS_COUNT}")
+
         if errors:
             raise ValueError("\n".join(errors))
         assert active_mode is not None # for static type checking
 
         self._values.clear()
         self._modes.clear()
+        self._macros.clear()
         self._active_mode = ActiveMode(self, active_mode.absolute_start)
         for i in range(MODE_COUNT):
             scroll_speed = ScrollSpeed(self, scroll_speeds[i].absolute_start)
@@ -196,6 +220,7 @@ class MouseData(Observable):
             color = Color(self, mode_colors[i].absolute_start)
             mode = Mode(self, scroll_speed, poll_rate, dpis_obj, effects, button_objects, color)
             self._modes.append(mode)
+        self._macros = [Macro(self, macro_steps) for macro_steps in macros]
 
     @property
     def data(self) -> memoryview:
@@ -381,8 +406,8 @@ class MacroStep(Value):
     def is_active(self) -> bool:
         return self.raw_data[0] != 0x00
 
-    def to_json(self) -> list[object]:
-        return list(self.raw_data)
+    def to_json(self) -> str:
+        return f'0x{self.raw_data.hex()}'
 
 class Macro(Observable):
     """A single macro."""
@@ -402,7 +427,13 @@ class Macro(Observable):
         return len(self._steps)
 
     def to_json(self) -> list[object]:
-        return [step.to_json() for step in self._steps]
+        steps: list[object] = []
+        for step in self._steps:
+            if step.is_active():
+                steps.append(step.to_json())
+            else:
+                break
+        return steps
 
 class Dpi(Value):
     """Represents a single DPI setting of the mouse."""
