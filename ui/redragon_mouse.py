@@ -105,7 +105,7 @@ class MouseData(Observable):
     def _parse_definition(self, root_section: ListSection) -> None:
         """Parses the root section to find memory offsets for all values. Raises an error on inconsistencies."""
         MODE_COUNT = 5
-        BUTTON_COUNT = 18
+        BUTTON_COUNT = 20
         errors: list[str] = []
         sections = list(self._walk_sections(root_section))
 
@@ -172,6 +172,8 @@ class MouseData(Observable):
                 else:
                     errors.append(f"Child of BUTTON_LIST section {button_section.id} is not a ValueSection: {child.id}")
             buttons.append(button_list)
+            if not len(button_list) == BUTTON_COUNT:
+                errors.append(f"Found {len(button_list)} buttons in BUTTON_LIST section {button_section.id} but expected {BUTTON_COUNT}")
         if not len(buttons) == MODE_COUNT:
             errors.append(f"Found {len(buttons)} button lists but expected {MODE_COUNT}")
 
@@ -188,9 +190,11 @@ class MouseData(Observable):
             dpi_list = [Dpi(self, c.absolute_start) for c in dpis[i].children()]
             dpis_obj = Dpis(self, dpi_list)
             effects = Effect(self, 0x0449 + i * 8)
-            buttons = Buttons(self, [])
+            button_objects: list[Button] = []
+            for button in buttons[i]:
+                button_objects.append(Button.from_raw(self, button.absolute_start))
             color = Color(self, mode_colors[i].absolute_start)
-            mode = Mode(self, scroll_speed, poll_rate, dpis_obj, effects, buttons, color)
+            mode = Mode(self, scroll_speed, poll_rate, dpis_obj, effects, button_objects, color)
             self._modes.append(mode)
 
     @property
@@ -243,10 +247,14 @@ class MouseData(Observable):
     def register_value(self, value: Value) -> None:
         """Register a new value. Raises an error if the value is out of bounds or overlaps with existing values."""
         if value.offset < 0 or value.offset + value.length > len(self._data):
-            raise ValueError(f"Value at offset {value.offset} with length {value.length} is out of bounds for data of length {len(self._data)}")
+            raise ValueError(f"Value at offset 0x{value.offset:04X} with length {value.length} is out of bounds for data of length {len(self._data)}")
         existing_values = self._find_values(value.offset, value.length)
         if existing_values:
-            raise ValueError(f"{value} overlaps with existing values: {existing_values}")
+            try:
+                my_name = str(value)
+            except Exception:
+                my_name = f"Value at offset 0x{value.offset:04X} with length {value.length}"
+            raise ValueError(f"{my_name} overlaps with existing values: {existing_values}")
         self._values.append(value)
         self._values.sort(key=lambda v: v.offset)
 
@@ -334,7 +342,7 @@ class ActiveMode(IntValue):
         super().__init__(mouse, offset, 1, 1, 5)
 
 class Mode(Observable):
-    def __init__(self, mouse: MouseData, scroll_speed: ScrollSpeed, poll_rate: PollRate, dpis: Dpis, effects: Effect, buttons: Buttons, color: Color):
+    def __init__(self, mouse: MouseData, scroll_speed: ScrollSpeed, poll_rate: PollRate, dpis: Dpis, effects: Effect, buttons: list[Button], color: Color):
         super().__init__(mouse)
         self._scroll_speed = scroll_speed
         self._scroll_speed.changed.connect(self.changed.emit)
@@ -345,7 +353,8 @@ class Mode(Observable):
         self._effects = effects
         self._effects.changed.connect(self.changed.emit)
         self._buttons = buttons
-        self._buttons.changed.connect(self.changed.emit)
+        for button in self._buttons:
+            button.changed.connect(self.changed.emit)
         self._color = color
         self._color.changed.connect(self.changed.emit)
 
@@ -355,7 +364,7 @@ class Mode(Observable):
             "poll_rate": self._poll_rate.to_json(),
             "dpis": self._dpis.to_json(),
             "effect": self._effects.to_json(),
-            "buttons": self._buttons.to_json(),
+            "buttons": [button.to_json() for button in self._buttons],
             "color": self._color.to_json(),
         }
 
@@ -446,20 +455,6 @@ class ScrollSpeed(Value):
 
     def to_json(self) -> int:
         return self.value
-
-class Buttons(Observable):
-    """All buttons for one mode."""
-    def __init__(self, mouse: MouseData, buttons: list[Button]):
-        super().__init__(mouse)
-        self._buttons = buttons
-        for button in self._buttons:
-            button.changed.connect(self.changed.emit)
-
-    def button(self, index: int) -> Button:
-        return self._buttons[index]
-
-    def to_json(self) -> list[object]:
-        return [button.to_json() for button in self._buttons]
 
 class Color(Value):
     """Represents a color setting."""
@@ -583,7 +578,7 @@ class Button(Value):
     def button_type(self) -> type[Button]:
         ''' Returns the type of the button. '''
         for button_type in Button.get_all_button_types():
-            if isinstance(self, button_type):
+            if type(self) is button_type:
                 return button_type
         raise ValueError('Unknown button type.')
 
@@ -595,19 +590,26 @@ class Button(Value):
         ''' Returns the index of the button type. '''
         button_types = Button.get_all_button_types()
         for index, button_type in enumerate(button_types):
-            if isinstance(self, button_type):
+            if type(self) is button_type:
                 return index
         raise ValueError('Unknown button type.')
+
+    def to_json(self) -> dict[str, object]:
+        ''' Returns a JSON-serializable representation of the button. '''
+        return {
+            "type": self.get_type_name(),
+            "data": self.to_raw()
+        }
 
 
 class ButtonOff(Button):
     ''' Button without functionality. '''
 
     def __init__(self, mouse: MouseData, offset: int):
+        data = list(mouse.data[offset:offset + 4])
+        if data != [0x00, 0x00, 0x00, 0x00]:
+            raise ValueError(f"Invalid ButtonOff data: {data}")
         super().__init__(mouse, offset)
-        self._data = list(self.raw_data)
-        if self._data != [0x00, 0x00, 0x00, 0x00]:
-            raise ValueError(f"Invalid ButtonOff data: {self._data}")
 
     @classmethod
     def type_name(cls) -> str:
@@ -635,16 +637,14 @@ class ButtonMouseButton(Button):
         def name(self) -> str:
             return self._name_.replace("_", " ").title()
 
-    def __init__(self, data: list[int] | None):
-        if data is None:
-            data = [ButtonMouseButton.Type.LEFT.value, 0x00, 0x00, 0x00]
-        if len(data) != 4:
-            raise ValueError('MouseButton data must be a list of 4 integers.')
+    def __init__(self, mouse: MouseData, offset: int):
+        data = list(mouse.data[offset:offset + 4])
         if data[1] != 0x00 or data[2] != 0x00 or data[3] != 0x00:
             raise ValueError(f"Invalid MouseButton data: {data}")
         if data[0] not in [button.value for button in ButtonMouseButton.Type]:
             raise ValueError(f"Invalid mouse button type: {data[0]}")
         self.mouse_button_type = ButtonMouseButton.Type(data[0])
+        super().__init__(mouse, offset)
 
     @classmethod
     def type_name(cls) -> str:
@@ -694,16 +694,13 @@ class ButtonMouseFunction(Button):
         def name(self) -> str:
             return ButtonMouseFunction.Type.names()[self]
 
-    def __init__(self, data: list[int] | None):
-        if data is None:
-            data = ButtonMouseFunction.Type.DPI_PLUS.value
-        if len(data) != 4:
-            raise ValueError(
-                'MouseFunction data must be a list of 4 integers.')
+    def __init__(self, mouse: MouseData, offset: int):
+        data = list(mouse.data[offset:offset + 4])
         if data in [function.value for function in ButtonMouseFunction.Type]:
             self.type = ButtonMouseFunction.Type(data)
         else:
             raise ValueError(f"Invalid MouseFunction data: {data}")
+        super().__init__(mouse, offset)
 
     @classmethod
     def type_name(cls) -> str:
@@ -719,17 +716,15 @@ class ButtonMouseFunction(Button):
 class ButtonKeyPress(Button):
     ''' Button that is mapped to a keyboard key including modifiers. '''
 
-    def __init__(self, data: list[int] | None):
-        if data is None:
-            data = [0x90, 0x00, ScanCode.A.value[0], 0x00]
-        if len(data) != 4:
-            raise ValueError('KeyPress data must be a list of 4 integers.')
+    def __init__(self, mouse: MouseData, offset: int):
+        data = list(mouse.data[offset:offset + 4])
         if data[0] != 0x90 and data[0] != 0x8f:
             raise ValueError(f"Invalid KeyPress data: {data}")
         self._modifiers = data[1]
         self._scan_code = data[2]
         if self._scan_code not in [scan_code.code for scan_code in ScanCode]:
             raise ValueError(f"Invalid scan code: {self._scan_code:#02x}")
+        super().__init__(mouse, offset)
 
     @classmethod
     def type_name(cls) -> str:
@@ -825,15 +820,13 @@ class ButtonSpecialKey(Button):
         def name(self) -> str:
             return self.names()[self]
 
-    def __init__(self, data: list[int] | None):
-        if data is None:
-            data = ButtonSpecialKey.Type.MEDIA_PLAY_PAUSE.value
-        if len(data) != 4:
-            raise ValueError('SpecialKey data must be a list of 4 integers.')
+    def __init__(self, mouse: MouseData, offset: int):
+        data = list(mouse.data[offset:offset + 4])
         if data in [function.value for function in ButtonSpecialKey.Type]:
             self.type = ButtonSpecialKey.Type(data)
         else:
             raise ValueError(f"Invalid SpecialKey data: {data}")
+        super().__init__(mouse, offset)
 
     @classmethod
     def type_name(cls) -> str:
@@ -856,11 +849,8 @@ class ButtonMacro(Button):
         HOLD = 0x80
         TOGGLE = 0x40
 
-    def __init__(self, data: list[int] | None):
-        if data is None:
-            data = [0x91, 0x00, 0x01, 0x00]
-        if len(data) != 4:
-            raise ValueError('Macro data must be a list of 4 integers.')
+    def __init__(self, mouse: MouseData, offset: int):
+        data = list(mouse.data[offset:offset + 4])
         if data[0] != 0x91:
             raise ValueError(f"Invalid Macro data: {data}")
         if (data[1] & 0xF0) not in [macro_type.value for macro_type in ButtonMacro.Type]:
@@ -875,6 +865,7 @@ class ButtonMacro(Button):
         else:
             if data[2] != 0xFF or data[3] != 0xFF:
                 raise ValueError(f"Invalid Macro data: {data}")
+        super().__init__(mouse, offset)
 
     @classmethod
     def type_name(cls) -> str:
@@ -924,14 +915,12 @@ class ButtonMacro(Button):
 class ButtonSniper(Button):
     ''' Button that sets the DPI to a predefined sniper level while held. '''
 
-    def __init__(self, data: list[int] | None):
-        if data is None:
-            data = [0x9a, 0x01, 0x04, 0x04]
-        if len(data) != 4:
-            raise ValueError('Sniper data must be a list of 4 integers.')
+    def __init__(self, mouse: MouseData, offset: int):
+        data = list(mouse.data[offset:offset + 4])
         if data[0] != 0x9a:
             raise ValueError(f"Invalid Sniper data: {data}")
         self.dpi_level = (data[2], data[1] - 1)
+        super().__init__(mouse, offset)
 
     @classmethod
     def type_name(cls) -> str:
@@ -955,11 +944,8 @@ class ButtonFireKey(Button):
         RIGHT = 0x82
         MIDDLE = 0x84
 
-    def __init__(self, data: list[int] | None):
-        if data is None:
-            data = [0x99, 0x81, 0x03, 0x0A]
-        if len(data) != 4:
-            raise ValueError('FireKey data must be a list of 4 integers.')
+    def __init__(self, mouse: MouseData, offset: int):
+        data = list(mouse.data[offset:offset + 4])
         if data[0] != 0x99:
             raise ValueError(f"Invalid FireKey data: {data}")
         self.key: ScanCode | ButtonFireKey.FireMouseButton
@@ -971,6 +957,7 @@ class ButtonFireKey(Button):
             raise ValueError(f"Invalid key for FireKey: {data[1]:#02x}")
         self.repeat_count = data[2]
         self.delay = data[3] * 10
+        super().__init__(mouse, offset)
 
     @classmethod
     def type_name(cls) -> str:
@@ -984,14 +971,13 @@ class ButtonFireKey(Button):
     def __str__(self) -> str:
         return f'({self.key.name}, times {self.repeat_count}, delay {self.delay}ms)'
 
-class ButtomCustom(Button):
+class ButtonCustom(Button):
     ''' Button with a custom function defined by the user. '''
-    def __init__(self, data: list[int] | None):
-        if data is None:
-            data = [0x00, 0x00, 0x00, 0x00]
-        if len(data) != 4:
-            raise ValueError('Custom button data must be a list of 4 integers.')
-        self.data = data
+    def __init__(self, mouse: MouseData, offset: int):
+        super().__init__(mouse, offset)
+        if self._data[0] != 0x00:
+            raise ValueError(f"Invalid Custom button data: {self._data}")
+        self.data = self._data
 
     @classmethod
     def type_name(cls) -> str:
