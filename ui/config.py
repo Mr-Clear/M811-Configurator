@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from PySide6.QtGui import QFont
 
-from ui.redragon_mouse import ValueFunction
+from ui.mouse_data.value_function import ValueFunction
 
 from .dump_analyzer.sections.list_section import ListSection
 
@@ -18,10 +18,10 @@ if TYPE_CHECKING:
     from .dump_analyzer.dump_analyzer import IntegerFormat
 
 class Config:
+    '''Configuration for UI components.'''
     _FILE_PATH: str = "config.json"
     _instance: Config
 
-    '''Configuration for UI components.'''
     def __init__(self) -> None:
         self.data: dict[str, Any] = {}
 
@@ -77,6 +77,16 @@ class Config:
     def sections(self, root: ListSection) -> None:
         '''Set the sections defined in the configuration.'''
         self.data["sections"] = root.to_dict()
+        self._save()
+
+    @property
+    def mouse_config(self) -> dict[str, Any]:
+        '''Get the mouse configuration defined in the configuration.'''
+        return self.data.get("mouse_config", {})
+    @mouse_config.setter
+    def mouse_config(self, config: dict[str, Any]) -> None:
+        '''Set the mouse configuration defined in the configuration.'''
+        self.data["mouse_config"] = config
         self._save()
 
     @property
