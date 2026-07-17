@@ -1,7 +1,7 @@
 from typing import Any
-from PySide6.QtCore import Signal
-from PySide6.QtCore import QModelIndex, QRect, Qt
-from PySide6.QtGui import QPainter
+
+from PySide6.QtCore import QModelIndex, QRect, QRegularExpression, Qt, Signal
+from PySide6.QtGui import QPainter, QRegularExpressionValidator
 from PySide6.QtWidgets import (QAbstractItemView, QApplication, QFormLayout,
                                QHBoxLayout, QLabel, QLineEdit, QListWidget,
                                QListWidgetItem, QSpinBox, QStyle,
@@ -29,24 +29,28 @@ class MouseConfigurator(QWidget):
 
         self._init_ui()
 
-        self.mouse_name_input.setText("Undefined")
-        self.image_input.setText("res/UnknownRedragon.svg")
-        for button_name in ['LMB', 'RMB', 'MMB', 'Back', 'Forward']:
-            item = QListWidgetItem(button_name)
-            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
-            self.buttons_list.addItem(item)
-        self.mode_count_spinbox.setValue(5)
-        self.macro_count_spinbox.setValue(20)
-        self.steps_per_macro_spinbox.setValue(30)
-
-
     def _init_ui(self):
         layout = QFormLayout(self)
         layout.setContentsMargins(8, 4, 8, 8)
         layout.setSpacing(4)
+
         self.mouse_name_input = QLineEdit(self)
         self.mouse_name_input.textChanged.connect(self.value_changed)
         layout.addRow("Model Name:", self.mouse_name_input)
+
+        id_layout = QHBoxLayout()
+        id_layout.setSpacing(0)
+        self.vendor_id_input = QLineEdit(self)
+        self.vendor_id_input.setValidator(QRegularExpressionValidator(QRegularExpression(r"^[0-9A-Fa-f]{4}$"), self))
+        self.vendor_id_input.textChanged.connect(self.value_changed)
+        id_layout.addWidget(self.vendor_id_input)
+        id_layout.addWidget(QLabel(":"))
+        self.product_id_input = QLineEdit(self)
+        self.product_id_input.setValidator(QRegularExpressionValidator(QRegularExpression(r"^[0-9A-Fa-f]{4}$"), self))
+        self.product_id_input.textChanged.connect(self.value_changed)
+        id_layout.addWidget(self.product_id_input)
+        layout.addRow("USB ID:", id_layout)
+
         image_layout = QHBoxLayout()
         self.image_input = QLineEdit(self)
         self.image_input.textChanged.connect(self.value_changed)
@@ -55,6 +59,7 @@ class MouseConfigurator(QWidget):
         image_button.setText("...")
         image_layout.addWidget(image_button)
         layout.addRow("Image:", image_layout)
+
         layout.addRow(QLabel("Buttons:"))
         buttons_layout = QHBoxLayout()
         buttons_controls_layout = QVBoxLayout()
@@ -81,16 +86,19 @@ class MouseConfigurator(QWidget):
         self.buttons_move_down.clicked.connect(self._move_button_down)
         buttons_controls_layout.addWidget(self.buttons_move_down)
         layout.addRow(buttons_layout)
+
         self.mode_count_spinbox = QSpinBox(self)
         self.mode_count_spinbox.setMinimum(1)
         self.mode_count_spinbox.setMaximum(10)
         self.mode_count_spinbox.valueChanged.connect(self.value_changed)
         layout.addRow("Mode Count:", self.mode_count_spinbox)
+
         self.macro_count_spinbox = QSpinBox(self)
         self.macro_count_spinbox.setMinimum(0)
         self.macro_count_spinbox.setMaximum(100)
         self.macro_count_spinbox.valueChanged.connect(self.value_changed)
         layout.addRow("Macro Count:", self.macro_count_spinbox)
+
         self.steps_per_macro_spinbox = QSpinBox(self)
         self.steps_per_macro_spinbox.setMinimum(1)
         self.steps_per_macro_spinbox.setMaximum(100)
@@ -131,6 +139,8 @@ class MouseConfigurator(QWidget):
         """Get the current configuration data as a dictionary."""
         return {
             "mouse_name": self.mouse_name_input.text(),
+            "vendor_id": self.vendor_id_input.text(),
+            "product_id": self.product_id_input.text(),
             "image": self.image_input.text(),
             "buttons": [self.buttons_list.item(i).text() for i in range(self.buttons_list.count())],
             "mode_count": self.mode_count_spinbox.value(),
@@ -140,16 +150,18 @@ class MouseConfigurator(QWidget):
 
     def set_data(self, data: dict[str, Any]):
         """Set the current configuration data from a dictionary."""
-        self.mouse_name_input.setText(data.get("mouse_name", "Undefined"))
-        self.image_input.setText(data.get("image", "res/UnknownRedragon.svg"))
+        self.mouse_name_input.setText(data["mouse_name"])
+        self.vendor_id_input.setText(data["vendor_id"])
+        self.product_id_input.setText(data["product_id"])
+        self.image_input.setText(data["image"])
         self.buttons_list.clear()
-        for button_name in data.get("buttons", []):
+        for button_name in data["buttons"]:
             item = QListWidgetItem(button_name)
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
             self.buttons_list.addItem(item)
-        self.mode_count_spinbox.setValue(data.get("mode_count", 5))
-        self.macro_count_spinbox.setValue(data.get("macro_count", 20))
-        self.steps_per_macro_spinbox.setValue(data.get("steps_per_macro", 30))
+        self.mode_count_spinbox.setValue(data["mode_count"])
+        self.macro_count_spinbox.setValue(data["macro_count"])
+        self.steps_per_macro_spinbox.setValue(data["steps_per_macro"])
 
 class ButtonItemDelegate(QStyledItemDelegate):
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None: # type: ignore[override]

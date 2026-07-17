@@ -1,5 +1,7 @@
 {
     "mouse_name": "M811-RGB",
+    "vendor_id": "04d9",
+    "product_id": "fc6d",
     "image": "res/UnknownRedragon.svg",
     "buttons": [
         "LMB",
