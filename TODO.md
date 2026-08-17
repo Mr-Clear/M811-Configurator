@@ -6,12 +6,27 @@ Configure Redragon Mice on Linux
 
 ### Todo
 
+- [ ] Open dump analyzer (Hex Editor)  
+- [ ] Clean up files  
+- [ ] Poll active mode  
+- [ ] Reload data from mouse  
+- [ ] Use values from mouse definition instead of constatns for macro count etc.  
+- [ ] Save changes on mouse  
+- [ ] Switch data (Profiles)  
+- [ ] Save data as json  
+- [ ] Rename Profile to Mode everywhere  
+- [ ] Sniper  
+- [ ] Fire Key  
+- [ ] Macro management  
+- [ ] Key selection by keyboard image  
+- [ ] Key selection by press  
 
 ### In Progress
 
 
 ### Done ✓
 
+- [x] Use mouse dump as data basis  
 - [x] Handle absolute and relative indexes correctly  
 - [x] Array section  
 - [x] Save Alpha in colors  

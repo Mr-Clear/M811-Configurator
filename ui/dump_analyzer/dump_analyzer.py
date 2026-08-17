@@ -342,8 +342,8 @@ class DumpAnalyzer (QMainWindow):
         '''Read dump data from the USB device.'''
         progress_window = USBProgressWindow()
         try:
-            from .usb import RedragonMouse
-            mouse = RedragonMouse()
+            from ..usb_connection import UsbConnection
+            mouse = UsbConnection(UsbConnection.find_device())
             progress_window.set_title("Reading from USB...")
             progress_window.set_target_size(0x1C00)
             progress_window.show()
@@ -364,8 +364,8 @@ class DumpAnalyzer (QMainWindow):
     def _write_to_usb(self) -> None:
         '''Write modified dump data to the USB device.'''
         try:
-            from .usb import RedragonMouse
-            mouse = RedragonMouse()
+            from ..usb_connection import UsbConnection
+            mouse = UsbConnection(UsbConnection.find_device())
             progress_window = USBProgressWindow()
             progress_window.set_title("Writing to USB...")
             progress_window.set_target_size(len(self._hex_viewer.data))

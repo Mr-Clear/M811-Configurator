@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import json
+from pprint import pprint as pp
 
 from ui.dump_analyzer.sections.list_section import ListSection, Section
-from ui.redragon_mouse import MouseData
-from pprint import pprint as pp
+from ui.mouse_data import MouseData
 
 with open("M811.json", "r") as f:
     section_list = Section.from_dict(json.load(f))

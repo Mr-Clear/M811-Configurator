@@ -7,14 +7,14 @@ from typing import Generic, TypeVar
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QFontMetrics
-from PySide6.QtWidgets import (QColorDialog, QComboBox, QHBoxLayout, QLabel, QLineEdit,
-                               QPushButton, QSpinBox, QToolButton, QVBoxLayout,
-                               QWidget)
+from PySide6.QtWidgets import (QColorDialog, QComboBox, QHBoxLayout, QLabel,
+                               QLineEdit, QPushButton, QSpinBox, QToolButton,
+                               QVBoxLayout, QWidget)
 
 from ui.config import Config
 from ui.dump_analyzer.section_widgets.section_types import get_section_types
 
-from ...redragon_mouse import ValueFunction
+from ...mouse_data.value_function import ValueFunction
 from ..sections.section import Section
 
 

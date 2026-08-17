@@ -16,62 +16,76 @@ class ButtonMacro(Button):
         TOGGLE = 0x40
 
     def __init__(self, mouse: MouseData, offset: int):
-        data = list(mouse.data[offset:offset + 4])
-        if data[0] != 0x91:
-            raise ValueError(f"Invalid Macro data: {data}")
-        if (data[1] & 0xF0) not in [macro_type.value for macro_type in ButtonMacro.Type]:
-            raise ValueError(f"Invalid macro type: {data[1] & 0xF0:#02x}")
-        self.macro_id = data[1] & 0x0F
-        self.macro_type = ButtonMacro.Type(data[1] & 0xF0)
-        self.repeat_count = data[2]
-        if self.macro_type == ButtonMacro.Type.REPEAT:
-            if self.repeat_count == 0 or self.repeat_count > 20:
-                raise ValueError(
-                    f"Invalid repeat count for macro: {self.repeat_count}")
-        else:
-            if data[2] != 0xFF or data[3] != 0xFF:
-                raise ValueError(f"Invalid Macro data: {data}")
         super().__init__(mouse, offset)
 
     @classmethod
     def type_name(cls) -> str:
         return "Macro"
 
+    @classmethod
+    def is_data_valid(cls, mouse: MouseData, offset: int) -> bool:
+        data = list(mouse.data[offset:offset + Button.DATA_LENGTH])
+        if data[0] != 0x91:
+            return False
+        if (data[1] & 0xF0) not in [macro_type.value for macro_type in ButtonMacro.Type]:
+            return False
+        macro_id = data[1] & 0x0F
+        if macro_id < 0 or macro_id > ButtonMacro.MACRO_COUNT - 1:
+            return False
+        if (data[1] & 0xF0) == ButtonMacro.Type.REPEAT.value:
+            if data[2] < 1 or data[2] > ButtonMacro.MAX_REPEAT:
+                return False
+        else:
+            if data[2] != 0xFF or data[3] != 0xFF:
+                return False
+        return True
+
+    def set_default(self) -> None:
+        self.raw_data = bytes([
+            0x91,
+            0x00, # macro id and type
+            0x01, # repeat count
+            0xFF # reserved
+        ])
+
     @property
-    def id(self) -> int:
+    def macro_id(self) -> int:
         ''' The ID of the macro. '''
-        return self.macro_id
-    @id.setter
-    def id(self, macro_id: int) -> None:
+        return self.raw_data[1] & 0x0F
+    @macro_id.setter
+    def macro_id(self, macro_id: int) -> None:
         ''' Set the ID of the macro. '''
         if macro_id < 1 or macro_id > ButtonMacro.MACRO_COUNT:
             raise ValueError(f"Invalid macro ID: {macro_id}")
-        self.macro_id = macro_id
+        data = bytearray(self.raw_data)
+        data[1] = (data[1] & 0xF0) | (macro_id & 0x0F)
+        self.raw_data = data
 
     @property
-    def type(self) -> Type:
+    def macro_type(self) -> Type:
         ''' The type of the macro. '''
-        return self.macro_type
-    @type.setter
-    def type(self, macro_type: Type) -> None:
+        return ButtonMacro.Type(self.raw_data[1] & 0xF0)
+    @macro_type.setter
+    def macro_type(self, macro_type: Type) -> None:
         ''' Set the type of the macro. '''
-        self.macro_type = macro_type
+        data = bytearray(self.raw_data)
+        data[1] = (data[1] & 0x0F) | macro_type.value
+        self.raw_data = data
 
     @property
-    def repeat(self) -> int:
+    def repeat_count(self) -> int:
         ''' The repeat count of the macro. '''
-        return self.repeat_count
-    @repeat.setter
-    def repeat(self, repeat_count: int) -> None:
+        return self.raw_data[2]
+    @repeat_count.setter
+    def repeat_count(self, repeat_count: int) -> None:
         ''' Set the repeat count of the macro. '''
         if self.macro_type != ButtonMacro.Type.REPEAT:
             raise ValueError("Repeat count can only be set for repeat macros.")
         if repeat_count < 1 or repeat_count > ButtonMacro.MAX_REPEAT:
             raise ValueError(f"Invalid repeat count: {repeat_count}")
-        self.repeat_count = repeat_count
-
-    def to_raw(self) -> list[int]:
-        return [0x91, self.macro_id | self.macro_type.value, 0x00, 0x00]
+        data = bytearray(self.raw_data)
+        data[2] = repeat_count
+        self.raw_data = data
 
     def __str__(self) -> str:
         if self.macro_type == ButtonMacro.Type.REPEAT:

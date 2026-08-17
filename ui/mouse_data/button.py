@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
@@ -8,21 +10,33 @@ if TYPE_CHECKING:
 
 class Button(Value):
     ''' Base class for button definitions. '''
+    DATA_LENGTH = 4
 
     def __init__(self, mouse: MouseData, offset: int):
-        super().__init__(mouse, offset, 4)
+        super().__init__(mouse, offset, Button.DATA_LENGTH)
         self._data = list(self.raw_data)
+        self.changed.connect(self._update_type)
 
     @classmethod
     def from_raw(cls, mouse: MouseData, offset: int) -> Button:
         ''' Creates a Button from the raw data at the given offset. '''
+        subclass = cls.type_from_raw(mouse, offset)
+        if subclass is None:
+            raise ValueError(f"Failed to decode button data at offset 0x{offset:04X} with data {mouse.data[offset:offset+Button.DATA_LENGTH].hex()}")
+        return subclass(mouse, offset)
+
+    @classmethod
+    def is_data_valid(cls, mouse: MouseData, offset: int) -> bool:
+        ''' Checks if the raw data at the given offset is valid for this button type. '''
+        raise NotImplementedError("is_data_valid must be implemented in subclasses.")
+
+    @classmethod
+    def type_from_raw(cls, mouse: MouseData, offset: int) -> type[Button] | None:
+        ''' Returns the button type from the raw data. '''
         for subclass in cls.get_all_button_types():
-            try:
-                btn = subclass(mouse, offset)
-                return btn
-            except ValueError:
-                continue
-        raise ValueError(f"Failed to decode button data at offset 0x{offset:04X} with data {mouse.data[offset:offset+4].hex()}")
+            if subclass.is_data_valid(mouse, offset):
+                return subclass
+        return None
 
     @classmethod
     @abstractmethod
@@ -31,13 +45,13 @@ class Button(Value):
         pass
 
     @abstractmethod
-    def to_raw(self) -> list[int]:
-        ''' Converts the Button to a raw data as used by the mouse module. '''
+    def __str__(self) -> str:
+        ''' Returns a human-readable string representation of the button. '''
         pass
 
     @abstractmethod
-    def __str__(self) -> str:
-        ''' Returns a human-readable string representation of the button. '''
+    def set_default(self) -> None:
+        ''' Sets the button data to its default value. '''
         pass
 
     @classmethod
@@ -53,24 +67,21 @@ class Button(Value):
         from .button_sniper import ButtonSniper
         from .button_special_key import ButtonSpecialKey
         return [
-            ButtonCustom,
-            ButtonFireKey,
-            ButtonKeyPress,
-            ButtonMacro,
             ButtonMouseButton,
             ButtonMouseFunction,
-            ButtonOff,
-            ButtonSniper,
+            ButtonKeyPress,
             ButtonSpecialKey,
+            ButtonMacro,
+            ButtonFireKey,
+            ButtonSniper,
+            ButtonOff,
+            ButtonCustom,
         ]
 
     @property
     def button_type(self) -> type[Button]:
         ''' Returns the type of the button. '''
-        for button_type in Button.get_all_button_types():
-            if type(self) is button_type:
-                return button_type
-        raise ValueError('Unknown button type.')
+        return type(self)
 
     def get_type_name(self) -> str:
         ''' Returns the name of the button type. '''
@@ -84,9 +95,18 @@ class Button(Value):
                 return index
         raise ValueError('Unknown button type.')
 
+    def _update_type(self) -> bool:
+        t = Button.type_from_raw(self.mouse_data, self.offset)
+        if t is None:
+            raise ValueError(f"Failed to determine button type at offset 0x{self.offset:04X} with data {self.raw_data.hex()}")
+        if type(self) is not t:
+            self.__class__ = t # type: ignore
+            return True
+        return False
+
     def to_json(self) -> dict[str, object]:
         ''' Returns a JSON-serializable representation of the button. '''
         return {
             "type": self.get_type_name(),
-            "data": self.to_raw()
+            "data": self.raw_data.hex()
         }

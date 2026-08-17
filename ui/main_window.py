@@ -1,8 +1,9 @@
 ''' Main application window. '''
 import logging
+import os
 import sys
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QRunnable, Qt, QThreadPool, QTimer, Signal
 from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import (QApplication, QComboBox, QHBoxLayout, QLabel,
                                QMainWindow, QPushButton, QSizePolicy,
@@ -10,10 +11,13 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QHBoxLayout, QLabel,
 
 from ui.buttons_widget import ButtonsWidget
 from ui.downloader import download
-from ui.mouse_config import get_mouse_config
-from ui.mouse_data import PROFILE_COUNT, MouseData
+from ui.mouse import Mouse
+from ui.mouse_data import MouseData
 from ui.mouse_image import MouseImageWidget
 from ui.mouse_selector_widget import MouseSelectorWidget
+from ui.usb_connection import UsbConnection
+
+from .mouse_data.mouse_definition import MouseDefinition
 
 logger = logging.getLogger(__name__)
 
@@ -23,15 +27,14 @@ ICON_SOURCE = "https://redragon.com/cdn/shop/files/small_logo.png?crop=left&heig
 
 class MainWindow(QMainWindow):
     '''Main application window.'''
+    data_loaded_from_mouse: Signal = Signal()
 
     def __init__(self) -> None:
         super().__init__()
 
         self.profile = 0
-        self.mouse: MouseData | None = None
-        self.mouse_config = get_mouse_config(None)
+        self.mouse: Mouse | None = None
         self.mouse_image: MouseImageWidget
-        self.warning_label: QLabel
         self.mouse_widget: QWidget
         self.buttons_widget: ButtonsWidget
         self.active_profile_label: QLabel
@@ -40,6 +43,9 @@ class MainWindow(QMainWindow):
         self.resize(800, 600)
         download(ICON_SOURCE, self._set_app_icon)
         self._build_ui()
+
+        self.data_loaded_from_mouse.connect(self._read_mouse)
+
         self.mouse_selector.refresh_mice()
 
     def _build_ui(self) -> None:
@@ -57,15 +63,6 @@ class MainWindow(QMainWindow):
         self.mouse_image.fixed_width = 400
         self.mouse_image.button_clicked.connect(self._on_button_clicked)
         self.mouse_image.button_hovered.connect(self._on_button_hovered)
-
-        self.warning_label = QLabel()
-        self.warning_label.setAlignment(
-            Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
-        self.warning_label.setStyleSheet("color: red;")
-        self.warning_label.setVisible(False)
-        self.warning_label.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByMouse)
-        layout.addWidget(self.warning_label)
 
         self.mouse_widget = QWidget()
         mouse_widget_layout = QVBoxLayout(self.mouse_widget)
@@ -85,7 +82,7 @@ class MainWindow(QMainWindow):
         profile_widget_layout.setContentsMargins(0, 0, 0, 0)
 
         profiles_combo = QComboBox()
-        for i in range(PROFILE_COUNT):
+        for i in range(MouseData.MODE_COUNT):
             profiles_combo.addItem(f"Profile {i+1}")
         profiles_combo.currentIndexChanged.connect(self._select_profile)
         profile_widget_layout.addWidget(profiles_combo)
@@ -134,17 +131,20 @@ class MainWindow(QMainWindow):
 
         return splitter
 
-    def _on_mouse_selected(self, mouse: MouseData | None, name: str | None) -> None:
-        self.mouse = mouse
-        logger.debug("Selected mouse: %s", name if name is not None else "None")
-        mouse_type = mouse.mouse_type if mouse is not None else None
-        self.mouse_config = get_mouse_config(mouse_type)
+    def _on_mouse_selected(self, connection: UsbConnection | None) -> None:
+        if connection:
+            definition = MouseDefinition.from_device(connection.dev.idVendor, connection.dev.idProduct)
+            mouse_data = MouseData(definition.data_definition, definition.memory_size)
+            self.mouse = Mouse(definition, mouse_data, connection)
+            logger.info("Selected mouse: %s (%s, %s, %s)", definition.name, connection.name, connection.ids, connection.path)
 
-        if mouse:
-            self.mouse_image.load_svg(self.mouse_config.image)
+            self.mouse_image.load_svg(definition.image)
             self._start_poll_active_profile()
-            mouse.load_from_mouse(lambda progress: logger.debug("Loading mouse data: %s", progress))
+            self.mouse_widget.setEnabled(True)
+
+            self._load_mouse_data()
         else:
+            self.mouse = None
             self._stop_poll_active_profile()
             pixmap = QPixmap(400, 300)
             pixmap.fill(Qt.GlobalColor.transparent)
@@ -155,37 +155,18 @@ class MainWindow(QMainWindow):
                 pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No mouse selected")
             painter.end()
             self.mouse_image.setPixmap(pixmap)
-
-        if mouse and mouse.status != MouseData.Status.NO_ACCESS:
-            if not self.mouse_config.fully_supported:
-                self.warning_label.setText(MainWindow._create_unsupported_warning_text())
-                self.warning_label.setVisible(True)
-            else:
-                self.warning_label.setVisible(False)
-            self.mouse_widget.setEnabled(True)
-            self._read_mouse()
-        elif mouse and mouse.status == MouseData.Status.NO_ACCESS:
-            self.mouse = None
-            self.warning_label.setText(
-                self._create_inaccessible_warning_text(mouse))
-            self.warning_label.setVisible(True)
-            self.mouse_widget.setEnabled(False)
-        else:
-            self.mouse = None
-            self.warning_label.setVisible(False)
             self.mouse_widget.setEnabled(False)
 
     def _select_profile(self, index: int) -> None:
         logger.debug("Selected profile: %d", index + 1)
         self.profile = index
-        self.buttons_widget.set_selected_profile_index(index)
+        self.buttons_widget.set_selected_mode_index(index)
 
     def _read_mouse(self) -> None:
         if self.mouse is None:
             return
 
-        self.mouse.load_from_mouse()
-        self.buttons_widget.set_data(self.mouse)
+        self.buttons_widget.set_data(self.mouse.data, self.mouse.definition)
 
     def _set_app_icon(self, data: bytes | Exception) -> None:
         if isinstance(data, Exception):
@@ -217,8 +198,9 @@ class MainWindow(QMainWindow):
         self.mouse_image.set_selected_button(button_index)
 
     def _on_button_clicked(self, button_index: int) -> None:
-        if 0 <= button_index < len(self.mouse_config.buttons):
-            self.buttons_widget.set_selected_button_index(button_index)
+        if self.mouse is not None:
+            if 0 <= button_index < len(self.mouse.definition.buttons):
+                self.buttons_widget.set_selected_button_index(button_index)
 
     def _on_button_hovered(self, button_index: int) -> None:
         self.buttons_widget.set_hovered_button_index(button_index)
@@ -241,24 +223,44 @@ class MainWindow(QMainWindow):
             self.active_profile_label.setText("❓")
             return
 
-        active_profile = self.mouse.load_active_profile()
-        ICONS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"]
-        self.active_profile_label.setText(ICONS[active_profile])
+        #active_profile = self.mouse.load_active_profile()
+        #ICONS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"]
+        #self.active_profile_label.setText(ICONS[active_profile])
 
-    @staticmethod
-    def _create_inaccessible_warning_text(mouse: MouseData) -> str:
-        # pylint: disable=line-too-long
-        return f"Selected mouse is not accessible. Please check permissions of <span style='font-family: monospace;'>/dev/bus/usb/{mouse.usb_path[0]:03d}/{mouse.usb_path[1]:03d}</span>.<br>\n" \
-            f"To grant access, you can create a udev rule like this in e.g. <span style='font-family: monospace;'>/etc/udev/rules.d/99-mouse.rules</span>:<br>\n" \
-            f"<span style='font-family: monospace;'>SUBSYSTEM==\"usb\", ATTRS{{idVendor}}==\"{mouse.usb_id[0]:04x}\", ATTRS{{idProduct}}==\"{mouse.usb_id[1]:04x}\", MODE=\"0666\"</span><br>\n" \
-            f"After creating the rule, reload udev rules with <span style='font-family: monospace;'>sudo udevadm control --reload</span> and re-plug the mouse."
+    def _load_mouse_data(self, reload_from_mouse: bool = False):
+        if self.mouse is None:
+            return
 
-    @staticmethod
-    def _create_unsupported_warning_text() -> str:
-        # pylint: disable=line-too-long
-        return "This mouse model is not fully supported. Some features may not work correctly.<br>\n" \
-               "You can raise an issue on GitHub: <a href='https://github.com/Mr-Clear/M811-Configurator' style='font-family: monospace;'>https://github.com/Mr-Clear/M811-Configurator</a>."
+        cache_file_name = f'.cache/mouse_data_{self.mouse.definition.name}_{self.mouse.connection.ids}_{self.mouse.connection.path}.dump'
+        if os.path.exists(cache_file_name) and not reload_from_mouse:
+            try:
+                with open(cache_file_name, 'rb') as f:
+                    self.mouse.data_on_device = f.read()
+            except Exception as e:
+                logger.error("Failed to load mouse data from cache: %s", e)
+                os.remove(cache_file_name)
+            if self.mouse.data_on_device is not None:
+                self.mouse.data.data = self.mouse.data_on_device
+                self.data_loaded_from_mouse.emit()
+                logger.info("Loaded mouse data from cache: %s", cache_file_name)
+                return
 
+        class Worker(QRunnable):
+            def run(inner_self): # type: ignore
+                assert self.mouse is not None
+                try:
+                    self.mouse.data_on_device = self.mouse.connection.read_all(
+                        lambda progress: logger.debug("Loading mouse data: %s", progress))
+                    try:
+                        with open(cache_file_name, 'wb') as f:
+                            f.write(self.mouse.data_on_device)
+                    except Exception as e:
+                        logger.warning("Failed to save mouse data to cache: %s", e)
+                    self.mouse.data.data = self.mouse.data_on_device
+                    self.data_loaded_from_mouse.emit()
+                except Exception as e:
+                    logger.error("Failed to load mouse data: %s", e)
+        QThreadPool.globalInstance().start(Worker())
 
 
 def start_app() -> int:

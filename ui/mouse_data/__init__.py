@@ -1,8 +1,11 @@
 """Classes to manage the mouse data and provide access to the values within it."""
 from __future__ import annotations
 
+import logging
+from logging import log
 from typing import Iterator
 
+from mouse import MouseType
 from ui.dump_analyzer.sections.list_section import ListSection
 from ui.dump_analyzer.sections.parent_section import AbstractParentSection
 from ui.dump_analyzer.sections.section import Section
@@ -20,24 +23,29 @@ from .poll_rate import PollRate
 from .scroll_speed import ScrollSpeed
 from .value_function import ValueFunction
 
+BytesType = bytes | bytearray | memoryview
+
 
 class MouseData(Observable):
     """Holds a dump of the mouse memory and provides access to the values within it."""
     MODE_COUNT = 5
-    BUTTON_COUNT = 20
+    BUTTON_COUNT = 18
     MACROS_COUNT = 30
     MACRO_STEP_COUNT = Macro.STEP_COUNT
 
-    def __init__(self, definition: ListSection, data: bytes | bytearray | memoryview | None = None) -> None:
+    def __init__(self, root_section: ListSection, data: BytesType | int | None = None) -> None:
         super().__init__(self)
-        self._data: bytearray = bytearray(b'\x00' * 0xFFFF)
+        initial_data_length = len(data) if isinstance(data, (bytes, bytearray, memoryview)) else (
+            data if isinstance(data, int) else 0xffff)
+        self._data: bytearray = bytearray(b'\x00' * initial_data_length)
         self._values: list[Value] = []
         self._active_mode: ActiveMode
         self._modes: list[Mode] = []
         self._macros: list[Macro] = []
+        self._type: MouseType = MouseType.M811
         if data is not None:
             self.data = bytearray(data)
-        self._parse_definition(definition)
+        self._parse_definition(root_section)
 
     def _search_active_mode(self, root_section: ListSection, errors: list[str]) -> ValueSection | None:
         """Searches the root section for the ACTIVE_MODE section. Returns None if not found."""
@@ -192,13 +200,24 @@ class MouseData(Observable):
     def data(self) -> memoryview:
         return memoryview(self._data)
     @data.setter
-    def data(self, value: bytes | bytearray | memoryview) -> None:
+    def data(self, value: BytesType) -> None:
         if self._values and self._values[-1].end_offset >= len(value):
             raise ValueError(f"New data length {len(value)} is too short for existing values, last value ends at {self._values[-1].end_offset}")
         old_data = bytes(self._data)
         self._data = bytearray(value)
-        for v in self._values:
-            if v.raw_data != old_data[v.offset:v.end_offset + 1]: # type: ignore (Pylance is wrong!)
+        self.check_for_changes(old_data, self._data)
+
+    def check_for_changes(self, old_data: BytesType, new_data: BytesType) -> None:
+        """Checks for changes between old_data and new_data, and emits changed signals for any values that have changed."""
+        if len(old_data) == len(new_data):
+            for v in self._values:
+                old_value = old_data[v.offset:v.end_offset + 1]
+                new_value = new_data[v.offset:v.end_offset + 1]
+                if old_value != new_value:
+                    v.changed.emit()
+        else:
+            log(logging.WARNING, "Old data length %s does not match new data length %s", len(old_data), len(new_data))
+            for v in self._values:
                 v.changed.emit()
 
     @property
@@ -208,10 +227,13 @@ class MouseData(Observable):
     def mode(self, index: int) -> Mode:
         return self._modes[index]
 
-    def set_value(self, offset: int, data: bytes | bytearray | memoryview) -> None:
+    def set_value(self, offset: int, data: BytesType) -> None:
         """Set the value at the given offset and length. Notifies all registered values that are changed."""
         if offset < 0 or offset + len(data) > len(self._data):
             raise ValueError(f"Offset {offset} and length {len(data)} are out of bounds for data of length {len(self._data)}")
+        old_data = self._data[offset:offset + len(data)]
+        if old_data == data:
+            return
         changed_values: list[Value] = []
         for value in self._find_values(offset, len(data)):
             value_start = value.offset
@@ -248,6 +270,11 @@ class MouseData(Observable):
             raise ValueError(f"{my_name} overlaps with existing values: {existing_values}")
         self._values.append(value)
         self._values.sort(key=lambda v: v.offset)
+
+    @property
+    def mouse_type(self) -> MouseType:
+        ''' The type of the mouse. '''
+        return self._type
 
     def _find_value(self, offset: int) -> 'Value | None':
         """"Use binary search to find the value that contains the given offset."""

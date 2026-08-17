@@ -26,23 +26,24 @@ class ButtonSpecialKey(Button):
 
         @staticmethod
         def names():
+            T = ButtonSpecialKey.Type
             return {
-                ButtonSpecialKey.Type.MEDIA_NEXT: "Next",
-                ButtonSpecialKey.Type.MEDIA_PREVIOUS: "Previous",
-                ButtonSpecialKey.Type.MEDIA_STOP: "Stop",
-                ButtonSpecialKey.Type.MEDIA_PLAY_PAUSE: "Play/Pause",
-                ButtonSpecialKey.Type.MEDIA_VOLUME_UP: "Volume Up",
-                ButtonSpecialKey.Type.MEDIA_VOL_DOWN: "Volume Down",
-                ButtonSpecialKey.Type.MEDIA_MUTE: "Mute",
+                T.MEDIA_NEXT: "Next",
+                T.MEDIA_PREVIOUS: "Previous",
+                T.MEDIA_STOP: "Stop",
+                T.MEDIA_PLAY_PAUSE: "Play/Pause",
+                T.MEDIA_VOLUME_UP: "Volume Up",
+                T.MEDIA_VOL_DOWN: "Volume Down",
+                T.MEDIA_MUTE: "Mute",
 
-                ButtonSpecialKey.Type.BROWSER_HOME: "Browser Home",
-                ButtonSpecialKey.Type.BROWSER_BACK: "Browser Back",
-                ButtonSpecialKey.Type.BROWSER_FORWARD: "Browser Forward",
-                ButtonSpecialKey.Type.BROWSER_STOP: "Browser Stop",
-                ButtonSpecialKey.Type.BROWSER_REFRESH: "Browser Refresh",
-                ButtonSpecialKey.Type.BROWSER_SEARCH: "Browser Search",
-                ButtonSpecialKey.Type.BROWSER_FAVORITES: "Browser Favorites",
-                ButtonSpecialKey.Type.MAIL: "Mail",
+                T.BROWSER_HOME: "Browser Home",
+                T.BROWSER_BACK: "Browser Back",
+                T.BROWSER_FORWARD: "Browser Forward",
+                T.BROWSER_STOP: "Browser Stop",
+                T.BROWSER_REFRESH: "Browser Refresh",
+                T.BROWSER_SEARCH: "Browser Search",
+                T.BROWSER_FAVORITES: "Browser Favorites",
+                T.MAIL: "Mail",
             }
 
         @property
@@ -50,19 +51,26 @@ class ButtonSpecialKey(Button):
             return self.names()[self]
 
     def __init__(self, mouse: MouseData, offset: int):
-        data = list(mouse.data[offset:offset + 4])
-        if data in [function.value for function in ButtonSpecialKey.Type]:
-            self.type = ButtonSpecialKey.Type(data)
-        else:
-            raise ValueError(f"Invalid SpecialKey data: {data}")
         super().__init__(mouse, offset)
 
     @classmethod
     def type_name(cls) -> str:
         return "Special Key"
 
-    def to_raw(self) -> list[int]:
-        return self.type.value
+    @classmethod
+    def is_data_valid(cls, mouse: MouseData, offset: int) -> bool:
+        data = list(mouse.data[offset:offset + Button.DATA_LENGTH])
+        return data in [function.value for function in ButtonSpecialKey.Type]
+
+    def set_default(self) -> None:
+        self.raw_data = bytes(ButtonSpecialKey.Type.MEDIA_PLAY_PAUSE.value)
+
+    @property
+    def special_key_type(self) -> Type:
+        return ButtonSpecialKey.Type(list(self.raw_data))
+    @special_key_type.setter
+    def special_key_type(self, value: Type) -> None:
+        self.raw_data = bytes(value.value)
 
     def __str__(self) -> str:
-        return f"{self.type.name}"
+        return f"{self.special_key_type.name}"

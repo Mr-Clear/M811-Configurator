@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (QAbstractButton, QHBoxLayout, QLabel,
 
 from ui.dump_analyzer.sections.list_section import ListSection
 from ui.dump_analyzer.sections.section import Section
-from ui.redragon_mouse import ValueFunction
+from ui.mouse_data.value_function import ValueFunction
 
 from .clipboard import get_section_from_clipboard
 from .section_types import get_section_types

@@ -7,9 +7,17 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QGridLayout, QHBoxLayout,
                                QVBoxLayout, QWidget)
 
 from ui.keyboard import Modifier
-from ui.mouse_data import (ButtomCustom, Button, ButtonFireKey, ButtonKeyPress,
-                           ButtonMacro, ButtonMouseButton, ButtonMouseFunction,
-                           ButtonOff, ButtonSniper, ButtonSpecialKey)
+
+from .mouse_data.button import Button
+from .mouse_data.button_custom import ButtonCustom
+from .mouse_data.button_fire_key import ButtonFireKey
+from .mouse_data.button_key_press import ButtonKeyPress
+from .mouse_data.button_macro import ButtonMacro
+from .mouse_data.button_mouse_button import ButtonMouseButton
+from .mouse_data.button_mouse_function import ButtonMouseFunction
+from .mouse_data.button_off import ButtonOff
+from .mouse_data.button_sniper import ButtonSniper
+from .mouse_data.button_special_key import ButtonSpecialKey
 
 
 class ButtonWidget(QWidget):
@@ -34,7 +42,12 @@ class ButtonWidget(QWidget):
         layout.addWidget(self.type_combo)
         layout.addWidget(self.content_container)
         layout.addStretch(1)
+        data.changed.connect(self.update_data)
         self.set_data(data)
+
+    def update_data(self) -> None:
+        '''Update the widget to reflect the current button data.'''
+        self.set_data(self.data)
 
     def set_data(self, data: Button) -> None:
         '''Set the button data to display.'''
@@ -42,10 +55,7 @@ class ButtonWidget(QWidget):
 
         self.type_combo.blockSignals(True)
         button_types = Button.get_all_button_types()
-        try:
-            index = button_types.index(type(data))
-        except ValueError:
-            index = 0
+        index = button_types.index(type(data))
         self.type_combo.setCurrentIndex(index)
         self.type_combo.blockSignals(False)
 
@@ -61,8 +71,9 @@ class ButtonWidget(QWidget):
     def _on_type_changed(self, index: int) -> None:
         '''Handle the user changing the button type from the combo box.'''
         new_type = Button.get_all_button_types()[index]
-        self.set_data(new_type(None))
-
+        # Don't try this at home, kids!
+        self.data.__class__ = new_type # type: ignore
+        self.data.set_default()
 
     class _ContentWidget(QWidget):
         data_changed = Signal()
@@ -127,7 +138,7 @@ class ButtonWidget(QWidget):
             layout = QVBoxLayout(self)
             layout.setContentsMargins(0, 0, 0, 0)
             self.button_combo = QComboBox()
-            for button in ButtonMouseFunction.Type:
+            for button in ButtonMouseFunction.MouseFunctionType:
                 self.button_combo.addItem(button.name)
             layout.addWidget(self.button_combo)
             self._set_data(data)
@@ -136,15 +147,15 @@ class ButtonWidget(QWidget):
             '''Set the button data to display.'''
             self.data = data
             self.button_combo.blockSignals(True)
-            button = data.type
-            index = list(ButtonMouseFunction.Type).index(button)
+            button = data.function_type
+            index = list(ButtonMouseFunction.MouseFunctionType).index(button)
             self.button_combo.setCurrentIndex(index)
             self.button_combo.blockSignals(False)
 
         def _on_button_changed(self, index: int) -> None:
             '''Handle the user changing the mouse function from the combo box.'''
-            button = list(ButtonMouseFunction.Type)[index]
-            self.data.type = button
+            button = list(ButtonMouseFunction.MouseFunctionType)[index]
+            self.data.function_type = button
             self.data_changed.emit()
 
     class _ButtonKeyPressContentWidget(_ContentWidget):
@@ -209,13 +220,13 @@ class ButtonWidget(QWidget):
         def _set_data(self, data: ButtonSpecialKey) -> None:
             '''Set the button data to display.'''
             self.data = data
-            index = list(ButtonSpecialKey.Type).index(data.type)
+            index = list(ButtonSpecialKey.Type).index(data.special_key_type)
             self.type_combo.setCurrentIndex(index)
 
         def _on_type_changed(self, index: int) -> None:
             '''Handle the user changing the special key type from the combo box.'''
             key_type = list(ButtonSpecialKey.Type)[index]
-            self.data.type = key_type
+            self.data.special_key_type = key_type
             self.data_changed.emit()
 
     class _ButtonMacroContentWidget(_ContentWidget):
@@ -255,14 +266,14 @@ class ButtonWidget(QWidget):
             self._toggle_radio.blockSignals(True)
             self._hold_radio.blockSignals(True)
             self.macro_id_combo.setCurrentIndex(data.macro_id - 1)
-            if data.type == ButtonMacro.Type.REPEAT:
+            if data.macro_type == ButtonMacro.Type.REPEAT:
                 self._repeat_radio.setChecked(True)
                 self._repeat_count_spinner.setValue(data.repeat_count)
                 self._repeat_count_spinner.setEnabled(True)
-            elif data.type == ButtonMacro.Type.HOLD:
+            elif data.macro_type == ButtonMacro.Type.HOLD:
                 self._hold_radio.setChecked(True)
                 self._repeat_count_spinner.setEnabled(False)
-            elif data.type == ButtonMacro.Type.TOGGLE:
+            elif data.macro_type == ButtonMacro.Type.TOGGLE:
                 self._toggle_radio.setChecked(True)
                 self._repeat_count_spinner.setEnabled(False)
             self.macro_id_combo.blockSignals(False)
@@ -273,22 +284,24 @@ class ButtonWidget(QWidget):
 
         def _on_value_changed(self) -> None:
             '''Handle the user changing any value'''
-
-            value = ButtonMacro(None)
-            value.macro_id = self.macro_id_combo.currentIndex() + 1
             if self._repeat_radio.isChecked():
-                value.type = ButtonMacro.Type.REPEAT
-                value.repeat_count = self._repeat_count_spinner.value()
-            elif self._hold_radio.isChecked():
-                value.type = ButtonMacro.Type.HOLD
-            elif self._toggle_radio.isChecked():
-                value.type = ButtonMacro.Type.TOGGLE
+                self._repeat_count_spinner.setEnabled(True)
+            else:
+                self._repeat_count_spinner.setEnabled(False)
 
-            if value != self.data:
-                self.data.macro_id = value.macro_id
-                self.data.type = value.type
-                self.data.repeat_count = value.repeat_count
-                self.data_changed.emit()
+            self.data.macro_id = self.macro_id_combo.currentIndex() + 1
+
+            if self._repeat_radio.isChecked():
+                self.data.macro_type = ButtonMacro.Type.REPEAT
+            elif self._hold_radio.isChecked():
+                self.data.macro_type = ButtonMacro.Type.HOLD
+            elif self._toggle_radio.isChecked():
+                self.data.macro_type = ButtonMacro.Type.TOGGLE
+
+            if self._repeat_radio.isChecked():
+                self.data.repeat_count = self._repeat_count_spinner.value()
+            else:
+                self.data.repeat_count = 0
 
     class _ButtonSniperContentWidget(_ContentWidget):
         '''Widget to show the content of a button that is a sniper button.'''
@@ -357,11 +370,11 @@ class ButtonWidget(QWidget):
             '''Handle the user changing a value.'''
             self.data_changed.emit()
 
-    class _ButtomCustomContentWidget(_ContentWidget):
+    class _ButtonCustomContentWidget(_ContentWidget):
         '''Widget to show the content of a button that is custom.'''
-        def __init__(self, data: ButtomCustom, parent: QWidget | None = None) -> None:
+        def __init__(self, data: ButtonCustom, parent: QWidget | None = None) -> None:
             super().__init__(parent)
-            assert isinstance(data, ButtomCustom)
+            assert isinstance(data, ButtonCustom)
             self.data = data
             layout = QGridLayout(self)
             layout.setContentsMargins(0, 0, 0, 0)
@@ -380,7 +393,7 @@ class ButtonWidget(QWidget):
                 self.hex_labels.append(hex_label)
             layout.setColumnStretch(4, 1)
 
-        def _set_data(self, data: ButtomCustom) -> None:
+        def _set_data(self, data: ButtonCustom) -> None:
             '''Set the button data to display.'''
             self.data = data
             for i in range(4):

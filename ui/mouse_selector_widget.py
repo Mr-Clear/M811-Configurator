@@ -2,27 +2,27 @@
 
 import logging
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QLabel, QPushButton,
                                QWidget)
 
-from mouse import Mouse, MouseType, UsbDevice
-from ui.mouse_data import MouseData
+from mouse import Mouse, MouseType
+
+from .usb_connection import UsbConnection
 
 logger = logging.getLogger(__name__)
 
 
 class MouseSelectorWidget(QWidget):
     '''Widget for selecting a mouse from the list of connected USB devices.'''
-    mouse_selected = Signal(MouseData, str)
+    mouse_selected = Signal(UsbConnection, str)
     mouse_deselected = Signal()
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
 
         self.mouse: Mouse | None = None
-        self.mice: list[UsbDevice] = []
+        self.mice: list[UsbConnection] = []
         self.selected_mouse_index = -1
 
         layout = QHBoxLayout(self)
@@ -37,7 +37,7 @@ class MouseSelectorWidget(QWidget):
         layout.addWidget(refresh_button)
 
     @property
-    def current_usb_device(self) -> UsbDevice | None:
+    def current_usb_device(self) -> UsbConnection | None:
         '''Returns the currently selected mouse's UsbDevice, or None if no mouse is selected.'''
         return self.mice[self.selected_mouse_index] \
             if self.selected_mouse_index >= 0 and self.selected_mouse_index < len(self.mice) \
@@ -47,7 +47,7 @@ class MouseSelectorWidget(QWidget):
         '''Refresh the list of connected mice and update the combo box.'''
         current_device = self.current_usb_device
 
-        self.mice = Mouse.find_devices()
+        self.mice = [UsbConnection(dev) for dev in UsbConnection.find_devices()]
         logger.info("Found %d mice: %s", len(self.mice), [mouse.name for mouse in self.mice])
         self.select_mouse_combo.blockSignals(True)
         self.select_mouse_combo.clear()
@@ -61,12 +61,7 @@ class MouseSelectorWidget(QWidget):
 
         for index, mouse in enumerate(self.mice):
             label = mouse.name or f"Device {mouse.dev.idProduct:04x}"
-            if not mouse.access:
-                label = f"{label} (inaccessible)"
             self.select_mouse_combo.addItem(label)
-            if not mouse.access:
-                self.select_mouse_combo.setItemData(
-                    index, QColor("red"), Qt.ItemDataRole.ForegroundRole)
 
         if current_device is not None:
             for index, mouse in enumerate(self.mice):
@@ -94,6 +89,6 @@ class MouseSelectorWidget(QWidget):
                              self.mice[index].dev.idProduct)
                 self.mouse_deselected.emit()
                 return
-            mouse_data = MouseData(Mouse.from_device(self.mice[index].dev), mouse_type)
-            self.mouse_selected.emit(mouse_data, self.mice[index].name
-                                                 or f"Device {self.mice[index].dev.idProduct:04x}")
+            usb_connection = UsbConnection(self.mice[index].dev)
+            self.mouse_selected.emit(usb_connection, self.mice[index].name
+                                     or f"Device {self.mice[index].dev.idProduct:04x}")

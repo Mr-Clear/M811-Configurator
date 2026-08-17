@@ -1,6 +1,5 @@
 """Functions to load and save data from and to the mouse"""
 
-import types
 from typing import Callable
 
 import usb.core
@@ -34,19 +33,27 @@ OP_LOCK = 0xf5
 
 TIMEOUT = 1000  # 1 second
 
-class RedragonMouse:
-    def __init__(self):
+
+class UsbConnection:
+    def __init__(self, dev: usb.core.Device | None):
+        self.dev = dev or UsbConnection.find_device()
+        if self.dev.is_kernel_driver_active(INTERFACE):
+            self.dev.detach_kernel_driver(INTERFACE)
+
+    @staticmethod
+    def find_devices() -> list[usb.core.Device]:
+        '''Find all connected Redragon mice and return a list of UsbConnection objects.'''
         devs = usb.core.find(idVendor=VENDOR_ID, find_all=True)
-        assert isinstance(devs, types.GeneratorType)
-        devs = list(devs)
+        return [dev for dev in devs]
+
+    @staticmethod
+    def find_device() -> usb.core.Device:
+        devs = UsbConnection.find_devices()
         if not devs:
             raise ValueError("Device not found")
         if len(devs) > 1:
             raise ValueError("Multiple devices found")
-
-        self.dev = devs[0]
-        if self.dev.is_kernel_driver_active(INTERFACE):
-            self.dev.detach_kernel_driver(INTERFACE)
+        return devs[0]
 
     def read_all(self, progress_callback: Callable[[int], None] | None = None) -> bytes:
         self._unlock()
@@ -77,10 +84,25 @@ class RedragonMouse:
             if chunk_orig != chunk_mod:
                 if progress_callback:
                     progress_callback(i + len(chunk_mod))
-                print(f"Writing bytes 0x{i:04X} to 0x{i+len(chunk_mod)-1:04X}...")
+                print(
+                    f"Writing bytes 0x{i:04X} to 0x{i+len(chunk_mod)-1:04X}...")
                 self._write64(i, len(chunk_mod), *chunk_mod)
         self._apply()
         self._lock()
+
+    @property
+    def name(self) -> str:
+        from .mouse import MouseType
+        type = MouseType.from_product_id(self.dev.idProduct)
+        return type.name if type else f"Unknown ({self.dev.idVendor:04x}:{self.dev.idProduct:04x})"
+
+    @property
+    def ids(self) -> str:
+        return f"{self.dev.idVendor:04x}:{self.dev.idProduct:04x}"
+
+    @property
+    def path(self) -> str:
+        return f"{self.dev.bus}-{self.dev.address}"
 
     def _addr_to_tuple(self, addr: int) -> tuple[int, int]:
         return (addr & 0xff, addr >> 8 & 0xff)
@@ -128,7 +150,7 @@ class RedragonMouse:
         self._set(REPORT_16B, [LEN_16B, OP_COMMAND, 0x02, cmd], 0x10)
 
     def _apply(self) -> None:
-        commands = [0x01, 0x04, 0x01, 0x02, 0x08, 0x10] # Got by Wireshark
+        commands = [0x01, 0x04, 0x01, 0x02, 0x08, 0x10]  # Got by Wireshark
         # commands = [0x01, 0x04] # Trial and error
         for cmd in commands:
             self._command(cmd)

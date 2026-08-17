@@ -15,7 +15,7 @@ if sys.version_info < MIN_PYTHON:
     )
 
 from ui.main_window import start_app
-from ui.dump_analyzer.dump_analyzer import start_app
+#from ui.dump_analyzer.dump_analyzer import start_app
 
 logging.basicConfig(
     level=logging.DEBUG,

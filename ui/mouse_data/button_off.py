@@ -6,17 +6,19 @@ class ButtonOff(Button):
     ''' Button without functionality. '''
 
     def __init__(self, mouse: MouseData, offset: int):
-        data = list(mouse.data[offset:offset + 4])
-        if data != [0x00, 0x00, 0x00, 0x00]:
-            raise ValueError(f"Invalid ButtonOff data: {data}")
         super().__init__(mouse, offset)
 
     @classmethod
     def type_name(cls) -> str:
         return "Off"
 
-    def to_raw(self) -> list[int]:
-        return [0x00, 0x00, 0x00, 0x00]
+    @classmethod
+    def is_data_valid(cls, mouse: MouseData, offset: int) -> bool:
+        data = list(mouse.data[offset:offset + Button.DATA_LENGTH])
+        return data == [0x00, 0x00, 0x00, 0x00]
+
+    def set_default(self) -> None:
+        self.raw_data = bytes([0x00, 0x00, 0x00, 0x00])
 
     def __str__(self) -> str:
         return "Button Off"

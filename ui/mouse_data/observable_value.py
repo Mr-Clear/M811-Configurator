@@ -48,7 +48,7 @@ class Value(Observable):
 
     @property
     def raw_data(self) -> memoryview:
-        return self.mouse_data.data[self.offset:self.offset + self.length]
+        return self.mouse_data.data[self.offset:self.offset + self.length].toreadonly()
     @raw_data.setter
     def raw_data(self, value: bytes | bytearray | memoryview) -> None:
         if len(value) != self.length:

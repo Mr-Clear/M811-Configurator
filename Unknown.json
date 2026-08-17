@@ -1,8 +1,8 @@
 {
-    "mouse_name": "M811-RGB",
+    "mouse_name": "Unknown",
     "vendor_id": "04d9",
-    "product_id": "fc6d",
-    "image": "res/M811.svg",
+    "product_id": "0000",
+    "image": "res/Unknown.svg",
     "buttons": [
         "LMB",
         "RMB",
@@ -20,6 +20,8 @@
         "6",
         "7",
         "8",
+        "9",
+        "10",
         "Up",
         "Down"
     ],
@@ -135,7 +137,7 @@
                 "subsections": [
                     {
                         "type": "Value",
-                        "name": "LMB",
+                        "name": "Button 1",
                         "function": "BUTTON",
                         "start": 0,
                         "color": "#ff94fff6",
@@ -145,7 +147,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "RMB",
+                        "name": "Button 2",
                         "function": "BUTTON",
                         "start": 4,
                         "color": "#ff94fff6",
@@ -155,7 +157,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "MMB",
+                        "name": "Button 3",
                         "function": "BUTTON",
                         "start": 8,
                         "color": "#ff94fff6",
@@ -165,7 +167,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Back",
+                        "name": "Button 4",
                         "function": "BUTTON",
                         "start": 12,
                         "color": "#ff94fff6",
@@ -175,7 +177,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Forward",
+                        "name": "Button 5",
                         "function": "BUTTON",
                         "start": 16,
                         "color": "#ff94fff6",
@@ -185,7 +187,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "DPI+",
+                        "name": "Button 6",
                         "function": "BUTTON",
                         "start": 20,
                         "color": "#ff94fff6",
@@ -195,7 +197,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "DPI-",
+                        "name": "Button 7",
                         "function": "BUTTON",
                         "start": 24,
                         "color": "#ff94fff6",
@@ -205,7 +207,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Mode",
+                        "name": "Button 8",
                         "function": "BUTTON",
                         "start": 28,
                         "color": "#ff94fff6",
@@ -215,7 +217,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "1",
+                        "name": "Button 9",
                         "function": "BUTTON",
                         "start": 32,
                         "color": "#ff94fff6",
@@ -225,7 +227,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "2",
+                        "name": "Button 10",
                         "function": "BUTTON",
                         "start": 36,
                         "color": "#ff94fff6",
@@ -235,7 +237,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "3",
+                        "name": "Button 11",
                         "function": "BUTTON",
                         "start": 40,
                         "color": "#ff94fff6",
@@ -245,7 +247,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "4",
+                        "name": "Button 12",
                         "function": "BUTTON",
                         "start": 44,
                         "color": "#ff94fff6",
@@ -255,7 +257,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "5",
+                        "name": "Button 13",
                         "function": "BUTTON",
                         "start": 48,
                         "color": "#ff94fff6",
@@ -265,7 +267,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "6",
+                        "name": "Button 14",
                         "function": "BUTTON",
                         "start": 52,
                         "color": "#ff94fff6",
@@ -275,7 +277,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "7",
+                        "name": "Button 15",
                         "function": "BUTTON",
                         "start": 56,
                         "color": "#ff94fff6",
@@ -285,7 +287,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "8",
+                        "name": "Button 16",
                         "function": "BUTTON",
                         "start": 60,
                         "color": "#ff94fff6",
@@ -295,7 +297,27 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Wheel Up",
+                        "name": "Button 17",
+                        "function": "BUTTON",
+                        "start": 64,
+                        "color": "#ff94fff6",
+                        "length": 4,
+                        "min_value": 0,
+                        "max_value": 255
+                    },
+                    {
+                        "type": "Value",
+                        "name": "Button 18",
+                        "function": "BUTTON",
+                        "start": 68,
+                        "color": "#ff94fff6",
+                        "length": 4,
+                        "min_value": 0,
+                        "max_value": 255
+                    },
+                    {
+                        "type": "Value",
+                        "name": "Button 19",
                         "function": "BUTTON",
                         "start": 88,
                         "color": "#ff94fff6",
@@ -305,7 +327,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Wheel Down",
+                        "name": "Button 20",
                         "function": "BUTTON",
                         "start": 92,
                         "color": "#ff94fff6",
@@ -355,17 +377,17 @@
                 },
                 "padding": 3
             },
-                        {
+            {
                 "type": "List",
                 "name": "Buttons 2",
                 "function": "BUTTON_LIST",
                 "start": 322,
-                "color": "#0a94fff6",
+                "color": "#1494fff6",
                 "size": 96,
                 "subsections": [
                     {
                         "type": "Value",
-                        "name": "LMB",
+                        "name": "Button 1",
                         "function": "BUTTON",
                         "start": 0,
                         "color": "#ff94fff6",
@@ -375,7 +397,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "RMB",
+                        "name": "Button 2",
                         "function": "BUTTON",
                         "start": 4,
                         "color": "#ff94fff6",
@@ -385,7 +407,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "MMB",
+                        "name": "Button 3",
                         "function": "BUTTON",
                         "start": 8,
                         "color": "#ff94fff6",
@@ -395,7 +417,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Back",
+                        "name": "Button 4",
                         "function": "BUTTON",
                         "start": 12,
                         "color": "#ff94fff6",
@@ -405,7 +427,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Forward",
+                        "name": "Button 5",
                         "function": "BUTTON",
                         "start": 16,
                         "color": "#ff94fff6",
@@ -415,7 +437,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "DPI+",
+                        "name": "Button 6",
                         "function": "BUTTON",
                         "start": 20,
                         "color": "#ff94fff6",
@@ -425,7 +447,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "DPI-",
+                        "name": "Button 7",
                         "function": "BUTTON",
                         "start": 24,
                         "color": "#ff94fff6",
@@ -435,7 +457,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Mode",
+                        "name": "Button 8",
                         "function": "BUTTON",
                         "start": 28,
                         "color": "#ff94fff6",
@@ -445,7 +467,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "1",
+                        "name": "Button 9",
                         "function": "BUTTON",
                         "start": 32,
                         "color": "#ff94fff6",
@@ -455,7 +477,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "2",
+                        "name": "Button 10",
                         "function": "BUTTON",
                         "start": 36,
                         "color": "#ff94fff6",
@@ -465,7 +487,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "3",
+                        "name": "Button 11",
                         "function": "BUTTON",
                         "start": 40,
                         "color": "#ff94fff6",
@@ -475,7 +497,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "4",
+                        "name": "Button 12",
                         "function": "BUTTON",
                         "start": 44,
                         "color": "#ff94fff6",
@@ -485,7 +507,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "5",
+                        "name": "Button 13",
                         "function": "BUTTON",
                         "start": 48,
                         "color": "#ff94fff6",
@@ -495,7 +517,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "6",
+                        "name": "Button 14",
                         "function": "BUTTON",
                         "start": 52,
                         "color": "#ff94fff6",
@@ -505,7 +527,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "7",
+                        "name": "Button 15",
                         "function": "BUTTON",
                         "start": 56,
                         "color": "#ff94fff6",
@@ -515,7 +537,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "8",
+                        "name": "Button 16",
                         "function": "BUTTON",
                         "start": 60,
                         "color": "#ff94fff6",
@@ -525,7 +547,27 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Wheel Up",
+                        "name": "Button 14",
+                        "function": "BUTTON",
+                        "start": 64,
+                        "color": "#ff94fff6",
+                        "length": 4,
+                        "min_value": 0,
+                        "max_value": 255
+                    },
+                    {
+                        "type": "Value",
+                        "name": "Button 18",
+                        "function": "BUTTON",
+                        "start": 68,
+                        "color": "#ff94fff6",
+                        "length": 4,
+                        "min_value": 0,
+                        "max_value": 255
+                    },
+                    {
+                        "type": "Value",
+                        "name": "Button 19",
                         "function": "BUTTON",
                         "start": 88,
                         "color": "#ff94fff6",
@@ -535,7 +577,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Wheel Down",
+                        "name": "Button 20",
                         "function": "BUTTON",
                         "start": 92,
                         "color": "#ff94fff6",
@@ -590,12 +632,12 @@
                 "name": "Buttons 3",
                 "function": "BUTTON_LIST",
                 "start": 498,
-                "color": "#0a94fff6",
+                "color": "#1494fff6",
                 "size": 96,
                 "subsections": [
                     {
                         "type": "Value",
-                        "name": "LMB",
+                        "name": "Button 1",
                         "function": "BUTTON",
                         "start": 0,
                         "color": "#ff94fff6",
@@ -605,7 +647,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "RMB",
+                        "name": "Button 2",
                         "function": "BUTTON",
                         "start": 4,
                         "color": "#ff94fff6",
@@ -615,7 +657,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "MMB",
+                        "name": "Button 3",
                         "function": "BUTTON",
                         "start": 8,
                         "color": "#ff94fff6",
@@ -625,7 +667,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Back",
+                        "name": "Button 4",
                         "function": "BUTTON",
                         "start": 12,
                         "color": "#ff94fff6",
@@ -635,7 +677,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Forward",
+                        "name": "Button 5",
                         "function": "BUTTON",
                         "start": 16,
                         "color": "#ff94fff6",
@@ -645,7 +687,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "DPI+",
+                        "name": "Button 6",
                         "function": "BUTTON",
                         "start": 20,
                         "color": "#ff94fff6",
@@ -655,7 +697,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "DPI-",
+                        "name": "Button 7",
                         "function": "BUTTON",
                         "start": 24,
                         "color": "#ff94fff6",
@@ -665,7 +707,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Mode",
+                        "name": "Button 8",
                         "function": "BUTTON",
                         "start": 28,
                         "color": "#ff94fff6",
@@ -675,7 +717,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "1",
+                        "name": "Button 9",
                         "function": "BUTTON",
                         "start": 32,
                         "color": "#ff94fff6",
@@ -685,7 +727,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "2",
+                        "name": "Button 10",
                         "function": "BUTTON",
                         "start": 36,
                         "color": "#ff94fff6",
@@ -695,7 +737,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "3",
+                        "name": "Button 11",
                         "function": "BUTTON",
                         "start": 40,
                         "color": "#ff94fff6",
@@ -705,7 +747,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "4",
+                        "name": "Button 12",
                         "function": "BUTTON",
                         "start": 44,
                         "color": "#ff94fff6",
@@ -715,7 +757,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "5",
+                        "name": "Button 13",
                         "function": "BUTTON",
                         "start": 48,
                         "color": "#ff94fff6",
@@ -725,7 +767,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "6",
+                        "name": "Button 14",
                         "function": "BUTTON",
                         "start": 52,
                         "color": "#ff94fff6",
@@ -735,7 +777,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "7",
+                        "name": "Button 15",
                         "function": "BUTTON",
                         "start": 56,
                         "color": "#ff94fff6",
@@ -745,7 +787,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "8",
+                        "name": "Button 16",
                         "function": "BUTTON",
                         "start": 60,
                         "color": "#ff94fff6",
@@ -755,7 +797,27 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Wheel Up",
+                        "name": "Button 14",
+                        "function": "BUTTON",
+                        "start": 64,
+                        "color": "#ff94fff6",
+                        "length": 4,
+                        "min_value": 0,
+                        "max_value": 255
+                    },
+                    {
+                        "type": "Value",
+                        "name": "Button 18",
+                        "function": "BUTTON",
+                        "start": 68,
+                        "color": "#ff94fff6",
+                        "length": 4,
+                        "min_value": 0,
+                        "max_value": 255
+                    },
+                    {
+                        "type": "Value",
+                        "name": "Button 19",
                         "function": "BUTTON",
                         "start": 88,
                         "color": "#ff94fff6",
@@ -765,7 +827,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Wheel Down",
+                        "name": "Button 20",
                         "function": "BUTTON",
                         "start": 92,
                         "color": "#ff94fff6",
@@ -820,12 +882,12 @@
                 "name": "Buttons 4",
                 "function": "BUTTON_LIST",
                 "start": 674,
-                "color": "#0a94fff6",
+                "color": "#1494fff6",
                 "size": 96,
                 "subsections": [
                     {
                         "type": "Value",
-                        "name": "LMB",
+                        "name": "Button 1",
                         "function": "BUTTON",
                         "start": 0,
                         "color": "#ff94fff6",
@@ -835,7 +897,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "RMB",
+                        "name": "Button 2",
                         "function": "BUTTON",
                         "start": 4,
                         "color": "#ff94fff6",
@@ -845,7 +907,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "MMB",
+                        "name": "Button 3",
                         "function": "BUTTON",
                         "start": 8,
                         "color": "#ff94fff6",
@@ -855,7 +917,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Back",
+                        "name": "Button 4",
                         "function": "BUTTON",
                         "start": 12,
                         "color": "#ff94fff6",
@@ -865,7 +927,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Forward",
+                        "name": "Button 5",
                         "function": "BUTTON",
                         "start": 16,
                         "color": "#ff94fff6",
@@ -875,7 +937,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "DPI+",
+                        "name": "Button 6",
                         "function": "BUTTON",
                         "start": 20,
                         "color": "#ff94fff6",
@@ -885,7 +947,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "DPI-",
+                        "name": "Button 7",
                         "function": "BUTTON",
                         "start": 24,
                         "color": "#ff94fff6",
@@ -895,7 +957,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Mode",
+                        "name": "Button 8",
                         "function": "BUTTON",
                         "start": 28,
                         "color": "#ff94fff6",
@@ -905,7 +967,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "1",
+                        "name": "Button 9",
                         "function": "BUTTON",
                         "start": 32,
                         "color": "#ff94fff6",
@@ -915,7 +977,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "2",
+                        "name": "Button 10",
                         "function": "BUTTON",
                         "start": 36,
                         "color": "#ff94fff6",
@@ -925,7 +987,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "3",
+                        "name": "Button 11",
                         "function": "BUTTON",
                         "start": 40,
                         "color": "#ff94fff6",
@@ -935,7 +997,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "4",
+                        "name": "Button 12",
                         "function": "BUTTON",
                         "start": 44,
                         "color": "#ff94fff6",
@@ -945,7 +1007,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "5",
+                        "name": "Button 13",
                         "function": "BUTTON",
                         "start": 48,
                         "color": "#ff94fff6",
@@ -955,7 +1017,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "6",
+                        "name": "Button 14",
                         "function": "BUTTON",
                         "start": 52,
                         "color": "#ff94fff6",
@@ -965,7 +1027,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "7",
+                        "name": "Button 15",
                         "function": "BUTTON",
                         "start": 56,
                         "color": "#ff94fff6",
@@ -975,7 +1037,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "8",
+                        "name": "Button 16",
                         "function": "BUTTON",
                         "start": 60,
                         "color": "#ff94fff6",
@@ -985,7 +1047,27 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Wheel Up",
+                        "name": "Button 14",
+                        "function": "BUTTON",
+                        "start": 64,
+                        "color": "#ff94fff6",
+                        "length": 4,
+                        "min_value": 0,
+                        "max_value": 255
+                    },
+                    {
+                        "type": "Value",
+                        "name": "Button 18",
+                        "function": "BUTTON",
+                        "start": 68,
+                        "color": "#ff94fff6",
+                        "length": 4,
+                        "min_value": 0,
+                        "max_value": 255
+                    },
+                    {
+                        "type": "Value",
+                        "name": "Button 19",
                         "function": "BUTTON",
                         "start": 88,
                         "color": "#ff94fff6",
@@ -995,7 +1077,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Wheel Down",
+                        "name": "Button 20",
                         "function": "BUTTON",
                         "start": 92,
                         "color": "#ff94fff6",
@@ -1050,12 +1132,12 @@
                 "name": "Buttons 5",
                 "function": "BUTTON_LIST",
                 "start": 850,
-                "color": "#0a94fff6",
+                "color": "#1494fff6",
                 "size": 96,
                 "subsections": [
                     {
                         "type": "Value",
-                        "name": "LMB",
+                        "name": "Button 1",
                         "function": "BUTTON",
                         "start": 0,
                         "color": "#ff94fff6",
@@ -1065,7 +1147,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "RMB",
+                        "name": "Button 2",
                         "function": "BUTTON",
                         "start": 4,
                         "color": "#ff94fff6",
@@ -1075,7 +1157,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "MMB",
+                        "name": "Button 3",
                         "function": "BUTTON",
                         "start": 8,
                         "color": "#ff94fff6",
@@ -1085,7 +1167,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Back",
+                        "name": "Button 4",
                         "function": "BUTTON",
                         "start": 12,
                         "color": "#ff94fff6",
@@ -1095,7 +1177,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Forward",
+                        "name": "Button 5",
                         "function": "BUTTON",
                         "start": 16,
                         "color": "#ff94fff6",
@@ -1105,7 +1187,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "DPI+",
+                        "name": "Button 6",
                         "function": "BUTTON",
                         "start": 20,
                         "color": "#ff94fff6",
@@ -1115,7 +1197,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "DPI-",
+                        "name": "Button 7",
                         "function": "BUTTON",
                         "start": 24,
                         "color": "#ff94fff6",
@@ -1125,7 +1207,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Mode",
+                        "name": "Button 8",
                         "function": "BUTTON",
                         "start": 28,
                         "color": "#ff94fff6",
@@ -1135,7 +1217,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "1",
+                        "name": "Button 9",
                         "function": "BUTTON",
                         "start": 32,
                         "color": "#ff94fff6",
@@ -1145,7 +1227,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "2",
+                        "name": "Button 10",
                         "function": "BUTTON",
                         "start": 36,
                         "color": "#ff94fff6",
@@ -1155,7 +1237,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "3",
+                        "name": "Button 11",
                         "function": "BUTTON",
                         "start": 40,
                         "color": "#ff94fff6",
@@ -1165,7 +1247,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "4",
+                        "name": "Button 12",
                         "function": "BUTTON",
                         "start": 44,
                         "color": "#ff94fff6",
@@ -1175,7 +1257,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "5",
+                        "name": "Button 13",
                         "function": "BUTTON",
                         "start": 48,
                         "color": "#ff94fff6",
@@ -1185,7 +1267,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "6",
+                        "name": "Button 14",
                         "function": "BUTTON",
                         "start": 52,
                         "color": "#ff94fff6",
@@ -1195,7 +1277,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "7",
+                        "name": "Button 15",
                         "function": "BUTTON",
                         "start": 56,
                         "color": "#ff94fff6",
@@ -1205,7 +1287,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "8",
+                        "name": "Button 16",
                         "function": "BUTTON",
                         "start": 60,
                         "color": "#ff94fff6",
@@ -1215,7 +1297,27 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Wheel Up",
+                        "name": "Button 14",
+                        "function": "BUTTON",
+                        "start": 64,
+                        "color": "#ff94fff6",
+                        "length": 4,
+                        "min_value": 0,
+                        "max_value": 255
+                    },
+                    {
+                        "type": "Value",
+                        "name": "Button 18",
+                        "function": "BUTTON",
+                        "start": 68,
+                        "color": "#ff94fff6",
+                        "length": 4,
+                        "min_value": 0,
+                        "max_value": 255
+                    },
+                    {
+                        "type": "Value",
+                        "name": "Button 19",
                         "function": "BUTTON",
                         "start": 88,
                         "color": "#ff94fff6",
@@ -1225,7 +1327,7 @@
                     },
                     {
                         "type": "Value",
-                        "name": "Wheel Down",
+                        "name": "Button 20",
                         "function": "BUTTON",
                         "start": 92,
                         "color": "#ff94fff6",

@@ -1,15 +1,18 @@
 '''Downloads files in the background and caches them in the '.cache' directory.'''
 
-import os
 import logging
+import os
 import threading
 from typing import Callable
 from urllib.error import URLError
 from urllib.request import urlopen
 
+import __main__
+
 logger = logging.getLogger(__name__)
 
-cache_dir = os.path.join(os.path.dirname(__file__), ".cache")
+cache_dir = os.path.join(os.path.dirname(__main__.__file__), ".cache")
+
 if not os.path.exists(cache_dir):
     os.makedirs(cache_dir)
 

@@ -6,7 +6,7 @@ from ui.mouse_data.button import Button
 
 class ButtonMouseFunction(Button):
     ''' Button that is mapped to a mouse function. '''
-    class Type(Enum):
+    class MouseFunctionType(Enum):
         DPI_PLUS = [0x8a, 0x00, 0x00, 0x00]
         DPI_MINUS = [0x89, 0x00, 0x00, 0x00]
         SWITCH_MODE = [0x8d, 0x00, 0x00, 0x00]
@@ -22,39 +22,47 @@ class ButtonMouseFunction(Button):
         DPI_LED_MODE = [0x9b, 0x02, 0x00, 0x00]
 
         @staticmethod
-        def names() -> dict[ButtonMouseFunction.Type, str]:
+        def names() -> dict[ButtonMouseFunction.MouseFunctionType, str]:
+            T = ButtonMouseFunction.MouseFunctionType
             return {
-                ButtonMouseFunction.Type.DPI_PLUS: "DPI+",
-                ButtonMouseFunction.Type.DPI_MINUS: "DPI-",
-                ButtonMouseFunction.Type.SWITCH_MODE: "Switch Mode",
-                ButtonMouseFunction.Type.MODE_PLUS: "Mode+",
-                ButtonMouseFunction.Type.MODE_MINUS: "Mode-",
-                ButtonMouseFunction.Type.DPI_SWITCH: "DPI Switch",
-                ButtonMouseFunction.Type.LED_SWITCH: "LED Switch",
-                ButtonMouseFunction.Type.POLL_RATE_PLUS: "Poll Rate+",
-                ButtonMouseFunction.Type.POLL_RATE_MINUS: "Poll Rate-",
-                ButtonMouseFunction.Type.RESET_SETTINGS: "Reset Settings",
-                ButtonMouseFunction.Type.DPI_LED_MODE: "DPI LED Mode",
+                T.DPI_PLUS: "DPI+",
+                T.DPI_MINUS: "DPI-",
+                T.SWITCH_MODE: "Switch Mode",
+                T.MODE_PLUS: "Mode+",
+                T.MODE_MINUS: "Mode-",
+                T.DPI_SWITCH: "DPI Switch",
+                T.LED_SWITCH: "LED Switch",
+                T.POLL_RATE_PLUS: "Poll Rate+",
+                T.POLL_RATE_MINUS: "Poll Rate-",
+                T.RESET_SETTINGS: "Reset Settings",
+                T.DPI_LED_MODE: "DPI LED Mode",
             }
 
         @property
         def name(self) -> str:
-            return ButtonMouseFunction.Type.names()[self]
+            return ButtonMouseFunction.MouseFunctionType.names()[self]
 
     def __init__(self, mouse: MouseData, offset: int):
-        data = list(mouse.data[offset:offset + 4])
-        if data in [function.value for function in ButtonMouseFunction.Type]:
-            self.type = ButtonMouseFunction.Type(data)
-        else:
-            raise ValueError(f"Invalid MouseFunction data: {data}")
         super().__init__(mouse, offset)
 
     @classmethod
     def type_name(cls) -> str:
         return "Mouse Function"
 
-    def to_raw(self) -> list[int]:
-        return self.type.value
+    @classmethod
+    def is_data_valid(cls, mouse: MouseData, offset: int) -> bool:
+        data = list(mouse.data[offset:offset + Button.DATA_LENGTH])
+        return data in [function.value for function in ButtonMouseFunction.MouseFunctionType]
+
+    def set_default(self) -> None:
+        self.raw_data = bytes(ButtonMouseFunction.MouseFunctionType.SWITCH_MODE.value)
+
+    @property
+    def function_type(self) -> MouseFunctionType:
+        return ButtonMouseFunction.MouseFunctionType(list(self.raw_data))
+    @function_type.setter
+    def function_type(self, value: MouseFunctionType) -> None:
+        self.raw_data = bytes(value.value)
 
     def __str__(self) -> str:
-        return f"{self.type.name}"
+        return f"{self.function_type.name}"
