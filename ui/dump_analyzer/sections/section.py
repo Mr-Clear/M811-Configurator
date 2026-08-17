@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 from PySide6.QtGui import QColor
 
 if TYPE_CHECKING:
-    from ui.mouse_data.value_function import ValueFunction
+    from mouse_data.value_function import ValueFunction
 
     from .parent_section import AbstractParentSection
 
@@ -131,7 +131,7 @@ class Section(ABC):
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> Section:
-        from ui.mouse_data.value_function import ValueFunction
+        from mouse_data.value_function import ValueFunction
         '''Create a section from a dictionary.'''
         type_name = data.get("type")
         if type_name == "List":

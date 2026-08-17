@@ -3,9 +3,13 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from mouse import VENDOR_ID, MouseType
 from ui.dump_analyzer.sections.list_section import ListSection
+from ui.usb_connection import VENDOR_ID
+
+if TYPE_CHECKING:
+    from mouse_data.mouse import MouseType
 
 
 @dataclass
@@ -45,6 +49,7 @@ class MouseDefinition:
     @classmethod
     def from_device(cls, vendor_id: int, product_id: int) -> MouseDefinition:
         """Load a mouse definition from a JSON file based on the vendor and product IDs."""
+        from mouse_data import MouseType
         if vendor_id != VENDOR_ID:
             raise ValueError(f"Unsupported vendor ID: {vendor_id:#04x}")
         mouse_type = MouseType.from_product_id(product_id)
@@ -58,6 +63,7 @@ class MouseDefinition:
     @property
     def mouse_type(self) -> MouseType:
         """Get the MouseType corresponding to this mouse definition."""
+        from mouse_data import MouseType
         t = MouseType.from_product_id(self.product_id)
         if t is None:
             raise ValueError(f"Product ID {self.product_id} is unknown.")

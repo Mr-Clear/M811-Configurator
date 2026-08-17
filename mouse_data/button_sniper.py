@@ -1,6 +1,6 @@
-from ui.mouse_data import MouseData
-from ui.mouse_data.button import Button
-from ui.mouse_data.dpis import dpi_to_int
+from mouse_data import MouseData
+from mouse_data.button import Button
+from mouse_data.dpis import dpi_to_int
 
 
 class ButtonSniper(Button):

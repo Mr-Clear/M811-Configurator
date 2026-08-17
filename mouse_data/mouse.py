@@ -2,9 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from .mouse_data.mouse_definition import MouseDefinition
-from .mouse_data import MouseData
-from .usb_connection import UsbConnection
+from typing import TYPE_CHECKING
+
+from mouse_data.mouse_definition import MouseDefinition
+from ui.usb_connection import UsbConnection
+
+if TYPE_CHECKING:
+    from . import MouseData
 
 class MouseType(Enum):
     '''Enumeration of supported mouse types, identified by USB product ID.'''

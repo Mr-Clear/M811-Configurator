@@ -7,15 +7,14 @@ from typing import TYPE_CHECKING, Any
 
 from PySide6.QtGui import QFont
 
-from ui.mouse_data.value_function import ValueFunction
+from mouse_data.value_function import ValueFunction
 
 from .dump_analyzer.sections.list_section import ListSection
 
 if TYPE_CHECKING:
     from .dump_analyzer.byte_info_widget import ByteInfoWidget
-    from .dump_analyzer.dump_analyzer import VisibleDetailBytes
+    from .dump_analyzer.dump_analyzer import IntegerFormat, VisibleDetailBytes
     from .dump_analyzer.hex_viewer import HexViewer
-    from .dump_analyzer.dump_analyzer import IntegerFormat
 
 class Config:
     '''Configuration for UI components.'''

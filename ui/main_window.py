@@ -9,15 +9,14 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QHBoxLayout, QLabel,
                                QMainWindow, QPushButton, QSizePolicy,
                                QSplitter, QVBoxLayout, QWidget)
 
+from mouse_data import MouseData
+from mouse_data.mouse import Mouse
+from mouse_data.mouse_definition import MouseDefinition
 from ui.buttons_widget import ButtonsWidget
 from ui.downloader import download
-from ui.mouse import Mouse
-from ui.mouse_data import MouseData
 from ui.mouse_image import MouseImageWidget
 from ui.mouse_selector_widget import MouseSelectorWidget
 from ui.usb_connection import UsbConnection
-
-from .mouse_data.mouse_definition import MouseDefinition
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,7 @@
 from enum import Enum
 
-from ui.mouse_data import MouseData
-from ui.mouse_data.button import Button
+from mouse_data import MouseData
+from mouse_data.button import Button
 
 
 class ButtonSpecialKey(Button):

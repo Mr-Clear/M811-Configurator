@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from ui.mouse_data.color import Color
-from ui.mouse_data.observable_value import IntValue, Observable
+from mouse_data.color import Color
+from mouse_data.observable_value import IntValue, Observable
 
 if TYPE_CHECKING:
     from . import MouseData
@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 
 class Lighting(Observable):
     """Lighting of a mode."""
+
     def __init__(self, mouse: MouseData, offset: int):
         super().__init__(mouse)
         self._color = Color(mouse, offset)

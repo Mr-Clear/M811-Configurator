@@ -1,6 +1,6 @@
 from ui.keyboard import Modifier, ScanCode
-from ui.mouse_data import MouseData
-from ui.mouse_data.button import Button
+from mouse_data import MouseData
+from mouse_data.button import Button
 
 
 class ButtonKeyPress(Button):

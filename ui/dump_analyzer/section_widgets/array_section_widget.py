@@ -3,7 +3,7 @@
 from PySide6.QtWidgets import (QComboBox, QFormLayout, QSpinBox, QToolButton,
                                QWidget)
 
-from ui.mouse_data.value_function import ValueFunction
+from mouse_data.value_function import ValueFunction
 
 from ..sections.array_section import ArraySection
 from ..sections.section import Section

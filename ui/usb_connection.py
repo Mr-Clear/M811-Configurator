@@ -92,7 +92,7 @@ class UsbConnection:
 
     @property
     def name(self) -> str:
-        from .mouse import MouseType
+        from mouse_data.mouse import MouseType
         type = MouseType.from_product_id(self.dev.idProduct)
         return type.name if type else f"Unknown ({self.dev.idVendor:04x}:{self.dev.idProduct:04x})"
 

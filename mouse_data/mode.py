@@ -1,15 +1,15 @@
 from typing import TYPE_CHECKING
 
-from ui.mouse_data.button import Button
-from ui.mouse_data.color import Color
-from ui.mouse_data.dpis import Dpis
-from ui.mouse_data.lighting import Lighting
-from ui.mouse_data.observable_value import Observable
-from ui.mouse_data.poll_rate import PollRate
-from ui.mouse_data.scroll_speed import ScrollSpeed
+from mouse_data.button import Button
+from mouse_data.color import Color
+from mouse_data.dpis import Dpis
+from mouse_data.lighting import Lighting
+from mouse_data.observable_value import Observable
+from mouse_data.poll_rate import PollRate
+from mouse_data.scroll_speed import ScrollSpeed
 
 if TYPE_CHECKING:
-    from . import MouseData, BytesType
+    from . import MouseData
 
 class Mode(Observable):
     def __init__(self, mouse: MouseData, scroll_speed: ScrollSpeed, poll_rate: PollRate, dpis: Dpis, effects: Lighting, buttons: list[Button], color: Color):

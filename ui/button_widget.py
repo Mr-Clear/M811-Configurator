@@ -6,18 +6,17 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QGridLayout, QHBoxLayout,
                                QLabel, QRadioButton, QSlider, QSpinBox,
                                QVBoxLayout, QWidget)
 
+from mouse_data.button import Button
+from mouse_data.button_custom import ButtonCustom
+from mouse_data.button_fire_key import ButtonFireKey
+from mouse_data.button_key_press import ButtonKeyPress
+from mouse_data.button_macro import ButtonMacro
+from mouse_data.button_mouse_button import ButtonMouseButton
+from mouse_data.button_mouse_function import ButtonMouseFunction
+from mouse_data.button_off import ButtonOff
+from mouse_data.button_sniper import ButtonSniper
+from mouse_data.button_special_key import ButtonSpecialKey
 from ui.keyboard import Modifier
-
-from .mouse_data.button import Button
-from .mouse_data.button_custom import ButtonCustom
-from .mouse_data.button_fire_key import ButtonFireKey
-from .mouse_data.button_key_press import ButtonKeyPress
-from .mouse_data.button_macro import ButtonMacro
-from .mouse_data.button_mouse_button import ButtonMouseButton
-from .mouse_data.button_mouse_function import ButtonMouseFunction
-from .mouse_data.button_off import ButtonOff
-from .mouse_data.button_sniper import ButtonSniper
-from .mouse_data.button_special_key import ButtonSpecialKey
 
 
 class ButtonWidget(QWidget):

@@ -6,7 +6,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QLabel, QPushButton,
                                QWidget)
 
-from mouse import Mouse, MouseType
+from mouse_data.mouse import Mouse, MouseType
 
 from .usb_connection import UsbConnection
 

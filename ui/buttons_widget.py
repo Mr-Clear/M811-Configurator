@@ -1,11 +1,10 @@
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QHBoxLayout, QWidget
 
+from mouse_data import MouseData
+from mouse_data.mouse_definition import MouseDefinition
 from ui.button_widget import ButtonWidget
 from ui.vertical_tab_wiget import HorizontalTabBar, VerticalTabWidget
-
-from .mouse_data import MouseData
-from .mouse_data.mouse_definition import MouseDefinition
 
 
 class ButtonsWidget(QWidget):

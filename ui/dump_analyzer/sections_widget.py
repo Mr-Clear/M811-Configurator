@@ -5,7 +5,7 @@ from PySide6.QtCore import (QAbstractItemModel, QModelIndex, QObject, QPoint,
 from PySide6.QtWidgets import (QHeaderView, QMenu, QSplitter, QTreeView,
                                QVBoxLayout, QWidget)
 
-from ui.mouse_data.value_function import ValueFunction
+from mouse_data.value_function import ValueFunction
 
 from .section_widgets.clipboard import copy_section_to_clipboard
 from .section_widgets.section_widget import SectionWidget

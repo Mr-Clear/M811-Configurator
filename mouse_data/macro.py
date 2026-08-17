@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from ui.mouse_data.observable_value import Observable, Value
+from mouse_data.observable_value import Observable, Value
 
 if TYPE_CHECKING:
     from . import MouseData

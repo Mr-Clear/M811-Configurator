@@ -5,7 +5,7 @@ import logging
 from logging import log
 from typing import Iterator
 
-from mouse import MouseType
+from mouse_data.mouse import MouseType
 from ui.dump_analyzer.sections.list_section import ListSection
 from ui.dump_analyzer.sections.parent_section import AbstractParentSection
 from ui.dump_analyzer.sections.section import Section
