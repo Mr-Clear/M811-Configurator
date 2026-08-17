@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from asyncio.log import logger
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QObject, Signal
@@ -59,14 +60,38 @@ class Value(Observable):
     def contains_offset(self, offset: int) -> bool:
         return self.offset <= offset < self.offset + self.length
 
-    def load_from_mouse(self, connection: UsbConnection) -> None:
+    def load_from_mouse(self, connection: UsbConnection, data_on_device: bytearray | None = None,
+                        cache_file_name: str | None = None) -> None:
         """Load the value from the mouse."""
         data = connection.read(self.offset, self.length)
+        if data == self.raw_data: # type: ignore
+            return
+        if data_on_device is not None:
+            data_on_device[self.offset:self.offset + self.length] = data
+        if cache_file_name is not None:
+            try:
+                with open(cache_file_name, 'r+b') as f:
+                    f.seek(self.offset)
+                    f.write(data)
+            except FileNotFoundError as e:
+                logger.warning("Failed to update cache file %s: %s", cache_file_name, e)
         self.raw_data = data
 
-    def save_to_mouse(self, connection: UsbConnection) -> None:
+    def save_to_mouse(self, connection: UsbConnection, data_on_device: bytearray | None = None,
+                      cache_file_name: str | None = None) -> None:
         """Save current value to the mouse."""
+        if data_on_device is not None and self.raw_data == data_on_device[self.offset:self.offset + self.length]: # type: ignore
+            return
         connection.write(self.offset, self.raw_data)
+        if data_on_device is not None:
+            data_on_device[self.offset:self.offset + self.length] = self.raw_data
+        if cache_file_name is not None:
+            try:
+                with open(cache_file_name, 'r+b') as f:
+                    f.seek(self.offset)
+                    f.write(self.raw_data)
+            except FileNotFoundError as e:
+                logger.warning("Failed to update cache file %s: %s", cache_file_name, e)
 
     def __len__(self) -> int:
         return self.length

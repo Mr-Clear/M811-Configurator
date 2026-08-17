@@ -47,7 +47,8 @@ class Mouse:
     definition: MouseDefinition
     data: MouseData
     connection: UsbConnection
-    data_on_device: bytes | None = None
+    data_on_device: bytearray | None = None
+    cache_file_name: str = ''
 
     @property
     def type(self) -> MouseType:

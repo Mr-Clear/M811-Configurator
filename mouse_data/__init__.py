@@ -254,6 +254,7 @@ class MouseData(Observable):
             if old_value_data != new_value_data:
                 changed_values.append(value)
         self._data[offset:offset + len(data)] = data
+        self.changed.emit()
         for value in changed_values:
             value.changed.emit()
 

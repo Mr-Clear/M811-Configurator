@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 
+import __main__
 from PySide6.QtCore import QRunnable, Qt, QThreadPool, QTimer, Signal
 from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import (QApplication, QComboBox, QHBoxLayout, QLabel,
@@ -17,6 +18,8 @@ from ui.buttons_widget import ButtonsWidget
 from ui.downloader import download
 from ui.mouse_image import MouseImageWidget
 from ui.mouse_selector_widget import MouseSelectorWidget
+
+cache_dir = os.path.join(os.path.dirname(__main__.__file__), ".cache")
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +77,8 @@ class MainWindow(QMainWindow):
         layout.addWidget(self._mouse_widget)
         self.setCentralWidget(central_widget)
 
+        self._check_saved_state()
+
     def _build_mode_bar(self) -> QWidget:
         """Build the mode-selector / upload / discard bar."""
         mode_widget = QWidget()
@@ -99,13 +104,17 @@ class MainWindow(QMainWindow):
 
         mode_widget_layout.addStretch(1)
 
-        upload_button = QPushButton("Upload Changes")
-        upload_button.setEnabled(False)
-        mode_widget_layout.addWidget(upload_button)
+        self._download_button = QPushButton("Download from Mouse")
+        mode_widget_layout.addWidget(self._download_button)
+        self._download_button.clicked.connect(self._on_download_pressed)
 
-        discard_button = QPushButton("Discard Changes")
-        discard_button.setEnabled(False)
-        mode_widget_layout.addWidget(discard_button)
+        self._upload_button = QPushButton("Upload Changes")
+        mode_widget_layout.addWidget(self._upload_button)
+        self._upload_button.clicked.connect(self._on_upload_pressed)
+
+        self._discard_button = QPushButton("Discard Changes")
+        mode_widget_layout.addWidget(self._discard_button)
+        self._discard_button.clicked.connect(self._on_discard_pressed)
 
         return mode_widget
 
@@ -142,6 +151,7 @@ class MainWindow(QMainWindow):
             definition = MouseDefinition.from_device(connection.dev.idVendor, connection.dev.idProduct)
             mouse_data = MouseData(definition.data_definition, definition.memory_size)
             self.mouse = Mouse(definition, mouse_data, connection)
+            self.mouse.cache_file_name = f'{cache_dir}/mouse_data_{self.mouse.definition.name}_{self.mouse.connection.ids}_{self.mouse.connection.path}.dump'
             logger.info("Selected mouse: %s (%s, %s, %s)", definition.name, connection.name, connection.ids, connection.path)
 
             self._mouse_image.load_svg(definition.image)
@@ -149,6 +159,7 @@ class MainWindow(QMainWindow):
             self.mouse.data.active_mode.changed.connect(self._update_active_mode_label)
             self._mouse_widget.setEnabled(True)
 
+            mouse_data.changed.connect(self._check_saved_state)
             self._load_mouse_data()
         else:
             self.mouse = None
@@ -171,7 +182,7 @@ class MainWindow(QMainWindow):
         self._modes_combo.setCurrentIndex(index)
         if self.mouse and self._modes_linked_button.isChecked():
             self.mouse.data.active_mode.value = index
-            self.mouse.data.active_mode.save_to_mouse(self.mouse.connection)
+            self.mouse.data.active_mode.save_to_mouse(self.mouse.connection, self.mouse.data_on_device, self.mouse.cache_file_name)
         logger.debug("Selected mode: %d", index + 1)
         self.buttons_widget.set_selected_mode_index(index)
 
@@ -235,9 +246,11 @@ class MainWindow(QMainWindow):
         if self.mouse is None:
             self._active_mode_label.setText("❓")
             return
-        self.mouse.data.active_mode.load_from_mouse(self.mouse.connection)
+        self.mouse.data.active_mode.load_from_mouse(self.mouse.connection, self.mouse.data_on_device, self.mouse.cache_file_name)
+        self._update_active_mode_label()
         if self._modes_linked_button.isChecked():
             self._select_mode(self.mouse.data.active_mode.value)
+        self._check_saved_state()
 
     def _update_active_mode_label(self):
         ICONS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"]
@@ -250,28 +263,27 @@ class MainWindow(QMainWindow):
         if self.mouse is None:
             return
 
-        cache_file_name = f'.cache/mouse_data_{self.mouse.definition.name}_{self.mouse.connection.ids}_{self.mouse.connection.path}.dump'
-        if os.path.exists(cache_file_name) and not reload_from_mouse:
+        if os.path.exists(self.mouse.cache_file_name) and not reload_from_mouse:
             try:
-                with open(cache_file_name, 'rb') as f:
-                    self.mouse.data_on_device = f.read()
+                with open(self.mouse.cache_file_name, 'rb') as f:
+                    self.mouse.data_on_device = bytearray(f.read())
             except Exception as e:
                 logger.error("Failed to load mouse data from cache: %s", e)
-                os.remove(cache_file_name)
+                os.remove(self.mouse.cache_file_name)
             if self.mouse.data_on_device is not None:
                 self.mouse.data.data = self.mouse.data_on_device
                 self.data_loaded_from_mouse.emit()
-                logger.info("Loaded mouse data from cache: %s", cache_file_name)
+                logger.info("Loaded mouse data from cache: %s", self.mouse.cache_file_name)
                 return
 
         class Worker(QRunnable):
             def run(inner_self): # type: ignore
                 assert self.mouse is not None
                 try:
-                    self.mouse.data_on_device = self.mouse.connection.read_all(
-                        lambda progress: logger.debug("Loading mouse data: %s", progress))
+                    self.mouse.data_on_device = bytearray(self.mouse.connection.read_all(
+                        lambda progress: logger.debug("Loading mouse data: %s", progress)))
                     try:
-                        with open(cache_file_name, 'wb') as f:
+                        with open(self.mouse.cache_file_name, 'wb') as f:
                             f.write(self.mouse.data_on_device)
                     except Exception as e:
                         logger.warning("Failed to save mouse data to cache: %s", e)
@@ -280,6 +292,34 @@ class MainWindow(QMainWindow):
                 except Exception as e:
                     logger.error("Failed to load mouse data: %s", e)
         QThreadPool.globalInstance().start(Worker())
+
+    def _check_saved_state(self):
+        if self.mouse:
+            self.all_data_saved = self.mouse.data.data == self.mouse.data_on_device # type: ignore
+        else:
+            self.all_data_saved = True
+        transfer_in_progress = self.mouse.connection.transfer_in_progress if self.mouse else False
+        self._download_button.setEnabled(not transfer_in_progress)
+        self._upload_button.setEnabled(not self.all_data_saved and not transfer_in_progress)
+        self._discard_button.setEnabled(not self.all_data_saved and not transfer_in_progress)
+
+    def _on_upload_pressed(self):
+        if self.mouse:
+            logger.info("Uploading changes to mouse...")
+            self.mouse.connection.write_diff(self.mouse.data_on_device, self.mouse.data.data)
+            self.mouse.data_on_device = bytearray(self.mouse.data.data)
+            with open(self.mouse.cache_file_name, 'wb') as f:
+                f.write(self.mouse.data_on_device)
+            self._check_saved_state()
+
+    def _on_discard_pressed(self):
+        if self.mouse and self.mouse.data_on_device:
+            self.mouse.data.data = self.mouse.data_on_device
+            self._check_saved_state()
+
+    def _on_download_pressed(self):
+        if self.mouse:
+            self._load_mouse_data(reload_from_mouse=True)
 
 
 def start_app() -> int:

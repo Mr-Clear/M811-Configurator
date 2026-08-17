@@ -128,6 +128,12 @@ class UsbConnection:
     def path(self) -> str:
         return f"{self.dev.bus}-{self.dev.address}"
 
+
+    @property
+    def transfer_in_progress(self) -> bool:
+        """Check if a transfer is in progress by rchecking the mutex lock status."""
+        return self._mutex.locked()
+
     def _addr_to_tuple(self, addr: int) -> tuple[int, int]:
         return (addr & 0xff, addr >> 8 & 0xff)
 

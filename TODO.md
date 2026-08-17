@@ -6,11 +6,14 @@ Configure Redragon Mice on Linux
 
 ### Todo
 
+- [ ] Auto save  
+- [ ] Show transfer progress  
+- [ ] Configure colors and effects  
+- [ ] Configure DPIs  
 - [ ] Open dump analyzer (Hex Editor)  
 - [ ] Clean up files  
 - [ ] Reload data from mouse  
 - [ ] Use values from mouse definition instead of constatns for macro count etc.  
-- [ ] Save changes on mouse  
 - [ ] Switch data (Profiles)  
 - [ ] Save data as json  
 - [ ] Sniper  
@@ -35,4 +38,5 @@ Configure Redragon Mice on Linux
 - [x] Compare data  
 - [x] Autosave  
 - [x] Upload  
+- [x] Save changes on mouse  
 
