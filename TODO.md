@@ -14,7 +14,6 @@ Configure Redragon Mice on Linux
 - [ ] Save changes on mouse  
 - [ ] Switch data (Profiles)  
 - [ ] Save data as json  
-- [ ] Rename Profile to Mode everywhere  
 - [ ] Sniper  
 - [ ] Fire Key  
 - [ ] Macro management  
@@ -23,6 +22,7 @@ Configure Redragon Mice on Linux
 
 ### In Progress
 
+- [ ] Rename Profile to Mode everywhere  
 
 ### Done ✓
 

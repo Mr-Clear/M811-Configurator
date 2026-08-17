@@ -31,12 +31,12 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
 
-        self.profile = 0
+        self.mode = 0
         self.mouse: Mouse | None = None
         self.mouse_image: MouseImageWidget
         self.mouse_widget: QWidget
         self.buttons_widget: ButtonsWidget
-        self.active_profile_label: QLabel
+        self.active_mode_label: QLabel
 
         self.setWindowTitle("M811 Configurator")
         self.resize(800, 600)
@@ -68,39 +68,39 @@ class MainWindow(QMainWindow):
         self.mouse_widget.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         mouse_widget_layout.setContentsMargins(0, 0, 0, 0)
-        mouse_widget_layout.addWidget(self._build_profile_bar())
+        mouse_widget_layout.addWidget(self._build_mode_bar())
         mouse_widget_layout.addWidget(self._build_splitter())
 
         layout.addWidget(self.mouse_widget)
         self.setCentralWidget(central_widget)
 
-    def _build_profile_bar(self) -> QWidget:
-        """Build the profile-selector / upload / discard bar."""
-        profile_widget = QWidget()
-        profile_widget_layout = QHBoxLayout(profile_widget)
-        profile_widget_layout.setContentsMargins(0, 0, 0, 0)
+    def _build_mode_bar(self) -> QWidget:
+        """Build the mode-selector / upload / discard bar."""
+        mode_widget = QWidget()
+        mode_widget_layout = QHBoxLayout(mode_widget)
+        mode_widget_layout.setContentsMargins(0, 0, 0, 0)
 
-        profiles_combo = QComboBox()
+        modes_combo = QComboBox()
         for i in range(MouseData.MODE_COUNT):
-            profiles_combo.addItem(f"Profile {i+1}")
-        profiles_combo.currentIndexChanged.connect(self._select_profile)
-        profile_widget_layout.addWidget(profiles_combo)
+            modes_combo.addItem(f"Mode {i+1}")
+        modes_combo.currentIndexChanged.connect(self._select_mode)
+        mode_widget_layout.addWidget(modes_combo)
 
-        profile_widget_layout.addWidget(QLabel("Active Profile:"))
-        self.active_profile_label = QLabel("❓")
-        profile_widget_layout.addWidget(self.active_profile_label)
+        mode_widget_layout.addWidget(QLabel("Active Mode:"))
+        self.active_mode_label = QLabel("❓")
+        mode_widget_layout.addWidget(self.active_mode_label)
 
-        profile_widget_layout.addStretch(1)
+        mode_widget_layout.addStretch(1)
 
         upload_button = QPushButton("Upload Changes")
         upload_button.setEnabled(False)
-        profile_widget_layout.addWidget(upload_button)
+        mode_widget_layout.addWidget(upload_button)
 
         discard_button = QPushButton("Discard Changes")
         discard_button.setEnabled(False)
-        profile_widget_layout.addWidget(discard_button)
+        mode_widget_layout.addWidget(discard_button)
 
-        return profile_widget
+        return mode_widget
 
     def _build_splitter(self) -> QSplitter:
         """Build the horizontal splitter containing the mouse image and button tabs."""
@@ -138,13 +138,13 @@ class MainWindow(QMainWindow):
             logger.info("Selected mouse: %s (%s, %s, %s)", definition.name, connection.name, connection.ids, connection.path)
 
             self.mouse_image.load_svg(definition.image)
-            self._start_poll_active_profile()
+            self._start_poll_active_mode()
             self.mouse_widget.setEnabled(True)
 
             self._load_mouse_data()
         else:
             self.mouse = None
-            self._stop_poll_active_profile()
+            self._stop_poll_active_mode()
             pixmap = QPixmap(400, 300)
             pixmap.fill(Qt.GlobalColor.transparent)
             painter = QPainter(pixmap)
@@ -156,9 +156,9 @@ class MainWindow(QMainWindow):
             self.mouse_image.setPixmap(pixmap)
             self.mouse_widget.setEnabled(False)
 
-    def _select_profile(self, index: int) -> None:
-        logger.debug("Selected profile: %d", index + 1)
-        self.profile = index
+    def _select_mode(self, index: int) -> None:
+        logger.debug("Selected mode: %d", index + 1)
+        self.mode = index
         self.buttons_widget.set_selected_mode_index(index)
 
     def _read_mouse(self) -> None:
@@ -204,27 +204,27 @@ class MainWindow(QMainWindow):
     def _on_button_hovered(self, button_index: int) -> None:
         self.buttons_widget.set_hovered_button_index(button_index)
 
-    def _start_poll_active_profile(self):
-        self._stop_poll_active_profile()
-        logger.debug("Starting active profile polling")
-        self.active_profile_timer = QTimer(self)
-        self.active_profile_timer.timeout.connect(self._poll_active_profile)
-        self.active_profile_timer.start(200)
+    def _start_poll_active_mode(self):
+        self._stop_poll_active_mode()
+        logger.debug("Starting active mode polling")
+        self.active_mode_timer = QTimer(self)
+        self.active_mode_timer.timeout.connect(self._poll_active_mode)
+        self.active_mode_timer.start(200)
 
-    def _stop_poll_active_profile(self):
-        if hasattr(self, 'active_profile_timer'):
-            logger.debug("Stopping active profile polling")
-            self.active_profile_timer.stop()
-            del self.active_profile_timer
+    def _stop_poll_active_mode(self):
+        if hasattr(self, 'active_mode_timer'):
+            logger.debug("Stopping active mode polling")
+            self.active_mode_timer.stop()
+            del self.active_mode_timer
 
-    def _poll_active_profile(self):
+    def _poll_active_mode(self):
         if self.mouse is None:
-            self.active_profile_label.setText("❓")
+            self.active_mode_label.setText("❓")
             return
 
-        #active_profile = self.mouse.load_active_profile()
+        #active_mode = self.mouse.load_active_mode()
         #ICONS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"]
-        #self.active_profile_label.setText(ICONS[active_profile])
+        #self.active_mode_label.setText(ICONS[active_mode])
 
     def _load_mouse_data(self, reload_from_mouse: bool = False):
         if self.mouse is None:
