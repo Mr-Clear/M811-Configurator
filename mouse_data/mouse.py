@@ -5,7 +5,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from mouse_data.mouse_definition import MouseDefinition
-from ui.usb_connection import UsbConnection
+from mouse_data.usb_connection import UsbConnection
 
 if TYPE_CHECKING:
     from . import MouseData

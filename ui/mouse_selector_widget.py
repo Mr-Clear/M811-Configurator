@@ -7,8 +7,7 @@ from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QLabel, QPushButton,
                                QWidget)
 
 from mouse_data.mouse import Mouse, MouseType
-
-from .usb_connection import UsbConnection
+from mouse_data.usb_connection import UsbConnection
 
 logger = logging.getLogger(__name__)
 

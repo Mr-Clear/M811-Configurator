@@ -1,5 +1,6 @@
 """Functions to load and save data from and to the mouse"""
 
+from threading import Lock
 from typing import Callable
 
 import usb.core
@@ -36,6 +37,7 @@ TIMEOUT = 1000  # 1 second
 
 class UsbConnection:
     def __init__(self, dev: usb.core.Device | None):
+        self._mutex = Lock()
         self.dev = dev or UsbConnection.find_device()
         if self.dev.is_kernel_driver_active(INTERFACE):
             self.dev.detach_kernel_driver(INTERFACE)
@@ -56,39 +58,51 @@ class UsbConnection:
         return devs[0]
 
     def read_all(self, progress_callback: Callable[[int], None] | None = None) -> bytes:
-        self._unlock()
-        data = bytearray()
-        for i in range(0, 0x1C00, 64):
-            data.extend(self._read64(i, 64))
-            if progress_callback:
-                progress_callback(i + 64)
-            else:
-                print('.', end='', flush=True)
-        self._lock()
-        if not progress_callback:
-            print()
-        return bytes(data)
+        with self._mutex:
+            self._unlock()
+            data = bytearray()
+            for i in range(0, 0x1C00, 64):
+                data.extend(self._read64(i, 64))
+                if progress_callback:
+                    progress_callback(i + 64)
+                else:
+                    print('.', end='', flush=True)
+            self._lock()
+            if not progress_callback:
+                print()
+            return bytes(data)
+
+    def read(self, offset: int, length: int) -> bytes:
+        with self._mutex:
+            self._unlock()
+            data = bytearray()
+            for i in range(offset, offset + length, 64):
+                chunk_length = min(64, offset + length - i)
+                data.extend(self._read64(i, chunk_length))
+            self._lock()
+            return bytes(data)
 
     def write_diff(self,
                    original: bytes | bytearray | memoryview | None,
                    modified: bytes | bytearray | memoryview,
                    progress_callback: Callable[[int], None] | None = None) -> None:
-        self._unlock()
-        chunk_size = 64
-        for i in range(0, len(modified), chunk_size):
-            chunk_mod = modified[i:i+chunk_size]
-            if original is not None and i < len(original):
-                chunk_orig = original[i:i+chunk_size]
-            else:
-                chunk_orig = bytes()
-            if chunk_orig != chunk_mod:
-                if progress_callback:
-                    progress_callback(i + len(chunk_mod))
-                print(
-                    f"Writing bytes 0x{i:04X} to 0x{i+len(chunk_mod)-1:04X}...")
-                self._write64(i, len(chunk_mod), *chunk_mod)
-        self._apply()
-        self._lock()
+        with self._mutex:
+            self._unlock()
+            chunk_size = 64
+            for i in range(0, len(modified), chunk_size):
+                chunk_mod = modified[i:i+chunk_size]
+                if original is not None and i < len(original):
+                    chunk_orig = original[i:i+chunk_size]
+                else:
+                    chunk_orig = bytes()
+                if chunk_orig != chunk_mod:
+                    if progress_callback:
+                        progress_callback(i + len(chunk_mod))
+                    print(
+                        f"Writing bytes 0x{i:04X} to 0x{i+len(chunk_mod)-1:04X}...")
+                    self._write64(i, len(chunk_mod), *chunk_mod)
+            self._apply()
+            self._lock()
 
     @property
     def name(self) -> str:

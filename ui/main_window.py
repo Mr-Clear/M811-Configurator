@@ -12,11 +12,11 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QHBoxLayout, QLabel,
 from mouse_data import MouseData
 from mouse_data.mouse import Mouse
 from mouse_data.mouse_definition import MouseDefinition
+from mouse_data.usb_connection import UsbConnection
 from ui.buttons_widget import ButtonsWidget
 from ui.downloader import download
 from ui.mouse_image import MouseImageWidget
 from ui.mouse_selector_widget import MouseSelectorWidget
-from ui.usb_connection import UsbConnection
 
 logger = logging.getLogger(__name__)
 
@@ -139,6 +139,7 @@ class MainWindow(QMainWindow):
 
             self.mouse_image.load_svg(definition.image)
             self._start_poll_active_mode()
+            self.mouse.data.active_mode.changed.connect(self._update_active_mode_label)
             self.mouse_widget.setEnabled(True)
 
             self._load_mouse_data()
@@ -221,10 +222,14 @@ class MainWindow(QMainWindow):
         if self.mouse is None:
             self.active_mode_label.setText("❓")
             return
+        self.mouse.data.active_mode.load_from_mouse(self.mouse.connection)
 
-        #active_mode = self.mouse.load_active_mode()
-        #ICONS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"]
-        #self.active_mode_label.setText(ICONS[active_mode])
+    def _update_active_mode_label(self):
+        ICONS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"]
+        if self.mouse is None:
+            self.active_mode_label.setText("❓")
+            return
+        self.active_mode_label.setText(ICONS[self.mouse.data.active_mode.value])
 
     def _load_mouse_data(self, reload_from_mouse: bool = False):
         if self.mouse is None:

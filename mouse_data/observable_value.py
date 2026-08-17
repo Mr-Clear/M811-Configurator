@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QObject, Signal
 
+from mouse_data.usb_connection import UsbConnection
+
 if TYPE_CHECKING:
     from . import MouseData
 
@@ -21,7 +23,6 @@ class Observable(QObject):
 
 
 class Value(Observable):
-
     def __init__(self, mouse: MouseData, offset: int, length: int) -> None:
         super().__init__(mouse)
         self._offset = offset
@@ -57,6 +58,11 @@ class Value(Observable):
 
     def contains_offset(self, offset: int) -> bool:
         return self.offset <= offset < self.offset + self.length
+
+    def load_from_mouse(self, connection: UsbConnection) -> None:
+        """Load the value from the mouse device."""
+        data = connection.read(self.offset, self.length)
+        self.raw_data = data
 
     def __len__(self) -> int:
         return self.length

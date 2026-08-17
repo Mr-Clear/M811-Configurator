@@ -5,8 +5,8 @@ import os
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from mouse_data.usb_connection import VENDOR_ID
 from ui.dump_analyzer.sections.list_section import ListSection
-from ui.usb_connection import VENDOR_ID
 
 if TYPE_CHECKING:
     from mouse_data.mouse import MouseType
