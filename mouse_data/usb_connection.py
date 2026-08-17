@@ -82,6 +82,16 @@ class UsbConnection:
             self._lock()
             return bytes(data)
 
+    def write(self, offset: int, data: bytes | bytearray | memoryview) -> None:
+        """Write data to the mouse memory, then apply the change."""
+        with self._mutex:
+            self._unlock()
+            for i in range(0, len(data), 64):
+                chunk = data[i:i + 64]
+                self._write64(offset + i, len(chunk), *chunk)
+            self._apply()
+            self._lock()
+
     def write_diff(self,
                    original: bytes | bytearray | memoryview | None,
                    modified: bytes | bytearray | memoryview,

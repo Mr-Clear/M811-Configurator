@@ -7,7 +7,7 @@ from PySide6.QtCore import QRunnable, Qt, QThreadPool, QTimer, Signal
 from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import (QApplication, QComboBox, QHBoxLayout, QLabel,
                                QMainWindow, QPushButton, QSizePolicy,
-                               QSplitter, QVBoxLayout, QWidget)
+                               QSplitter, QToolButton, QVBoxLayout, QWidget)
 
 from mouse_data import MouseData
 from mouse_data.mouse import Mouse
@@ -33,10 +33,10 @@ class MainWindow(QMainWindow):
 
         self.mode = 0
         self.mouse: Mouse | None = None
-        self.mouse_image: MouseImageWidget
-        self.mouse_widget: QWidget
+        self._mouse_image: MouseImageWidget
+        self._mouse_widget: QWidget
         self.buttons_widget: ButtonsWidget
-        self.active_mode_label: QLabel
+        self._active_mode_label: QLabel
 
         self.setWindowTitle("M811 Configurator")
         self.resize(800, 600)
@@ -45,7 +45,7 @@ class MainWindow(QMainWindow):
 
         self.data_loaded_from_mouse.connect(self._read_mouse)
 
-        self.mouse_selector.refresh_mice()
+        self._mouse_selector.refresh_mice()
 
     def _build_ui(self) -> None:
         """Create and wire all widgets; called once from __init__."""
@@ -53,25 +53,25 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(central_widget)
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        self.mouse_selector = MouseSelectorWidget()
-        self.mouse_selector.mouse_selected.connect(self._on_mouse_selected)
-        self.mouse_selector.mouse_deselected.connect(self._on_mouse_selected)
-        layout.addWidget(self.mouse_selector)
+        self._mouse_selector = MouseSelectorWidget()
+        self._mouse_selector.mouse_selected.connect(self._on_mouse_selected)
+        self._mouse_selector.mouse_deselected.connect(self._on_mouse_selected)
+        layout.addWidget(self._mouse_selector)
 
-        self.mouse_image = MouseImageWidget()
-        self.mouse_image.fixed_width = 400
-        self.mouse_image.button_clicked.connect(self._on_button_clicked)
-        self.mouse_image.button_hovered.connect(self._on_button_hovered)
+        self._mouse_image = MouseImageWidget()
+        self._mouse_image.fixed_width = 400
+        self._mouse_image.button_clicked.connect(self._on_button_clicked)
+        self._mouse_image.button_hovered.connect(self._on_button_hovered)
 
-        self.mouse_widget = QWidget()
-        mouse_widget_layout = QVBoxLayout(self.mouse_widget)
-        self.mouse_widget.setSizePolicy(
+        self._mouse_widget = QWidget()
+        mouse_widget_layout = QVBoxLayout(self._mouse_widget)
+        self._mouse_widget.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         mouse_widget_layout.setContentsMargins(0, 0, 0, 0)
         mouse_widget_layout.addWidget(self._build_mode_bar())
         mouse_widget_layout.addWidget(self._build_splitter())
 
-        layout.addWidget(self.mouse_widget)
+        layout.addWidget(self._mouse_widget)
         self.setCentralWidget(central_widget)
 
     def _build_mode_bar(self) -> QWidget:
@@ -80,15 +80,22 @@ class MainWindow(QMainWindow):
         mode_widget_layout = QHBoxLayout(mode_widget)
         mode_widget_layout.setContentsMargins(0, 0, 0, 0)
 
-        modes_combo = QComboBox()
+        self._modes_combo = QComboBox()
         for i in range(MouseData.MODE_COUNT):
-            modes_combo.addItem(f"Mode {i+1}")
-        modes_combo.currentIndexChanged.connect(self._select_mode)
-        mode_widget_layout.addWidget(modes_combo)
+            self._modes_combo.addItem(f"Mode {i+1}")
+        self._modes_combo.currentIndexChanged.connect(self._select_mode)
+        mode_widget_layout.addWidget(self._modes_combo)
+
+        self._modes_linked_button = QToolButton()
+        self._modes_linked_button.setCheckable(True)
+        self._modes_linked_button.setToolTip("Link selected mode with active mode.")
+        self._modes_linked_button.toggled.connect(lambda: self._modes_linked_button.setText('🔗' if self._modes_linked_button.isChecked() else '⛓️‍💥'))
+        self._modes_linked_button.toggle()
+        mode_widget_layout.addWidget(self._modes_linked_button)
 
         mode_widget_layout.addWidget(QLabel("Active Mode:"))
-        self.active_mode_label = QLabel("❓")
-        mode_widget_layout.addWidget(self.active_mode_label)
+        self._active_mode_label = QLabel("❓")
+        mode_widget_layout.addWidget(self._active_mode_label)
 
         mode_widget_layout.addStretch(1)
 
@@ -112,7 +119,7 @@ class MainWindow(QMainWindow):
         splitter_left_layout = QVBoxLayout(splitter_left)
         splitter_left_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         splitter_left_layout.setContentsMargins(0, 0, 0, 0)
-        splitter_left_layout.addWidget(self.mouse_image)
+        splitter_left_layout.addWidget(self._mouse_image)
         splitter.addWidget(splitter_left)
         splitter.setStretchFactor(0, 0)
 
@@ -137,10 +144,10 @@ class MainWindow(QMainWindow):
             self.mouse = Mouse(definition, mouse_data, connection)
             logger.info("Selected mouse: %s (%s, %s, %s)", definition.name, connection.name, connection.ids, connection.path)
 
-            self.mouse_image.load_svg(definition.image)
+            self._mouse_image.load_svg(definition.image)
             self._start_poll_active_mode()
             self.mouse.data.active_mode.changed.connect(self._update_active_mode_label)
-            self.mouse_widget.setEnabled(True)
+            self._mouse_widget.setEnabled(True)
 
             self._load_mouse_data()
         else:
@@ -154,12 +161,18 @@ class MainWindow(QMainWindow):
             painter.drawText(
                 pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "No mouse selected")
             painter.end()
-            self.mouse_image.setPixmap(pixmap)
-            self.mouse_widget.setEnabled(False)
+            self._mouse_image.setPixmap(pixmap)
+            self._mouse_widget.setEnabled(False)
 
     def _select_mode(self, index: int) -> None:
-        logger.debug("Selected mode: %d", index + 1)
+        if index == self.mode:
+            return
         self.mode = index
+        self._modes_combo.setCurrentIndex(index)
+        if self.mouse and self._modes_linked_button.isChecked():
+            self.mouse.data.active_mode.value = index
+            self.mouse.data.active_mode.save_to_mouse(self.mouse.connection)
+        logger.debug("Selected mode: %d", index + 1)
         self.buttons_widget.set_selected_mode_index(index)
 
     def _read_mouse(self) -> None:
@@ -195,7 +208,7 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(QIcon(circled_icon))
 
     def _on_button_selected(self, button_index: int) -> None:
-        self.mouse_image.set_selected_button(button_index)
+        self._mouse_image.set_selected_button(button_index)
 
     def _on_button_clicked(self, button_index: int) -> None:
         if self.mouse is not None:
@@ -220,16 +233,18 @@ class MainWindow(QMainWindow):
 
     def _poll_active_mode(self):
         if self.mouse is None:
-            self.active_mode_label.setText("❓")
+            self._active_mode_label.setText("❓")
             return
         self.mouse.data.active_mode.load_from_mouse(self.mouse.connection)
+        if self._modes_linked_button.isChecked():
+            self._select_mode(self.mouse.data.active_mode.value)
 
     def _update_active_mode_label(self):
         ICONS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"]
         if self.mouse is None:
-            self.active_mode_label.setText("❓")
+            self._active_mode_label.setText("❓")
             return
-        self.active_mode_label.setText(ICONS[self.mouse.data.active_mode.value])
+        self._active_mode_label.setText(ICONS[self.mouse.data.active_mode.value])
 
     def _load_mouse_data(self, reload_from_mouse: bool = False):
         if self.mouse is None:

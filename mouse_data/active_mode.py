@@ -9,4 +9,4 @@ if TYPE_CHECKING:
 class ActiveMode(IntValue):
     """Represents the active mode of the mouse."""
     def __init__(self, mouse: MouseData, offset: int):
-        super().__init__(mouse, offset, 1, 1, 5)
+        super().__init__(mouse, offset, 1, 0, 4)

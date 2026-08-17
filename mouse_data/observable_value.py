@@ -60,9 +60,13 @@ class Value(Observable):
         return self.offset <= offset < self.offset + self.length
 
     def load_from_mouse(self, connection: UsbConnection) -> None:
-        """Load the value from the mouse device."""
+        """Load the value from the mouse."""
         data = connection.read(self.offset, self.length)
         self.raw_data = data
+
+    def save_to_mouse(self, connection: UsbConnection) -> None:
+        """Save current value to the mouse."""
+        connection.write(self.offset, self.raw_data)
 
     def __len__(self) -> int:
         return self.length
