@@ -1,8 +1,8 @@
-
+from __future__ import annotations
 from dataclasses import dataclass
 from enum import Flag, auto
 
-from ..usb_hid import ScanCode
+from ..usb_hid import ScanCode, ModifierCode, modifier_keys
 from ..physical_layout import PhysicalLayout
 
 class Modifier(Flag):
@@ -54,6 +54,32 @@ class KeyboardLayout:
                 modifier_keys[modifier] = set()
             modifier_keys[modifier].add(scan_code)
         return modifier_keys
+
+    @property
+    def modifiers_by_modifier_code(self) -> dict[ModifierCode, Modifier]:
+        """Map ModifierCode to Modifier for this layout."""
+        modifier_code_map: dict[ModifierCode, Modifier] = {}
+        for scan_code, modifier in self.modifiers.items():
+            if scan_code in modifier_keys:
+                modifier_code = modifier_keys[scan_code]
+                modifier_code_map[modifier_code] = modifier
+        return modifier_code_map
+
+    def modifiers_from_modifier_codes(self, modifier_codes: ModifierCode) -> Modifier:
+        """Return the Modifiers corresponding to the given ModifierCodes."""
+        modifiers: Modifier = Modifier.NONE
+        for modifier_code in self.modifiers_by_modifier_code:
+            if modifier_code in modifier_codes:
+                modifiers |= self.modifiers_by_modifier_code[modifier_code]
+        return modifiers
+
+    def modifiers_from_scan_codes(self, scan_codes: set[ScanCode]) -> Modifier:
+        """Return the Modifier corresponding to the given ScanCodes."""
+        modifiers: Modifier = Modifier.NONE
+        for modifier, modifier_scan_codes in self.modifier_keys.items():
+            if any(scan_code in modifier_scan_codes for scan_code in scan_codes):
+                modifiers |= modifier
+        return modifiers
 
 f_keys = {
     ScanCode.F1: LayoutKey("F1", is_character=False),

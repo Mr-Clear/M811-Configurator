@@ -19,6 +19,55 @@ from .physical_layout import PhysicalLayout
 from .usb_hid import ModifierCode, ScanCode, modifier_keys
 
 
+@dataclass
+class KeyColors:
+    background: QColor
+    border: QColor
+    text: QColor
+
+@dataclass
+class KeyboardColors:
+    background: QColor
+    border: QColor
+    keyboard_color: QColor
+    key: KeyColors
+    key_hovered: KeyColors
+    key_active: KeyColors
+    key_down: KeyColors
+    key_up: KeyColors
+
+keyboard_colors = KeyboardColors(
+    background=QColor("#0d1017"),
+    border=QColor("#2a3140"),
+    keyboard_color=QColor("#151a24"),
+    key=KeyColors(
+        background=QColor("#202735"),
+        border=QColor("#394456"),
+        text=QColor("#d9dfeb")
+    ),
+    key_hovered=KeyColors(
+        background=QColor("#303b51"),
+        border=QColor("#627393"),
+        text=QColor("#f3f6ff")
+    ),
+    key_active=KeyColors(
+        background=QColor("#5b8cff"),
+        border=QColor("#9bb7ff"),
+        text=QColor("#ffffff")
+    ),
+    key_down=KeyColors(
+        background=QColor("#cc3c3c"),
+        border=QColor("#ff6b6b"),
+        text=QColor("#ffffff")
+    ),
+    key_up=KeyColors(
+        background=QColor("#3ccc3c"),
+        border=QColor("#6bff6b"),
+        text=QColor("#ffffff")
+    ),
+
+)
+
 @dataclass(frozen=True)
 class KeyPosition:
     x: float
@@ -144,7 +193,6 @@ key_positions_iso[ScanCode.BACKSLASH_ISO] = KeyPosition(1.3, 4.25)
 key_positions_iso[ScanCode.HASHTILDE_ISO] = KeyPosition(12.8, 3.25)
 key_positions_iso[ScanCode.ENTER] = KeyPosition(13.5, 2.25, width=1.5, height=2, special_shape=True)
 
-
 physical_layouts = {
     PhysicalLayout.ANSI: key_positions_ansi,
     PhysicalLayout.ISO: key_positions_iso,
@@ -161,6 +209,7 @@ class Align(Enum):
     BottomRight = Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight
     Right = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
     TopRight = Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight
+
 
 class KeyboardWidget(QWidget):
     """Paints a responsive keyboard and highlights the last clicked key."""
@@ -189,10 +238,6 @@ class KeyboardWidget(QWidget):
         if self._hovered != scan_code:
             self._hovered = scan_code
             self.hover_changed.emit(scan_code)
-
-            if self._pressed is not None and self._pressed != scan_code:
-                self._selected.discard(self._pressed)
-                self._pressed = None
 
             self.update()
 
@@ -232,35 +277,35 @@ class KeyboardWidget(QWidget):
 
     def mousePressEvent(self, event: QMouseEvent) -> None:  # type: ignore[override]
         key = self._key_at(event.position())
+        if not key:
+            return
         if event.button() == Qt.MouseButton.LeftButton:
             self._pressed = key
-            if key is not None:
+            if not key in self._selected:
                 self._selected.add(key)
                 self.key_down.emit(key, self.pressed_modifiers)
-                self.update()
+            self.update()
         elif event.button() == Qt.MouseButton.RightButton:
-            if key is not None:
-                if key in self._selected:
-                    self._selected.discard(key)
-                    self.key_up.emit(key)
-                else:
-                    self._selected.add(key)
-                    self.key_down.emit(key, self.pressed_modifiers)
-                self.update()
+            if key in self._selected:
+                self._selected.discard(key)
+                self.key_up.emit(key)
+            else:
+                self._selected.add(key)
+                self.key_down.emit(key, self.pressed_modifiers)
+            self.update()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:  # type: ignore[override]
         if event.button() == Qt.MouseButton.LeftButton:
-            key = self._key_at(event.position())
-            if key == self._pressed:
-                self._selected.discard(key)
-                self.key_up.emit(key)
-            self._pressed = None
+            if self._pressed:
+                self._selected.discard(self._pressed)
+                self.key_up.emit(self._pressed)
+                self._pressed = None
             self.update()
 
-    def paintEvent(self, event: QPaintEvent) -> None:  # type: ignore[override]
+    def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.fillRect(self.rect(), QColor("#0d1017"))
+        painter.fillRect(self.rect(), keyboard_colors.background)
 
         area = QRectF(self.rect()).adjusted(46, 46, -46, -46)
 
@@ -277,16 +322,19 @@ class KeyboardWidget(QWidget):
         self._key_rects.clear()
 
         chassis = QRectF(area.left() - 16, top - 16, area.width() + 32, board_height + 32)
-        painter.setPen(QPen(QColor("#2a3140"), 1))
-        painter.setBrush(QColor("#151a24"))
+        painter.setPen(QPen(keyboard_colors.border, 1))
+        painter.setBrush(keyboard_colors.keyboard_color)
         painter.drawRoundedRect(chassis, 18, 18)
 
-        modifiers = {
-            **self.keyboard_layout.modifiers,
+        additional_modifiers = {
+            **self._layout.modifiers,
             ScanCode.CAPSLOCK: Modifier.SHIFT,
             ScanCode.NUMLOCK: Modifier.NUMLK,
         }
-        modifier_keys = KeyboardLayout.get_modifier_keys(modifiers)
+        modifiers: Modifier = Modifier(0)
+        for scan_code, modifier in additional_modifiers.items():
+            if scan_code in self._selected:
+                modifiers |= modifier
 
         for key, value in key_positions.items():
             x = area.left() + value.x * (key_width + gap)
@@ -295,95 +343,115 @@ class KeyboardWidget(QWidget):
             height = value.height * key_height + (value.height - 1) * gap
             rect = QRectF(x, y, width, height)
             self._key_rects.append((key, value, rect))
-            layout_key = self._layout.keys.get(key)
-            layout_key_labels = layout_key.labels if layout_key else {}
-            labels: dict[Align, str] = {}
-            primary_position = Align.Center if layout_key and (key.is_numpad_key or layout_key.is_letter or not layout_key.additional) else Align.BottomLeft
-            modifier_positions = {
-                Modifier.NONE: primary_position,
-                Modifier.SHIFT: Align.TopLeft,
-                Modifier.CTRL: Align.TopRight,
-                Modifier.NUMLK: Align.Bottom,
-                Modifier.ALTGR: Align.BottomRight,
-            }
-            if layout_key:
-                for position, alignment in modifier_positions.items():
-                    if position in layout_key_labels:
-                        labels[alignment] = layout_key_labels[position]
-                for position, scan_codes in modifier_keys.items():
-                    swapped = False
-                    for scan_code in scan_codes:
-                        if scan_code in self._selected and \
-                           modifier_positions[position] in labels and \
-                           primary_position in labels:
-                                primary = labels[primary_position]
-                                labels[primary_position] = labels[modifier_positions[position]]
-                                labels[modifier_positions[position]] = primary
-                                swapped = True
-                                break
-                        if swapped:
-                            break
 
-            self._draw_Key(painter, rect, key, labels, value.special_shape)
+            if key in self._selected:
+                colors = keyboard_colors.key_active
+            elif key == self._hovered:
+                colors = keyboard_colors.key_hovered
+            else:
+                colors = keyboard_colors.key
+            draw_key(painter, rect, key, modifiers, self._layout, colors, special_shape=value.special_shape)
 
         painter.end()
 
-    def _draw_Key(self, painter: QPainter, rect: QRectF, key: ScanCode, labels: dict[Align, str], special_shape: bool) -> None:
-        is_active = key in self._selected
-        is_hovered = key == self._hovered
-        if is_active:
-            fill, border, label_color = QColor("#5b8cff"), QColor("#9bb7ff"), QColor("#ffffff")
-        elif is_hovered:
-            fill, border, label_color = QColor("#303b51"), QColor("#627393"), QColor("#f3f6ff")
-        else:
-            fill, border, label_color = QColor("#202735"), QColor("#394456"), QColor("#d9dfeb")
 
-        painter.setPen(QPen(border, 1))
-        painter.setBrush(fill)
-        r = 8
-        if special_shape:
-            wl = rect.width() / 1.5 * 0.3
-            bl = rect.left() + wl
-            bh = rect.top() + rect.height() / 2 - 4
-            path = QPainterPath()
-            path.moveTo(rect.left() + r, rect.top())
-            path.lineTo(rect.right() - r, rect.top())
-            path.quadTo(rect.right(), rect.top(), rect.right(), rect.top() + r)
-            path.lineTo(rect.right(), rect.bottom() - r)
-            path.quadTo(rect.right(), rect.bottom(), rect.right() - r, rect.bottom())
-            path.lineTo(bl + r, rect.bottom())
-            path.quadTo(bl, rect.bottom(), bl, rect.bottom() - r)
-            path.lineTo(bl, bh + r)
-            path.quadTo(bl, bh, bl - r, bh)
-            path.lineTo(rect.left() + r, bh)
-            path.quadTo(rect.left(), bh, rect.left(), bh - r)
-            path.lineTo(rect.left(), rect.top() + r)
-            path.quadTo(rect.left(), rect.top(), rect.left() + r, rect.top())
-            painter.drawPath(path)
-            textrect = QRectF(bl, rect.top(), rect.width() - wl, rect.height())
-        else:
-            path = QPainterPath()
-            path.addRoundedRect(rect, r, r)
-            painter.drawPath(path)
-            textrect = rect
+class KeyWidget(QWidget):
+    """A self-contained widget that paints a single key."""
 
-        no_center = Align.Center not in labels
-        for alignment, label in labels.items():
-            if label:
-                textrect_adjusted = textrect.adjusted(6, 4, -6, -4)
-                if no_center:
-                    textrect_adjusted = textrect_adjusted.adjusted(6, 0, -6, 0)
-                font_size = min(rect.width(), rect.height()) * 0.4
-                if alignment != alignment.Center:
-                    font_size *= 0.65 if no_center else 0.5
-                if len(label) > 1:
-                    font_size *= 0.7
-                if len(label) > 3:
-                    font_size *= 0.7
-                font = QFont("Inter", 12, QFont.Weight.DemiBold)
-                font.setPointSizeF(font_size)
-                painter.setFont(font)
-                painter.setPen(label_color)
-                painter.drawText(textrect_adjusted, alignment.value, label)
+    def __init__(self,
+                 scan_code: ScanCode,
+                 modifiers: Modifier,
+                 keyboard_layout: KeyboardLayout,
+                 colors: KeyColors,
+                 parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setMinimumSize(50, 50)
+        self._key: ScanCode = scan_code
+        self._layout: KeyboardLayout = keyboard_layout
+        self._layout_key = self._layout.keys.get(scan_code)
+        self._modifiers: Modifier = modifiers
+        self._colors: KeyColors = colors
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.fillRect(self.rect(), QColor("#0d1017"))
+
+        area = QRectF(self.rect()).adjusted(8, 8, -8, -8)
+        draw_key(painter, area, self._key, self._modifiers, self._layout, self._colors, special_shape=False)
+
+
+def draw_key(painter: QPainter, rect: QRectF, key: ScanCode, modifiers: Modifier, keyboard_layout: KeyboardLayout, colors: KeyColors, special_shape: bool):
+    layout_key = keyboard_layout.keys.get(key)
+    layout_key_labels = layout_key.labels if layout_key else {}
+    labels: dict[Align, str] = {}
+    primary_position = Align.Center if key.is_numpad_key or layout_key and (layout_key.is_letter or not layout_key.additional) else Align.BottomLeft
+    modifier_positions = {
+        Modifier.NONE: primary_position,
+        Modifier.SHIFT: Align.TopLeft,
+        Modifier.CTRL: Align.TopRight,
+        Modifier.NUMLK: Align.Bottom,
+        Modifier.ALTGR: Align.BottomRight,
+    }
+    if layout_key:
+        for position, alignment in modifier_positions.items():
+            if position in layout_key_labels:
+                labels[alignment] = layout_key_labels[position]
+        for modifier in modifiers:
+            if modifier in modifier_positions and modifier_positions[modifier] in labels and \
+                primary_position in labels:
+                    primary = labels[primary_position]
+                    labels[primary_position] = labels[modifier_positions[modifier]]
+                    labels[modifier_positions[modifier]] = primary
+                    break
+
+    size = min(rect.width(), rect.height())
+    painter.setPen(QPen(colors.border, 1))
+    painter.setBrush(colors.background)
+    r = 8
+    if special_shape:
+        wl = rect.width() / 1.5 * 0.3
+        bl = rect.left() + wl
+        bh = rect.top() + rect.height() / 2 - 4
+        path = QPainterPath()
+        path.moveTo(rect.left() + r, rect.top())
+        path.lineTo(rect.right() - r, rect.top())
+        path.quadTo(rect.right(), rect.top(), rect.right(), rect.top() + r)
+        path.lineTo(rect.right(), rect.bottom() - r)
+        path.quadTo(rect.right(), rect.bottom(), rect.right() - r, rect.bottom())
+        path.lineTo(bl + r, rect.bottom())
+        path.quadTo(bl, rect.bottom(), bl, rect.bottom() - r)
+        path.lineTo(bl, bh + r)
+        path.quadTo(bl, bh, bl - r, bh)
+        path.lineTo(rect.left() + r, bh)
+        path.quadTo(rect.left(), bh, rect.left(), bh - r)
+        path.lineTo(rect.left(), rect.top() + r)
+        path.quadTo(rect.left(), rect.top(), rect.left() + r, rect.top())
+        painter.drawPath(path)
+        textrect = QRectF(bl, rect.top(), rect.width() - wl, rect.height())
+    else:
+        path = QPainterPath()
+        path.addRoundedRect(rect, r, r)
+        painter.drawPath(path)
+        textrect = rect
+
+    no_center = Align.Center not in labels
+    for alignment, label in labels.items():
+        if label:
+            textrect_adjusted = textrect.adjusted(6, 4, -6, -4)
+            if no_center:
+                textrect_adjusted = textrect_adjusted.adjusted(size * 0.1, 0, -size * 0.1, 0)
+            font_size = size * 0.4
+            if alignment != alignment.Center:
+                font_size *= 0.65 if no_center else 0.5
+            if len(label) > 1:
+                font_size *= 0.7
+            if len(label) > 3:
+                font_size *= 0.7
+            font = QFont("Inter", 12, QFont.Weight.DemiBold)
+            font.setPointSizeF(font_size)
+            painter.setFont(font)
+            painter.setPen(colors.text)
+            painter.drawText(textrect_adjusted, alignment.value, label)
 
 
