@@ -1,6 +1,6 @@
 from enum import Enum
 
-from ui.keyboard import ScanCode
+from ui.keyboard.usb_hid import ScanCode
 from mouse_data import MouseData
 from mouse_data.button import Button
 
@@ -25,14 +25,14 @@ class ButtonFireKey(Button):
         if data[0] != 0x99:
             return False
         if data[1] not in [button.value for button in ButtonFireKey.FireMouseButton] and \
-           data[1] not in [scan_code.code for scan_code in ScanCode]:
+           data[1] not in [scan_code.value for scan_code in ScanCode]:
             return False
         return True
 
     def set_default(self) -> None:
         self.raw_data = bytes([
             0x99,
-            ScanCode.A.code,
+            ScanCode.A.value,
             5,  # repeat count
             10, # delay in 10ms
         ])
@@ -41,12 +41,12 @@ class ButtonFireKey(Button):
     def key(self) -> ScanCode | FireMouseButton:
         if self.raw_data[1] in [button.value for button in ButtonFireKey.FireMouseButton]:
             return ButtonFireKey.FireMouseButton(self.raw_data[1])
-        return ScanCode.from_code(self.raw_data[1])
+        return ScanCode(self.raw_data[1])
     @key.setter
     def key(self, value: ScanCode | FireMouseButton) -> None:
         data = bytearray(self.raw_data)
         if isinstance(value, ScanCode):
-            data[1] = value.code
+            data[1] = value.value
         else:
             data[1] = value.value
         self.raw_data = data

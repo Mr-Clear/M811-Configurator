@@ -14,8 +14,9 @@ if sys.version_info < MIN_PYTHON:
         f"Python {min_version}+ is required (current: {current_version})."
     )
 
-from ui.main_window import start_app
+#from ui.main_window import start_app
 #from ui.dump_analyzer.dump_analyzer import start_app
+from ui.keyboard.test_window import start_app
 
 logging.basicConfig(
     level=logging.DEBUG,

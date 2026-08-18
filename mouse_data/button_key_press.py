@@ -1,4 +1,4 @@
-from ui.keyboard import Modifier, ScanCode
+from ui.keyboard.usb_hid import ModifierCode, ScanCode
 from mouse_data import MouseData
 from mouse_data.button import Button
 
@@ -18,7 +18,7 @@ class ButtonKeyPress(Button):
         data = list(mouse.data[offset:offset + Button.DATA_LENGTH])
         if data[0] != 0x90 and data[0] != 0x8f:
             return False
-        if data[2] not in [scan_code.code for scan_code in ScanCode]:
+        if data[2] not in [scan_code.value for scan_code in ScanCode]:
             return False
         return True
 
@@ -30,33 +30,33 @@ class ButtonKeyPress(Button):
         self.raw_data = bytes([
             0x90,
             0x00, # no modifiers
-            ScanCode.A.code,
+            ScanCode.A.value,
             0x00, # reserved
         ])
 
     @property
     def key(self) -> ScanCode:
         ''' The scan code of the key press. '''
-        return ScanCode.from_code(self.raw_data[2])
+        return ScanCode(self.raw_data[2])
 
     @key.setter
     def key(self, scan_code: ScanCode) -> None:
         ''' Set the scan code of the key press. '''
         data = bytearray(self.raw_data)
-        data[2] = scan_code.code
+        data[2] = scan_code.value
         self.raw_data = data
 
     @property
-    def modifiers(self) -> set[Modifier]:
+    def modifiers(self) -> set[ModifierCode]:
         ''' The modifiers of the key press. '''
-        modifiers: set[Modifier] = set()
-        for modifier in Modifier:
+        modifiers: set[ModifierCode] = set()
+        for modifier in ModifierCode:
             if self.raw_data[1] & modifier.value:
                 modifiers.add(modifier)
         return modifiers
 
     @modifiers.setter
-    def modifiers(self, modifiers: set[Modifier]) -> None:
+    def modifiers(self, modifiers: set[ModifierCode]) -> None:
         ''' Set the modifiers of the key press. '''
         data = bytearray(self.raw_data)
         i = 0
@@ -67,14 +67,14 @@ class ButtonKeyPress(Button):
 
     def _modifiers_str(self) -> str:
         modifiers_str = ""
-        for modifier in Modifier:
+        for modifier in ModifierCode:
             if self.raw_data[1] & modifier.value:
                 modifiers_str += modifier.name + "+"
         return modifiers_str[:-1] if modifiers_str else ""
 
     def __str__(self) -> str:
         modifiers_str = self._modifiers_str()
-        scan_code_str = f"{self.key.key_name()} ({self.raw_data[2]:#02x})"
+        scan_code_str = f"{self.key} ({self.raw_data[2]:#02x})"
         if modifiers_str:
             return f"{modifiers_str}+{scan_code_str}"
         else:

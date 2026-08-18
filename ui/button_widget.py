@@ -16,7 +16,7 @@ from mouse_data.button_mouse_function import ButtonMouseFunction
 from mouse_data.button_off import ButtonOff
 from mouse_data.button_sniper import ButtonSniper
 from mouse_data.button_special_key import ButtonSpecialKey
-from ui.keyboard import Modifier
+from ui.keyboard.usb_hid import ModifierCode
 
 
 class ButtonWidget(QWidget):
@@ -174,8 +174,8 @@ class ButtonWidget(QWidget):
             key_layout.addStretch(1)
             layout.addLayout(key_layout)
             modifiers_layout = QGridLayout()
-            self.modifier_checkboxes: dict[Modifier, QCheckBox] = {}
-            for i, modifier in enumerate(Modifier):
+            self.modifier_checkboxes: dict[ModifierCode, QCheckBox] = {}
+            for i, modifier in enumerate(ModifierCode):
                 checkbox = QCheckBox(modifier.name)
                 checkbox.stateChanged.connect(self._on_modifiers_changed)
                 modifiers_layout.addWidget(checkbox, i % 4, i // 4)
@@ -194,7 +194,7 @@ class ButtonWidget(QWidget):
 
         def _on_modifiers_changed(self) -> None:
             '''Handle the user changing the modifiers from the checkboxes.'''
-            modifiers: set[Modifier] = set()
+            modifiers: set[ModifierCode] = set()
             for modifier, checkbox in self.modifier_checkboxes.items():
                 if checkbox.isChecked():
                     modifiers.add(modifier)
