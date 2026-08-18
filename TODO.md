@@ -6,24 +6,24 @@ Configure Redragon Mice on Linux
 
 ### Todo
 
+- [ ] Support additional mouse devices  
 - [ ] Auto save  
 - [ ] Show transfer progress  
 - [ ] Configure colors and effects  
 - [ ] Configure DPIs  
 - [ ] Open dump analyzer (Hex Editor)  
 - [ ] Clean up files  
-- [ ] Reload data from mouse  
 - [ ] Use values from mouse definition instead of constatns for macro count etc.  
 - [ ] Switch data (Profiles)  
 - [ ] Save data as json  
 - [ ] Sniper  
 - [ ] Fire Key  
-- [ ] Macro management  
-- [ ] Key selection by keyboard image  
+- [ ] Edit macros  
 - [ ] Key selection by press  
 
 ### In Progress
 
+- [ ] Key selection by keyboard image  
 
 ### Done ✓
 
@@ -39,4 +39,5 @@ Configure Redragon Mice on Linux
 - [x] Autosave  
 - [x] Upload  
 - [x] Save changes on mouse  
+- [x] Reload data from mouse  
 
