@@ -9,14 +9,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from PySide6.QtCore import QEvent, QPointF, QRectF, Qt, Signal
-from PySide6.QtGui import (QColor, QFont, QMouseEvent, QPainter, QPainterPath,
-                           QPaintEvent, QPen)
-from PySide6.QtWidgets import QWidget
+from PySide6.QtCore import QEvent, QObject, QPointF, QRectF, Qt, Signal
+from PySide6.QtGui import (QColor, QFont, QKeyEvent, QMouseEvent, QPainter,
+                           QPainterPath, QPaintEvent, QPen, QWindow)
+from PySide6.QtWidgets import QApplication, QWidget
 
 from .layouts import KeyboardLayout, Modifier, known_layouts
 from .physical_layout import PhysicalLayout
-from .usb_hid import ModifierCode, ScanCode, modifier_keys
+from .usb_hid import (ModifierCode, ScanCode, modifier_keys,
+                      native_scan_code_to_hid)
 
 
 @dataclass
@@ -228,6 +229,10 @@ class KeyboardWidget(QWidget):
         self._key_rects: list[tuple[ScanCode, KeyPosition, QRectF]] = []
         self._layout = list(known_layouts().values())[0]
 
+        instance = QApplication.instance()
+        assert instance is not None
+        instance.installEventFilter(self)
+
     def _key_at(self, point: QPointF) -> ScanCode | None:
         for key, _key_position, rect in self._key_rects:
             if rect.contains(point):
@@ -266,6 +271,16 @@ class KeyboardWidget(QWidget):
                 modifiers |= modifier_keys[key]
         return modifiers
 
+    def set_key_down(self, key: ScanCode):
+        self._selected.add(key)
+        self.key_down.emit(key, self.pressed_modifiers)
+        self.update()
+
+    def set_key_up(self, key: ScanCode):
+        self._selected.discard(key)
+        self.key_up.emit(key)
+        self.update()
+
     def mouseMoveEvent(self, event: QMouseEvent) -> None:  # type: ignore[override]
         key = self._key_at(event.position())
         if key != self._hovered:
@@ -282,25 +297,19 @@ class KeyboardWidget(QWidget):
         if event.button() == Qt.MouseButton.LeftButton:
             self._pressed = key
             if not key in self._selected:
-                self._selected.add(key)
-                self.key_down.emit(key, self.pressed_modifiers)
+                self.set_key_down(key)
             self.update()
         elif event.button() == Qt.MouseButton.RightButton:
             if key in self._selected:
-                self._selected.discard(key)
-                self.key_up.emit(key)
+                self.set_key_up(key)
             else:
-                self._selected.add(key)
-                self.key_down.emit(key, self.pressed_modifiers)
-            self.update()
+                self.set_key_down(key)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:  # type: ignore[override]
         if event.button() == Qt.MouseButton.LeftButton:
             if self._pressed:
-                self._selected.discard(self._pressed)
-                self.key_up.emit(self._pressed)
+                self.set_key_up(self._pressed)
                 self._pressed = None
-            self.update()
 
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
@@ -353,6 +362,22 @@ class KeyboardWidget(QWidget):
             draw_key(painter, rect, key, modifiers, self._layout, colors, special_shape=value.special_shape)
 
         painter.end()
+
+    def eventFilter(self,  watched: QObject, event: QEvent):
+        if event.type() == QEvent.Type.KeyPress:
+            assert isinstance(event, QKeyEvent)
+            if not event.isAutoRepeat() and isinstance(watched, QWindow):
+                scan_code = native_scan_code_to_hid(event.nativeScanCode())
+                if scan_code:
+                    self.set_key_down(scan_code)
+        elif event.type() == QEvent.Type.KeyRelease:
+            assert isinstance(event, QKeyEvent)
+            if not event.isAutoRepeat() and isinstance(watched, QWindow):
+                scan_code = native_scan_code_to_hid(event.nativeScanCode())
+                if scan_code:
+                    self.set_key_up(scan_code)
+
+        return super().eventFilter(watched, event)
 
 
 class KeyWidget(QWidget):

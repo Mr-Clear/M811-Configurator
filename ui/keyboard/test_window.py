@@ -68,7 +68,6 @@ class KeyboardWindow(QMainWindow):
         horizontal_scroll_bar = self._pressed_keys_widget_scroll_area.horizontalScrollBar()
         QTimer.singleShot(0, lambda: horizontal_scroll_bar.setValue(horizontal_scroll_bar.maximum()))
 
-
 def start_app() -> int:
     app = QApplication(sys.argv)
     app.setStyle("Fusion")

@@ -19,10 +19,10 @@ Configure Redragon Mice on Linux
 - [ ] Sniper  
 - [ ] Fire Key  
 - [ ] Edit macros  
-- [ ] Key selection by press  
 
 ### In Progress
 
+- [ ] Key selection by press  
 - [ ] Key selection by keyboard image  
 
 ### Done ✓
