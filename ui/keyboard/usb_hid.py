@@ -182,6 +182,138 @@ class ScanCode(Enum):
     MEDIA_REFRESH = 0xfa
     MEDIA_CALC = 0xfb
 
+    @classmethod
+    def modifiers(cls) -> set[ScanCode]:
+        return {
+            cls.LEFTCTRL,
+            cls.LEFTSHIFT,
+            cls.LEFTALT,
+            cls.LEFTMETA,
+            cls.RIGHTCTRL,
+            cls.RIGHTSHIFT,
+            cls.RIGHTALT,
+            cls.RIGHTMETA,
+        }
+
+    @classmethod
+    def function_keys(cls) -> set[ScanCode]:
+        return {
+            cls.F1,
+            cls.F2,
+            cls.F3,
+            cls.F4,
+            cls.F5,
+            cls.F6,
+            cls.F7,
+            cls.F8,
+            cls.F9,
+            cls.F10,
+            cls.F11,
+            cls.F12,
+        }
+
+    @classmethod
+    def cursor_keys(cls) -> set[ScanCode]:
+        return {
+            cls.UP,
+            cls.DOWN,
+            cls.LEFT,
+            cls.RIGHT,
+        }
+
+    @classmethod
+    def position_keys(cls) -> set[ScanCode]:
+        return {
+            cls.INSERT,
+            cls.HOME,
+            cls.PAGEUP,
+            cls.DELETE,
+            cls.END,
+            cls.PAGEDOWN,
+        }
+
+    @classmethod
+    def numpad_keys(cls) -> set[ScanCode]:
+        return {
+            cls.KP0,
+            cls.KP1,
+            cls.KP2,
+            cls.KP3,
+            cls.KP4,
+            cls.KP5,
+            cls.KP6,
+            cls.KP7,
+            cls.KP8,
+            cls.KP9,
+            cls.KPDOT,
+            cls.KPSLASH,
+            cls.KPASTERISK,
+            cls.KPMINUS,
+            cls.KPPLUS,
+            cls.KPENTER,
+        }
+
+    @classmethod
+    def system_control_keys(cls) -> set[ScanCode]:
+        return {
+            cls.PRINT,
+            cls.SCROLLLOCK,
+            cls.PAUSE,
+        }
+
+    @classmethod
+    def media_keys(cls) -> set[ScanCode]:
+        return {
+            cls.MEDIA_PLAYPAUSE,
+            cls.MEDIA_STOPCD,
+            cls.MEDIA_PREVIOUSSONG,
+            cls.MEDIA_NEXTSONG,
+            cls.MEDIA_EJECTCD,
+            cls.MEDIA_VOLUMEUP,
+            cls.MEDIA_VOLUMEDOWN,
+            cls.MEDIA_MUTE,
+            cls.MEDIA_WWW,
+            cls.MEDIA_BACK,
+            cls.MEDIA_FORWARD,
+            cls.MEDIA_STOP,
+            cls.MEDIA_FIND,
+            cls.MEDIA_SCROLLUP,
+            cls.MEDIA_SCROLLDOWN,
+            cls.MEDIA_EDIT,
+            cls.MEDIA_SLEEP,
+            cls.MEDIA_COFFEE,
+            cls.MEDIA_REFRESH,
+            cls.MEDIA_CALC,
+        }
+
+    @property
+    def is_modifier(self) -> bool:
+        return self in self.modifiers()
+
+    @property
+    def is_function_key(self) -> bool:
+        return self in self.function_keys()
+
+    @property
+    def is_cursor_key(self) -> bool:
+        return self in self.cursor_keys()
+
+    @property
+    def is_position_key(self) -> bool:
+        return self in self.position_keys()
+
+    @property
+    def is_numpad_key(self) -> bool:
+        return self in self.numpad_keys()
+
+    @property
+    def is_system_control_key(self) -> bool:
+        return self in self.system_control_keys()
+
+    @property
+    def is_media_key(self) -> bool:
+        return self in self.media_keys()
+
 
 class ModifierCode(Flag):
     LCtrl = 0x01

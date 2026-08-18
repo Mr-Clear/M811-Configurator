@@ -7,6 +7,7 @@ Run this file directly to open the demo application:
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 
 from PySide6.QtCore import QEvent, QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import (QColor, QFont, QMouseEvent, QPainter, QPainterPath,
@@ -150,14 +151,16 @@ physical_layouts = {
 }
 
 
-@dataclass
-class KeyLabels:
-    """The labels to display on a physical key."""
-    primary: str | None
-    top_left: str | None = None
-    top_right: str | None = None
-    bottom_left: str | None = None
-    bottom_right: str | None = None
+class Align(Enum):
+    Center = Qt.AlignmentFlag.AlignCenter
+    Top = Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter
+    TopLeft = Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft
+    Left = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+    BottomLeft = Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignLeft
+    Bottom = Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter
+    BottomRight = Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight
+    Right = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+    TopRight = Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight
 
 class KeyboardWidget(QWidget):
     """Paints a responsive keyboard and highlights the last clicked key."""
@@ -278,14 +281,6 @@ class KeyboardWidget(QWidget):
         painter.setBrush(QColor("#151a24"))
         painter.drawRoundedRect(chassis, 18, 18)
 
-        modifier_positions = {
-            Modifier.NONE: 'primary',
-            Modifier.SHIFT: 'top_left',
-            Modifier.CTRL: 'top_right',
-            Modifier.NUMLK: 'bottom_left',
-            Modifier.ALTGR: 'bottom_right',
-        }
-
         modifiers = {
             **self.keyboard_layout.modifiers,
             ScanCode.CAPSLOCK: Modifier.SHIFT,
@@ -300,32 +295,40 @@ class KeyboardWidget(QWidget):
             height = value.height * key_height + (value.height - 1) * gap
             rect = QRectF(x, y, width, height)
             self._key_rects.append((key, value, rect))
-            label_keys = self._layout.keys.get(key)
-            label = KeyLabels('')
-            if label_keys:
-                for modifier, position in modifier_positions.items():
-                    if position == 'primary':
-                        setattr(label, position, label_keys.primary)
-                    else:
-                        setattr(label, position, label_keys.additional.get(modifier) if label_keys.additional else None)
-                for modifier, scan_codes in modifier_keys.items():
+            layout_key = self._layout.keys.get(key)
+            layout_key_labels = layout_key.labels if layout_key else {}
+            labels: dict[Align, str] = {}
+            primary_position = Align.Center if layout_key and (key.is_numpad_key or layout_key.is_letter or not layout_key.additional) else Align.BottomLeft
+            modifier_positions = {
+                Modifier.NONE: primary_position,
+                Modifier.SHIFT: Align.TopLeft,
+                Modifier.CTRL: Align.TopRight,
+                Modifier.NUMLK: Align.Bottom,
+                Modifier.ALTGR: Align.BottomRight,
+            }
+            if layout_key:
+                for position, alignment in modifier_positions.items():
+                    if position in layout_key_labels:
+                        labels[alignment] = layout_key_labels[position]
+                for position, scan_codes in modifier_keys.items():
                     swapped = False
                     for scan_code in scan_codes:
                         if scan_code in self._selected and \
-                           getattr(label, modifier_positions[modifier]):
-                                primary = label.primary
-                                label.primary = getattr(label, modifier_positions[modifier])
-                                setattr(label, modifier_positions[modifier], primary)
+                           modifier_positions[position] in labels and \
+                           primary_position in labels:
+                                primary = labels[primary_position]
+                                labels[primary_position] = labels[modifier_positions[position]]
+                                labels[modifier_positions[position]] = primary
                                 swapped = True
                                 break
                         if swapped:
                             break
 
-            self._draw_Key(painter, rect, key, label, value.special_shape)
+            self._draw_Key(painter, rect, key, labels, value.special_shape)
 
         painter.end()
 
-    def _draw_Key(self, painter: QPainter, rect: QRectF, key: ScanCode, labels: KeyLabels, special_shape: bool) -> None:
+    def _draw_Key(self, painter: QPainter, rect: QRectF, key: ScanCode, labels: dict[Align, str], special_shape: bool) -> None:
         is_active = key in self._selected
         is_hovered = key == self._hovered
         if is_active:
@@ -364,34 +367,23 @@ class KeyboardWidget(QWidget):
             painter.drawPath(path)
             textrect = rect
 
-        label_rects = [
-            (
-                textrect,
-                labels.primary,
-                Qt.AlignmentFlag.AlignCenter
-            ), (
-                QRectF(textrect.left(), textrect.top(), textrect.width() /2, textrect.height() / 2),
-                labels.top_left,
-                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
-            ), (
-                QRectF(textrect.right() - textrect.width() / 2, textrect.top(),textrect.width() / 2, textrect.height() / 2),
-                labels.top_right,
-                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop
-            ), (
-                QRectF(textrect.left(), textrect.bottom() - textrect.height() / 2, textrect.width() / 2, textrect.height() / 2),
-                labels.bottom_left,
-                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBottom
-            ), (
-                QRectF(textrect.right() - textrect.width() / 2, textrect.bottom() - textrect.height() / 2, textrect.width() / 2, textrect.height() / 2),
-                labels.bottom_right,
-                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom
-            ),
-        ]
-        for rect, label, text_alignment in label_rects:
+        no_center = Align.Center not in labels
+        for alignment, label in labels.items():
             if label:
-                font_size = max(8, min(15, int(min(rect.height(), rect.width()) * (0.18 if label and len(label) > 1 else 0.32))))
-                painter.setFont(QFont("Inter", font_size, QFont.Weight.DemiBold))
+                textrect_adjusted = textrect.adjusted(6, 4, -6, -4)
+                if no_center:
+                    textrect_adjusted = textrect_adjusted.adjusted(6, 0, -6, 0)
+                font_size = min(rect.width(), rect.height()) * 0.4
+                if alignment != alignment.Center:
+                    font_size *= 0.65 if no_center else 0.5
+                if len(label) > 1:
+                    font_size *= 0.7
+                if len(label) > 3:
+                    font_size *= 0.7
+                font = QFont("Inter", 12, QFont.Weight.DemiBold)
+                font.setPointSizeF(font_size)
+                painter.setFont(font)
                 painter.setPen(label_color)
-                painter.drawText(textrect.adjusted(6, 4, -6, -4), text_alignment, label)
+                painter.drawText(textrect_adjusted, alignment.value, label)
 
 

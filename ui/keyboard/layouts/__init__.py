@@ -22,6 +22,15 @@ class LayoutKey:
     additional: dict[Modifier, str] | None = None
     is_character: bool = True
     representation: str | None = None
+    is_letter: bool = False
+
+    @property
+    def labels(self) -> dict[Modifier, str]:
+        """Return a dictionary mapping modifiers to the labels for this key."""
+        labels: dict[Modifier, str] = {Modifier.NONE: self.primary}
+        if self.additional:
+            labels.update(self.additional)
+        return labels
 
 @dataclass(frozen=True)
 class KeyboardLayout:
