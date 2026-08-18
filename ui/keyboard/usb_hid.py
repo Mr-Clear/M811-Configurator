@@ -1,6 +1,4 @@
-
-
-from enum import Enum
+from enum import Enum, Flag
 
 
 class ScanCode(Enum):
@@ -185,7 +183,7 @@ class ScanCode(Enum):
     MEDIA_CALC = 0xfb
 
 
-class ModifierCode(Enum):
+class ModifierCode(Flag):
     LCtrl = 0x01
     LShift = 0x02
     LAlt = 0x04
