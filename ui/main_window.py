@@ -5,7 +5,7 @@ import sys
 
 import __main__
 from PySide6.QtCore import QRunnable, Qt, QThreadPool, QTimer, Signal
-from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
+from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap, QShowEvent
 from PySide6.QtWidgets import (QApplication, QComboBox, QHBoxLayout, QLabel,
                                QMainWindow, QPushButton, QSizePolicy,
                                QSplitter, QToolButton, QVBoxLayout, QWidget)
@@ -48,7 +48,14 @@ class MainWindow(QMainWindow):
 
         self.data_loaded_from_mouse.connect(self._read_mouse)
 
-        self._mouse_selector.refresh_mice()
+        self._mice_refreshed = False
+
+    def showEvent(self, event: QShowEvent) -> None: # type: ignore[override]
+        super().showEvent(event)
+        if not self._mice_refreshed:
+            self._mice_refreshed = True
+            # Defer enumeration until after the window has been painted, so USB scanning doesn't delay first paint.
+            QTimer.singleShot(10, self._mouse_selector.refresh_mice)
 
     def _build_ui(self) -> None:
         """Create and wire all widgets; called once from __init__."""

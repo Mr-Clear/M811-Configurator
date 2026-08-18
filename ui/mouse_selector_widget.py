@@ -3,8 +3,8 @@
 import logging
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import (QComboBox, QHBoxLayout, QLabel, QPushButton,
-                               QWidget)
+from PySide6.QtWidgets import (QApplication, QComboBox, QHBoxLayout, QLabel,
+                               QPushButton, QWidget)
 
 from mouse_data.mouse import Mouse, MouseType
 from mouse_data.usb_connection import UsbConnection
@@ -46,11 +46,15 @@ class MouseSelectorWidget(QWidget):
         '''Refresh the list of connected mice and update the combo box.'''
         current_device = self.current_usb_device
 
-        self.mice = [UsbConnection(dev) for dev in UsbConnection.find_devices()]
-        logger.info("Found %d mice: %s", len(self.mice), [mouse.name for mouse in self.mice])
         self.select_mouse_combo.blockSignals(True)
         self.select_mouse_combo.clear()
+        self.select_mouse_combo.addItem("Searching for mice...")
+        QApplication.processEvents()  # Allow the UI to update before scanning for devices
 
+        self.mice = [UsbConnection(dev) for dev in UsbConnection.find_devices()]
+        logger.info("Found %d mice: %s", len(self.mice), [mouse.name for mouse in self.mice])
+
+        self.select_mouse_combo.clear()
         if not self.mice:
             self.select_mouse_combo.addItem("No mice found")
             self.select_mouse_combo.setEnabled(False)
