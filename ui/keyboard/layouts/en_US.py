@@ -7,16 +7,14 @@ layout_en_us = KeyboardLayout(
     name="en-US",
     physical_layout=PhysicalLayout.ANSI,
     modifiers={
-        ScanCode.LEFTSHIFT: (Modifier.SHIFT, False),
-        ScanCode.RIGHTSHIFT: (Modifier.SHIFT, False),
-        ScanCode.RIGHTALT: (Modifier.ALT, False),
-        ScanCode.NUMLOCK: (Modifier.NUMLK, True),
+        ScanCode.LEFTSHIFT: Modifier.SHIFT,
+        ScanCode.RIGHTSHIFT: Modifier.SHIFT,
     },
     keys={
         **general_keys,
 
         ScanCode.PRINT: LayoutKey("Print", is_character=False),
-        ScanCode.SCROLLLOCK: LayoutKey("Scroll\nLock", is_character=False),
+        ScanCode.SCROLLLOCK: LayoutKey("Scroll\nLock", is_character=False, representation="ScrollLock"),
         ScanCode.PAUSE: LayoutKey("Pause", is_character=False),
         ScanCode.GRAVE: LayoutKey("`", {Modifier.SHIFT: "~"}),
         ScanCode.ONE: LayoutKey("1", {Modifier.SHIFT: "!"}),

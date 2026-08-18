@@ -278,6 +278,21 @@ class KeyboardWidget(QWidget):
         painter.setBrush(QColor("#151a24"))
         painter.drawRoundedRect(chassis, 18, 18)
 
+        modifier_positions = {
+            Modifier.NONE: 'primary',
+            Modifier.SHIFT: 'top_left',
+            Modifier.CTRL: 'top_right',
+            Modifier.NUMLK: 'bottom_left',
+            Modifier.ALTGR: 'bottom_right',
+        }
+
+        modifiers = {
+            **self.keyboard_layout.modifiers,
+            ScanCode.CAPSLOCK: Modifier.SHIFT,
+            ScanCode.NUMLOCK: Modifier.NUMLK,
+        }
+        modifier_keys = KeyboardLayout.get_modifier_keys(modifiers)
+
         for key, value in key_positions.items():
             x = area.left() + value.x * (key_width + gap)
             y = top + value.y * (key_height + gap)
@@ -285,23 +300,26 @@ class KeyboardWidget(QWidget):
             height = value.height * key_height + (value.height - 1) * gap
             rect = QRectF(x, y, width, height)
             self._key_rects.append((key, value, rect))
-            label = self._layout.keys.get(key)
-            if label:
-                label = KeyLabels(
-                    primary=label.primary,
-                    top_left=label.additional.get(Modifier.SHIFT) if label.additional else None,
-                    top_right=label.additional.get(Modifier.CTRL) if label.additional else None,
-                    bottom_left=label.additional.get(Modifier.NUMLK) if label.additional else None,
-                    bottom_right=label.additional.get(Modifier.ALTGR) if label.additional else None,
-                )
-            else:
-                label = KeyLabels(
-                    primary="",
-                    top_left=None,
-                    top_right=None,
-                    bottom_left=None,
-                    bottom_right=None,
-                )
+            label_keys = self._layout.keys.get(key)
+            label = KeyLabels('')
+            if label_keys:
+                for modifier, position in modifier_positions.items():
+                    if position == 'primary':
+                        setattr(label, position, label_keys.primary)
+                    else:
+                        setattr(label, position, label_keys.additional.get(modifier) if label_keys.additional else None)
+                for modifier, scan_codes in modifier_keys.items():
+                    swapped = False
+                    for scan_code in scan_codes:
+                        if scan_code in self._selected and \
+                           getattr(label, modifier_positions[modifier]):
+                                primary = label.primary
+                                label.primary = getattr(label, modifier_positions[modifier])
+                                setattr(label, modifier_positions[modifier], primary)
+                                swapped = True
+                                break
+                        if swapped:
+                            break
 
             self._draw_Key(painter, rect, key, label, value.special_shape)
 
@@ -346,13 +364,28 @@ class KeyboardWidget(QWidget):
             painter.drawPath(path)
             textrect = rect
 
-
         label_rects = [
-            (textrect, labels.primary, Qt.AlignmentFlag.AlignCenter),
-            (QRectF(textrect.left(), textrect.top(), textrect.width() /2, textrect.height() / 2), labels.top_left, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop),
-            (QRectF(textrect.right() - textrect.width() / 2, textrect.top(), textrect.width() / 2, textrect.height() / 2), labels.top_right, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop),
-            (QRectF(textrect.left(), textrect.bottom() - textrect.height() / 2, textrect.width() / 2, textrect.height() / 2), labels.bottom_left, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBottom),
-            (QRectF(textrect.right() - textrect.width() / 2, textrect.bottom() - textrect.height() / 2, textrect.width() / 2, textrect.height() / 2), labels.bottom_right, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom),
+            (
+                textrect,
+                labels.primary,
+                Qt.AlignmentFlag.AlignCenter
+            ), (
+                QRectF(textrect.left(), textrect.top(), textrect.width() /2, textrect.height() / 2),
+                labels.top_left,
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+            ), (
+                QRectF(textrect.right() - textrect.width() / 2, textrect.top(),textrect.width() / 2, textrect.height() / 2),
+                labels.top_right,
+                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop
+            ), (
+                QRectF(textrect.left(), textrect.bottom() - textrect.height() / 2, textrect.width() / 2, textrect.height() / 2),
+                labels.bottom_left,
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBottom
+            ), (
+                QRectF(textrect.right() - textrect.width() / 2, textrect.bottom() - textrect.height() / 2, textrect.width() / 2, textrect.height() / 2),
+                labels.bottom_right,
+                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom
+            ),
         ]
         for rect, label, text_alignment in label_rects:
             if label:

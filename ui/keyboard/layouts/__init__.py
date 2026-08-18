@@ -28,8 +28,23 @@ class KeyboardLayout:
     """A keyboard layout, which maps physical keys to characters."""
     name: str
     physical_layout: PhysicalLayout
-    modifiers: dict[ScanCode, tuple[Modifier, bool]]  # The bool determines whether the modifier is sticky (e.g., Num Lock) or not.
+    modifiers: dict[ScanCode, Modifier]
     keys: dict[ScanCode, LayoutKey]
+
+    @property
+    def modifier_keys(self) -> dict[Modifier, set[ScanCode]]:
+        """Return a dictionary mapping modifiers to the physical keys that trigger them."""
+        return self.get_modifier_keys(self.modifiers)
+
+    @staticmethod
+    def get_modifier_keys(modifiers: dict[ScanCode, Modifier]) -> dict[Modifier, set[ScanCode]]:
+        """Return a dictionary mapping modifiers to the physical keys that trigger them."""
+        modifier_keys: dict[Modifier, set[ScanCode]] = {}
+        for scan_code, modifier in modifiers.items():
+            if modifier not in modifier_keys:
+                modifier_keys[modifier] = set()
+            modifier_keys[modifier].add(scan_code)
+        return modifier_keys
 
 f_keys = {
     ScanCode.F1: LayoutKey("F1", is_character=False),

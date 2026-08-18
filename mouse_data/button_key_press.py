@@ -69,7 +69,7 @@ class ButtonKeyPress(Button):
         modifiers_str = ""
         for modifier in ModifierCode:
             if self.raw_data[1] & modifier.value:
-                modifiers_str += modifier.name + "+"
+                modifiers_str += f'{modifier.name}+'
         return modifiers_str[:-1] if modifiers_str else ""
 
     def __str__(self) -> str:

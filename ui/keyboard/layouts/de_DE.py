@@ -8,10 +8,9 @@ layout_de_de = KeyboardLayout(
     name="de-DE",
     physical_layout=PhysicalLayout.ISO,
     modifiers={
-        ScanCode.LEFTSHIFT: (Modifier.SHIFT, False),
-        ScanCode.RIGHTSHIFT: (Modifier.SHIFT, False),
-        ScanCode.RIGHTALT: (Modifier.ALTGR, False),
-        ScanCode.NUMLOCK: (Modifier.NUMLK, True),
+        ScanCode.LEFTSHIFT: Modifier.SHIFT,
+        ScanCode.RIGHTSHIFT: Modifier.SHIFT,
+        ScanCode.RIGHTALT: Modifier.ALTGR,
     },
     keys={
         **layout_en_us.keys,
