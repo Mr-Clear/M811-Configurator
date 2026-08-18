@@ -384,54 +384,71 @@ class KeyWidget(QWidget):
     """A self-contained widget that paints a single key."""
 
     def __init__(self,
-                 scan_code: ScanCode,
-                 modifiers: Modifier,
+                 scan_code: ScanCode | None,
+                 modifiers: Modifier | ModifierCode,
                  keyboard_layout: KeyboardLayout,
                  colors: KeyColors,
                  parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setMinimumSize(50, 50)
-        self._key: ScanCode = scan_code
+        self.setMinimumSize(32, 32)
+        self._key: ScanCode | None = scan_code
         self._layout: KeyboardLayout = keyboard_layout
-        self._layout_key = self._layout.keys.get(scan_code)
-        self._modifiers: Modifier = modifiers
+        self._layout_key = self._layout.keys.get(scan_code) if scan_code else None
+        self._modifiers: Modifier
+        if isinstance(modifiers, Modifier):
+            self._modifiers = modifiers
+        else:
+            self._modifiers = self._layout.modifiers_from_modifier_codes(modifiers)
         self._colors: KeyColors = colors
+
+    @property
+    def scan_code(self) -> ScanCode | None:
+        return self._key
+    @scan_code.setter
+    def scan_code(self, scan_code: ScanCode | None) -> None:
+        self._key = scan_code
+        self._layout_key = self._layout.keys.get(scan_code) if scan_code else None
+        self.update()
+
+    @property
+    def modifiers(self) -> Modifier:
+        return self._modifiers
+    @modifiers.setter
+    def modifiers(self, modifiers: Modifier | ModifierCode) -> None:
+        if isinstance(modifiers, Modifier):
+            self._modifiers = modifiers
+        else:
+            self._modifiers = self._layout.modifiers_from_modifier_codes(modifiers)
+        self.update()
+
+    @property
+    def keyboard_layout(self) -> KeyboardLayout:
+        return self._layout
+    @keyboard_layout.setter
+    def keyboard_layout(self, layout: KeyboardLayout) -> None:
+        self._layout = layout
+        self._layout_key = self._layout.keys.get(self._key) if self._key else None
+        self.update()
+
+    @property
+    def colors(self) -> KeyColors:
+        return self._colors
+    @colors.setter
+    def colors(self, colors: KeyColors) -> None:
+        self._colors = colors
+        self.update()
 
     def paintEvent(self, event: QPaintEvent) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.fillRect(self.rect(), QColor("#0d1017"))
 
-        area = QRectF(self.rect()).adjusted(8, 8, -8, -8)
+        area = QRectF(self.rect())
         draw_key(painter, area, self._key, self._modifiers, self._layout, self._colors, special_shape=False)
 
 
-def draw_key(painter: QPainter, rect: QRectF, key: ScanCode, modifiers: Modifier, keyboard_layout: KeyboardLayout, colors: KeyColors, special_shape: bool):
-    layout_key = keyboard_layout.keys.get(key)
-    layout_key_labels = layout_key.labels if layout_key else {}
-    labels: dict[Align, str] = {}
-    primary_position = Align.Center if key.is_numpad_key or layout_key and (layout_key.is_letter or not layout_key.additional) else Align.BottomLeft
-    modifier_positions = {
-        Modifier.NONE: primary_position,
-        Modifier.SHIFT: Align.TopLeft,
-        Modifier.CTRL: Align.TopRight,
-        Modifier.NUMLK: Align.Bottom,
-        Modifier.ALTGR: Align.BottomRight,
-    }
-    if layout_key:
-        for position, alignment in modifier_positions.items():
-            if position in layout_key_labels:
-                labels[alignment] = layout_key_labels[position]
-        for modifier in modifiers:
-            if modifier in modifier_positions and modifier_positions[modifier] in labels and \
-                primary_position in labels:
-                    primary = labels[primary_position]
-                    labels[primary_position] = labels[modifier_positions[modifier]]
-                    labels[modifier_positions[modifier]] = primary
-                    break
-
+def draw_key(painter: QPainter, rect: QRectF, key: ScanCode | None, modifiers: Modifier, keyboard_layout: KeyboardLayout, colors: KeyColors, special_shape: bool):
     size = min(rect.width(), rect.height())
-    painter.setPen(QPen(colors.border, 1))
+    painter.setPen(QPen(colors.border, 2))
     painter.setBrush(colors.background)
     r = 8
     if special_shape:
@@ -459,6 +476,32 @@ def draw_key(painter: QPainter, rect: QRectF, key: ScanCode, modifiers: Modifier
         path.addRoundedRect(rect, r, r)
         painter.drawPath(path)
         textrect = rect
+
+    if not key:
+        return
+
+    layout_key = keyboard_layout.keys.get(key)
+    layout_key_labels = layout_key.labels if layout_key else {}
+    labels: dict[Align, str] = {}
+    primary_position = Align.Center if key.is_numpad_key or layout_key and (layout_key.is_letter or not layout_key.additional) else Align.BottomLeft
+    modifier_positions = {
+        Modifier.NONE: primary_position,
+        Modifier.SHIFT: Align.TopLeft,
+        Modifier.CTRL: Align.TopRight,
+        Modifier.NUMLK: Align.Bottom,
+        Modifier.ALTGR: Align.BottomRight,
+    }
+    if layout_key:
+        for position, alignment in modifier_positions.items():
+            if position in layout_key_labels:
+                labels[alignment] = layout_key_labels[position]
+        for modifier in modifiers:
+            if modifier in modifier_positions and modifier_positions[modifier] in labels and \
+                primary_position in labels:
+                    primary = labels[primary_position]
+                    labels[primary_position] = labels[modifier_positions[modifier]]
+                    labels[modifier_positions[modifier]] = primary
+                    break
 
     no_center = Align.Center not in labels
     for alignment, label in labels.items():

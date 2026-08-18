@@ -316,6 +316,7 @@ class ScanCode(Enum):
 
 
 class ModifierCode(Flag):
+    NONE = 0x00
     LCtrl = 0x01
     LShift = 0x02
     LAlt = 0x04

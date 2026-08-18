@@ -6,13 +6,17 @@ Configure Redragon Mice on Linux
 
 ### Todo
 
+- [ ] Modifiers of "Key Press" are not working.  
+- [ ] Configure keyboard layout  
+- [ ] Set selected key by image  
+- [ ] Visualize mouse wheel directions in image  
+- [ ] CLI  
 - [ ] Support additional mouse devices  
 - [ ] Auto save  
 - [ ] Show transfer progress  
 - [ ] Configure colors and effects  
 - [ ] Configure DPIs  
 - [ ] Open dump analyzer (Hex Editor)  
-- [ ] Clean up files  
 - [ ] Use values from mouse definition instead of constatns for macro count etc.  
 - [ ] Switch data (Profiles)  
 - [ ] Save data as json  
@@ -22,11 +26,11 @@ Configure Redragon Mice on Linux
 
 ### In Progress
 
-- [ ] Key selection by press  
-- [ ] Key selection by keyboard image  
 
 ### Done ✓
 
+- [x] Key selection by keyboard image  
+- [x] Key selection by press  
 - [x] Poll active mode  
 - [x] Rename Profile to Mode everywhere  
 - [x] Use mouse dump as data basis  

@@ -26,7 +26,7 @@ class ButtonKeyPress(Button):
         data = bytearray(self.raw_data)
         data[0] = 0x90
         self.key = ScanCode.A
-        self.modifiers = set()
+        self.modifiers = ModifierCode(0)
         self.raw_data = bytes([
             0x90,
             0x00, # no modifiers
@@ -47,16 +47,16 @@ class ButtonKeyPress(Button):
         self.raw_data = data
 
     @property
-    def modifiers(self) -> set[ModifierCode]:
+    def modifiers(self) -> ModifierCode:
         ''' The modifiers of the key press. '''
-        modifiers: set[ModifierCode] = set()
+        modifiers = ModifierCode(0)
         for modifier in ModifierCode:
             if self.raw_data[1] & modifier.value:
-                modifiers.add(modifier)
+                modifiers |= modifier
         return modifiers
 
     @modifiers.setter
-    def modifiers(self, modifiers: set[ModifierCode]) -> None:
+    def modifiers(self, modifiers: ModifierCode) -> None:
         ''' Set the modifiers of the key press. '''
         data = bytearray(self.raw_data)
         i = 0

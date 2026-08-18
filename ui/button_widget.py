@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import (QCheckBox, QComboBox, QGridLayout, QHBoxLayout,
-                               QLabel, QRadioButton, QSlider, QSpinBox,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QGridLayout,
+                               QHBoxLayout, QLabel, QRadioButton, QSlider,
+                               QSpinBox, QToolButton, QVBoxLayout, QWidget)
 
 from mouse_data.button import Button
 from mouse_data.button_custom import ButtonCustom
@@ -16,7 +16,9 @@ from mouse_data.button_mouse_function import ButtonMouseFunction
 from mouse_data.button_off import ButtonOff
 from mouse_data.button_sniper import ButtonSniper
 from mouse_data.button_special_key import ButtonSpecialKey
-from ui.keyboard.usb_hid import ModifierCode
+from ui.keyboard.keyboard_dialog import KeyboardDialog
+from ui.keyboard.layouts import known_layouts
+from ui.keyboard.usb_hid import ModifierCode, ScanCode
 
 
 class ButtonWidget(QWidget):
@@ -27,6 +29,7 @@ class ButtonWidget(QWidget):
     def __init__(self, data: Button, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.data = data
+        self._content_widget: ButtonWidget._ContentWidget | None = None
 
         self.type_combo = QComboBox()
         for button_type in Button.get_all_button_types():
@@ -58,14 +61,17 @@ class ButtonWidget(QWidget):
         self.type_combo.setCurrentIndex(index)
         self.type_combo.blockSignals(False)
 
-        content_widget = ButtonWidget._ContentWidget.from_button(data)
-        if self.content_layout.count() > 0:
-            old_item = self.content_layout.takeAt(0)
-            if old_item is not None:
-                old_widget = old_item.widget()
-                if old_widget is not None:
-                    old_widget.deleteLater()
-        self.content_layout.addWidget(content_widget)
+        if self._content_widget and isinstance(self._content_widget, ButtonWidget._ContentWidget.widget_type_for_button(data)):
+            self._content_widget.set_data(data)
+        else:
+            self._content_widget = ButtonWidget._ContentWidget.from_button(data)
+            if self.content_layout.count() > 0:
+                old_item = self.content_layout.takeAt(0)
+                if old_item is not None:
+                    old_widget = old_item.widget()
+                    if old_widget is not None:
+                        old_widget.deleteLater()
+            self.content_layout.addWidget(self._content_widget)
 
     def _on_type_changed(self, index: int) -> None:
         '''Handle the user changing the button type from the combo box.'''
@@ -81,15 +87,23 @@ class ButtonWidget(QWidget):
         def __init__(self, parent: QWidget | None = None) -> None:
             super().__init__(parent)
 
+        def set_data(self, data: Button) -> None:
+            '''Set the button data to display.'''
+            raise NotImplementedError("Subclasses must implement _set_data()")
+
+        @staticmethod
+        def widget_type_for_button(data: Button):
+            '''Return the widget type for the given button data.'''
+            widget_name = f'_{type(data).__name__}ContentWidget'
+            widget_class = getattr(ButtonWidget, widget_name, None)
+            if widget_class is None:
+                raise ValueError(f"No content widget for button type {type(data).__name__}")
+            return widget_class
+
         @staticmethod
         def from_button(data: Button, parent: QWidget | None = None) -> ButtonWidget._ContentWidget:
             '''Create a content widget for the given button data.'''
-            widget_name = f'_{type(data).__name__}ContentWidget'
-
-            widget_class = getattr(ButtonWidget, widget_name, None)
-            if widget_class is None:
-                return QWidget(parent) # type: ignore
-                #raise ValueError(f"No content widget for button type {type(data).__name__}")
+            widget_class = ButtonWidget._ContentWidget.widget_type_for_button(data)
             return widget_class(data, parent)
 
     class _ButtonOffContentWidget(_ContentWidget):
@@ -97,6 +111,9 @@ class ButtonWidget(QWidget):
         def __init__(self, data: ButtonOff, parent: QWidget | None = None) -> None:
             super().__init__(parent)
             assert data.button_type == ButtonOff
+
+        def set_data(self, data: Button) -> None:
+            assert isinstance(data, ButtonOff)
 
     class _ButtonMouseButtonContentWidget(_ContentWidget):
         '''Widget to show the content of a button that is a mouse button.'''
@@ -111,10 +128,11 @@ class ButtonWidget(QWidget):
                 self.button_combo.addItem(button.name)
             self.button_combo.currentIndexChanged.connect(self._on_button_changed)
             layout.addWidget(self.button_combo)
-            self._set_data(data)
+            self.set_data(data)
 
-        def _set_data(self, data: ButtonMouseButton) -> None:
+        def set_data(self, data: Button) -> None:
             '''Set the button data to display.'''
+            assert isinstance(data, ButtonMouseButton)
             self.data = data
             self.button_combo.blockSignals(True)
             button = data.mouse_button_type
@@ -140,10 +158,11 @@ class ButtonWidget(QWidget):
             for button in ButtonMouseFunction.MouseFunctionType:
                 self.button_combo.addItem(button.name)
             layout.addWidget(self.button_combo)
-            self._set_data(data)
+            self.set_data(data)
 
-        def _set_data(self, data: ButtonMouseFunction) -> None:
+        def set_data(self, data: Button) -> None:
             '''Set the button data to display.'''
+            assert isinstance(data, ButtonMouseFunction)
             self.data = data
             self.button_combo.blockSignals(True)
             button = data.function_type
@@ -167,10 +186,12 @@ class ButtonWidget(QWidget):
             layout.setContentsMargins(0, 0, 0, 0)
             key_layout = QHBoxLayout()
             key_layout.addWidget(QLabel("Key:"))
-            self.key_label = QLabel(data.key.name)
-            self.key_label.setFrameStyle(QLabel.Shape.Panel | QLabel.Shadow.Sunken)
-            self.key_label.setStyleSheet("font-family: monospace;")
-            key_layout.addWidget(self.key_label)
+            self._key_button = QToolButton()
+            self._key_button.setText(data.key.name)
+            #self._key_button.setFrameStyle(QLabel.Shape.Panel | QLabel.Shadow.Sunken)
+            self._key_button.setStyleSheet("font-family: monospace;")
+            self._key_button.clicked.connect(self._on_key_button_clicked)
+            key_layout.addWidget(self._key_button)
             key_layout.addStretch(1)
             layout.addLayout(key_layout)
             modifiers_layout = QGridLayout()
@@ -181,12 +202,13 @@ class ButtonWidget(QWidget):
                 modifiers_layout.addWidget(checkbox, i % 4, i // 4)
                 self.modifier_checkboxes[modifier] = checkbox
             layout.addLayout(modifiers_layout)
-            self._set_data(data)
+            self.set_data(data)
 
-        def _set_data(self, data: ButtonKeyPress) -> None:
+        def set_data(self, data: Button) -> None:
             '''Set the button data to display.'''
+            assert isinstance(data, ButtonKeyPress)
             self.data = data
-            self.key_label.setText(data.key.name)
+            self._key_button.setText(data.key.name)
             for modifier, checkbox in self.modifier_checkboxes.items():
                 checkbox.blockSignals(True)
                 checkbox.setChecked(modifier in data.modifiers)
@@ -194,12 +216,25 @@ class ButtonWidget(QWidget):
 
         def _on_modifiers_changed(self) -> None:
             '''Handle the user changing the modifiers from the checkboxes.'''
-            modifiers: set[ModifierCode] = set()
+            modifiers = ModifierCode(0)
             for modifier, checkbox in self.modifier_checkboxes.items():
                 if checkbox.isChecked():
-                    modifiers.add(modifier)
+                    modifiers |= modifier
             self.data.modifiers = modifiers
             self.data_changed.emit()
+
+        def _on_key_button_clicked(self) -> None:
+            '''Handle the user clicking the key button to change the key.'''
+            dialog = KeyboardDialog(list(known_layouts().values())[0], "Select Key", self)
+            if dialog.exec() == QDialog.DialogCode.Accepted:
+                scan_code = dialog.scan_code
+                if scan_code:
+                    self._on_key_selected(scan_code, dialog.modifiers)
+
+        def _on_key_selected(self, scan_code: ScanCode, modifiers: ModifierCode) -> None:
+            '''Handle the user selecting a key from the keyboard dialog.'''
+            self.data.key = scan_code
+            self.data.modifiers = modifiers
 
     class _ButtonSpecialKeyContentWidget(_ContentWidget):
         '''Widget to show the content of a button that is a special key.'''
@@ -214,10 +249,11 @@ class ButtonWidget(QWidget):
                 self.type_combo.addItem(key.name)
             layout.addWidget(self.type_combo)
             self.type_combo.currentIndexChanged.connect(self._on_type_changed)
-            self._set_data(data)
+            self.set_data(data)
 
-        def _set_data(self, data: ButtonSpecialKey) -> None:
+        def set_data(self, data: Button) -> None:
             '''Set the button data to display.'''
+            assert isinstance(data, ButtonSpecialKey)
             self.data = data
             index = list(ButtonSpecialKey.Type).index(data.special_key_type)
             self.type_combo.setCurrentIndex(index)
@@ -254,10 +290,11 @@ class ButtonWidget(QWidget):
             self._toggle_radio = QRadioButton("Toggle")
             layout.addWidget(self._toggle_radio, 3, 0)
             self._toggle_radio.toggled.connect(self._on_value_changed)
-            self._set_data(data)
+            self.set_data(data)
 
-        def _set_data(self, data: ButtonMacro) -> None:
+        def set_data(self, data: Button) -> None:
             '''Set the button data to display.'''
+            assert isinstance(data, ButtonMacro)
             self.data = data
             self.macro_id_combo.blockSignals(True)
             self._repeat_radio.blockSignals(True)
@@ -314,8 +351,9 @@ class ButtonWidget(QWidget):
             self.dpi_slider.setRange(1, 100)
             layout.addWidget(self.dpi_slider)
 
-        def _set_data(self, data: ButtonSniper) -> None:
+        def set_data(self, data: Button) -> None:
             '''Set the button data to display.'''
+            assert isinstance(data, ButtonSniper)
             self.data = data
             # Todo: Set the slider value to the sniper sensitivity
 
@@ -347,8 +385,9 @@ class ButtonWidget(QWidget):
             layout.addWidget(self.keyboard_key_label)
 
 
-        def _set_data(self, data: ButtonFireKey) -> None:
+        def set_data(self, data: Button) -> None:
             '''Set the button data to display.'''
+            assert isinstance(data, ButtonFireKey)
             self.data = data
             if isinstance(data.key, ButtonMouseButton):
                 self.type_combo.setCurrentIndex(0)
@@ -392,8 +431,9 @@ class ButtonWidget(QWidget):
                 self.hex_labels.append(hex_label)
             layout.setColumnStretch(4, 1)
 
-        def _set_data(self, data: ButtonCustom) -> None:
+        def set_data(self, data: Button) -> None:
             '''Set the button data to display.'''
+            assert isinstance(data, ButtonCustom)
             self.data = data
             for i in range(4):
                 self.spin_boxes[i].blockSignals(True)

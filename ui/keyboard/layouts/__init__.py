@@ -32,6 +32,12 @@ class LayoutKey:
             labels.update(self.additional)
         return labels
 
+    def to_string(self, modifiers: Modifier = Modifier.NONE) -> str:
+        """Return the label for this key with the given modifiers."""
+        if self.representation:
+            return f'{self.representation}'
+        return self.labels.get(modifiers, self.primary)
+
 @dataclass(frozen=True)
 class KeyboardLayout:
     """A keyboard layout, which maps physical keys to characters."""
