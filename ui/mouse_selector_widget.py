@@ -63,7 +63,7 @@ class MouseSelectorWidget(QWidget):
             self.select_mouse_combo.setEnabled(True)
 
         for index, mouse in enumerate(self.mice):
-            label = mouse.name or f"Device {mouse.dev.idProduct:04x}"
+            label = f'{mouse.name or f"Device {mouse.ids}"}  ({mouse.long_path})'
             self.select_mouse_combo.addItem(label)
 
         if current_device is not None:

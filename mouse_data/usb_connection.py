@@ -128,6 +128,9 @@ class UsbConnection:
     def path(self) -> str:
         return f"{self.dev.bus}-{self.dev.address}"
 
+    @property
+    def long_path(self) -> str:
+        return f"Bus {self.dev.bus:03d} Device {self.dev.address:03d}"
 
     @property
     def transfer_in_progress(self) -> bool:
